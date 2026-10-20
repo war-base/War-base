@@ -1,5 +1,4 @@
 html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
-/* Dodane tło awaryjne dla kontenera gry */
 #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
 
 #top-bar {
