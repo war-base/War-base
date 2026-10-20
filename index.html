@@ -6,9 +6,9 @@
   <title>War Base</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
-    /* Tło dla kontenera gry */
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
 
+    /* Górny pasek */
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.75); color: white; padding: 12px; 
@@ -17,6 +17,7 @@
     .res-gold { color: #ffd700; }
     .res-elixir { color: #ff69b4; }
 
+    /* Menu budowania */
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; justify-content: space-around; gap: 10px;
@@ -33,6 +34,7 @@
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ff69b4; }
 
+    /* Przycisk ataku */
     #attack-btn {
       position: absolute; bottom: 100px; right: 20px;
       background: #cc0000; color: white; border: 2px solid #ff4444;
@@ -42,6 +44,7 @@
     }
     #attack-btn:active { background: #990000; transform: scale(0.95); }
 
+    /* Panel walki */
     #battle-ui {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       z-index: 10; pointer-events: none; display: none;
@@ -51,15 +54,26 @@
       display: flex; justify-content: space-between; align-items: center;
       font-size: 18px; font-weight: bold; pointer-events: auto;
     }
-    #battle-top-bar button {
-      background: #cc0000; color: white; border: none; padding: 10px 15px;
-      border-radius: 8px; font-weight: bold;
-    }
+    #battle-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
-    #message {
+    /* Panel budynku (Ulepszanie / Sprzedaż) */
+    #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 10px;
+      display: none; z-index: 30; text-align: center; min-width: 250px; border: 2px solid #ffd700;
+    }
+    #building-panel h3 { margin: 0 0 10px 0; color: #ffd700; font-size: 22px; }
+    #building-panel p { margin: 5px 0; font-size: 16px; }
+    #building-panel button { margin: 5px; padding: 10px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; font-size: 14px; }
+    #bp-upgrade { background: #2d8a4e; color: white; }
+    #bp-sell { background: #8b0000; color: white; }
+    #bp-close { background: #555; color: white; width: 90%; }
+
+    /* Komunikaty */
+    #message {
+      position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(200, 0, 0, 0.9); color: white; padding: 10px 20px;
-      border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 20;
+      border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 40;
       text-align: center;
     }
   </style>
@@ -80,11 +94,22 @@
 
   <button id="attack-btn" onclick="startAttack()">⚔️ Atakuj</button>
 
+  <!-- Panel Walki -->
   <div id="battle-ui">
     <div id="battle-top-bar">
       <div>🪖 Armia: <span id="ui-army">20</span></div>
       <button onclick="endBattle(false)">Poddaj się</button>
     </div>
+  </div>
+
+  <!-- Panel Ulepszania Budynku -->
+  <div id="building-panel">
+    <h3 id="bp-name">Budynek</h3>
+    <p>Poziom: <span id="bp-level">1</span></p>
+    <p>Produkcja: <span id="bp-prod">0</span></p>
+    <button id="bp-upgrade" onclick="upgradeBuilding()">Ulepsz (Koszt: <span id="bp-upgrade-cost">0</span>)</button>
+    <button id="bp-sell" onclick="sellBuilding()">Sprzedaj (Zwrot: <span id="bp-sell-value">0</span>)</button>
+    <button id="bp-close" onclick="closeBuildingPanel()">Zamknij</button>
   </div>
   
   <div id="message">Za mało surowców!</div>
@@ -94,12 +119,14 @@
   <script>
     // --- USTAWIENIA ---
     const TILE = 64; 
-    const GRID = 25; 
+    const GRID = 35; // ZWIĘKSZONO MAPĘ, żeby na pewno dało się ją przesuwać w pionie!
+    
     let gold = 1000;
     let elixir = 1000;
     let selectedBuildingType = null;
     let buildings = [];
     let prodTimer = 0;
+    let currentlySelectedBuilding = null;
 
     const BUILDINGS = {
       townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 } },
@@ -124,6 +151,7 @@
     function selectBuilding(type) {
       selectedBuildingType = (selectedBuildingType === type) ? null : type;
       if (window.preview) window.preview.setVisible(false);
+      closeBuildingPanel();
       updateUI();
     }
 
@@ -134,9 +162,83 @@
       setTimeout(() => { msg.style.display = 'none'; }, 2000);
     }
 
+    // --- PANEL BUDYNKU ---
+    function openBuildingPanel(building) {
+      currentlySelectedBuilding = building;
+      const def = BUILDINGS[building.type];
+      
+      document.getElementById('bp-name').innerText = def.name;
+      document.getElementById('bp-level').innerText = building.level;
+      
+      const prodGold = (def.prod.gold || 0) * building.level;
+      const prodElixir = (def.prod.elixir || 0) * building.level;
+      let prodStr = [];
+      if (prodGold > 0) prodStr.push(prodGold + ' 🪙');
+      if (prodElixir > 0) prodStr.push(prodElixir + ' 💧');
+      document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
+      
+      // Koszt ulepszenia rośnie z poziomem
+      const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
+      const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
+      document.getElementById('bp-upgrade-cost').innerText = `${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧`;
+      
+      const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
+      const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
+      document.getElementById('bp-sell-value').innerText = `${sellValueGold} 🪙, ${sellValueElixir} 💧`;
+      
+      document.getElementById('building-panel').style.display = 'block';
+    }
+
+    function closeBuildingPanel() {
+      document.getElementById('building-panel').style.display = 'none';
+      currentlySelectedBuilding = null;
+    }
+
+    function upgradeBuilding() {
+      if (!currentlySelectedBuilding) return;
+      const def = BUILDINGS[currentlySelectedBuilding.type];
+      const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
+      const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
+      
+      if (gold < costGold) { showMessage('Za mało złota!'); return; }
+      if (elixir < costElixir) { showMessage('Za mało eliksiru!'); return; }
+      
+      gold -= costGold;
+      elixir -= costElixir;
+      currentlySelectedBuilding.level++;
+      
+      currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
+      
+      updateUI();
+      saveGame();
+      openBuildingPanel(currentlySelectedBuilding); 
+    }
+
+    function sellBuilding() {
+      if (!currentlySelectedBuilding) return;
+      const def = BUILDINGS[currentlySelectedBuilding.type];
+      const refundGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
+      const refundElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
+      
+      gold += refundGold;
+      elixir += refundElixir;
+      
+      currentlySelectedBuilding.destroy();
+      buildings = buildings.filter(b => b !== currentlySelectedBuilding);
+      
+      updateUI();
+      saveGame();
+      closeBuildingPanel();
+    }
+
     // --- ZAPIS ---
     function saveGame() {
-      const data = { version: 2, gold: gold, elixir: elixir, buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type })) };
+      const data = { 
+        version: 3, 
+        gold: gold, 
+        elixir: elixir, 
+        buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level })) 
+      };
       localStorage.setItem('warBaseSave', JSON.stringify(data));
     }
     function loadGame() {
@@ -144,7 +246,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 2 && typeof data.gold === 'number') {
+          if (data.version === 3 && typeof data.gold === 'number') {
             gold = data.gold; elixir = data.elixir; return data.buildings;
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -154,6 +256,7 @@
 
     // --- EKRANY ---
     function startAttack() {
+      closeBuildingPanel();
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
@@ -186,7 +289,7 @@
         this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
         buildings = []; 
-        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false));
+        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1));
         updateUI();
 
         this.input.on('pointermove', (p) => {
@@ -209,7 +312,7 @@
 
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
-        cam.setZoom(0.8);
+        cam.setZoom(0.7); // Trochę bardziej oddalone, żeby widzieć więcej
       }
 
       update(time, delta) {
@@ -217,7 +320,10 @@
         prodTimer += delta;
         if (prodTimer >= 1000) {
           let aG = 0, aE = 0;
-          buildings.forEach(b => { aG += BUILDINGS[b.type].prod.gold; aE += BUILDINGS[b.type].prod.elixir; });
+          buildings.forEach(b => {
+            aG += (BUILDINGS[b.type].prod.gold || 0) * b.level;
+            aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level;
+          });
           if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
           prodTimer = 0;
         }
@@ -235,27 +341,29 @@
         if (elixir < def.cost.elixir) { showMessage('Za mało eliksiru!'); return; }
 
         gold -= def.cost.gold; elixir -= def.cost.elixir;
-        this.createBuilding(x, y, selectedBuildingType, true);
+        this.createBuilding(x, y, selectedBuildingType, true, 1);
         updateUI(); saveGame();
       }
 
-      createBuilding(x, y, type, isNew) {
+      createBuilding(x, y, type, isNew, level) {
         const def = BUILDINGS[type];
         const container = this.add.container(x, y);
+        
         const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
-        const label = this.add.text(0, 0, def.name, { fontSize: '10px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        const label = this.add.text(0, 0, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
         
         container.add([rect, label]);
         container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
-        container.type = type; container.gridX = x; container.gridY = y;
+        container.type = type; 
+        container.gridX = x; 
+        container.gridY = y;
+        container.level = level;
+        container.label = label;
 
         container.on('pointerdown', (pointer, localX, localY, event) => {
           if (event) event.stopPropagation();
           if (selectedBuildingType) return; 
-          gold += Math.floor(def.cost.gold * 0.5); elixir += Math.floor(def.cost.elixir * 0.5); updateUI();
-          container.destroy();
-          buildings = buildings.filter(b => b !== container);
-          saveGame();
+          openBuildingPanel(container);
         });
 
         buildings.push(container);
@@ -277,7 +385,6 @@
         this.armyLeft = 20;
         this.battleEnded = false;
 
-        // Używamy dokładnych wymiarów okna, tak jak w teście
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
@@ -351,7 +458,6 @@
     }
 
     // --- START GRY ---
-    // ZMIENIONO NA CANVAS I SZTYWNE WYMIARY (dokładnie jak w działającym teście)
     const config = {
       type: Phaser.CANVAS, 
       parent: 'game',
