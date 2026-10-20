@@ -2,7 +2,7 @@
 <html lang="pl">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>War Base</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
@@ -10,17 +10,19 @@
 
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.75); color: white; padding: 12px; 
+      background: rgba(0, 0, 0, 0.85); color: white; 
+      /* POPRAWKA: Margines na wcięcie w telefonie (notch) */
+      padding: max(12px, env(safe-area-inset-top)) 12px 12px 12px; 
       display: flex; justify-content: space-around; font-weight: bold; font-size: 16px; z-index: 10; pointer-events: none;
     }
     .res-gold { color: #ffd700; }
     .res-elixir { color: #ff69b4; }
 
-    /* Menu budowania - przewijane w bok, bo mamy więcej budynków */
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; gap: 10px;
       border-top: 2px solid #555; z-index: 10; overflow-x: auto; white-space: nowrap;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .build-btn {
       min-width: 80px; padding: 10px 5px; border: none; border-radius: 8px;
@@ -56,7 +58,8 @@
       z-index: 10; pointer-events: none; display: none;
     }
     #battle-top-bar, #defense-top-bar {
-      background: rgba(0, 0, 0, 0.85); color: white; padding: 15px;
+      background: rgba(0, 0, 0, 0.85); color: white; 
+      padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px;
       display: flex; justify-content: space-between; align-items: center;
       font-size: 18px; font-weight: bold; pointer-events: auto;
     }
@@ -93,7 +96,6 @@
     <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">1000</span></div>
   </div>
   
-  <!-- Przewijane menu budowy -->
   <div id="build-menu">
     <button class="build-btn" onclick="selectBuilding('townhall')">🏰 Ratusz<span class="btn-sub gold">1000 🪙</span></button>
     <button class="build-btn" onclick="selectBuilding('mine')">⛏️ Kopalnia<span class="btn-sub elixir">150 💧</span></button>
@@ -153,7 +155,6 @@
     let prodTimer = 0;
     let currentlySelectedBuilding = null;
 
-    // DODANO IKONY (emoji) ORAZ NOWE BUDYNKI (Mur, Wieża)
     const BUILDINGS = {
       townhall: { name: 'Ratusz', emoji: '🏰', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000 },
       mine: { name: 'Kopalnia', emoji: '⛏️', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400 },
@@ -284,7 +285,7 @@
 
     function saveGame() {
       const data = { 
-        version: 5, // Nowa wersja zapisu
+        version: 5, 
         gold: gold, 
         elixir: elixir, 
         currentArmy: currentArmy, 
@@ -416,8 +417,15 @@
           }
         });
 
+        // Znajdź Ratusz, aby na nim wyśrodkować kamerę (jeśli istnieje)
+        const townhall = buildings.find(b => b.type === 'townhall');
+        if (townhall) {
+          cam.centerOn(townhall.x, townhall.y);
+        } else {
+          cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
+        }
+        
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
-        cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
         cam.setZoom(0.7); 
       }
 
@@ -456,8 +464,6 @@
         const container = this.add.container(x, y);
         
         const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
-        
-        // DODANO IKONĘ DO BUDYNKU
         const icon = this.add.text(0, -5, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
         const label = this.add.text(0, 15, def.name + ' L' + level, { fontSize: '9px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
         
@@ -524,7 +530,6 @@
         const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
         this.add.text(x, y - 5, emoji, {fontSize: '24px'}).setOrigin(0.5);
         this.add.text(x, y + 18, name, {fontSize: '10px', color: '#fff'}).setOrigin(0.5);
-        
         this.add.rectangle(x, y - 40, size, 8, 0x000000);
         const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
         this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isTower: (name === 'Wieża') });
@@ -550,7 +555,8 @@
             if (nearestTroop) {
               const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000);
               laser.setOrigin(0, 0);
-              setTimeout(() => laser.destroy(), 100); 
+              laser.setLineWidth(4); // Grubszy laser
+              setTimeout(() => laser.destroy(), 150); 
               nearestTroop.hp -= 25;
             }
           }
@@ -618,10 +624,6 @@
         let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
         grid.setOrigin(0, 0);
         
-        cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
-        cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
-        cam.setZoom(0.7);
-        
         this.playerBuildings = [];
         const saved = loadGame(); 
         
@@ -641,6 +643,21 @@
           });
         });
         
+        // Znajdź Ratusz i wyśrodkuj na nim kamerę
+        const townhall = this.playerBuildings.find(b => b.type === 'townhall');
+        let centerX = TILE * GRID / 2;
+        let centerY = TILE * GRID / 2;
+        if (townhall) {
+          centerX = townhall.x;
+          centerY = townhall.y;
+        }
+        
+        cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
+        cam.centerOn(centerX, centerY);
+        cam.setZoom(0.8);
+        
+        this.centerBase = { x: centerX, y: centerY };
+
         this.enemies = [];
         this.waveCount = 0;
         this.battleEnded = false;
@@ -648,17 +665,17 @@
         
         this.spawnWave();
         
-        // Strzelanie wież gracza (co 1.5 sekundy)
         this.time.addEvent({
           delay: 1500, loop: true, callback: () => {
             if (this.battleEnded) return;
             this.playerBuildings.forEach(tower => {
               if (tower.alive && tower.isTower) {
-                let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 300);
+                let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 400);
                 if (target) {
                   const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff);
                   laser.setOrigin(0, 0);
-                  setTimeout(() => laser.destroy(), 100); 
+                  laser.setLineWidth(5); // Grubszy laser
+                  setTimeout(() => laser.destroy(), 150); 
                   target.hp -= 30; 
                 }
               }
@@ -708,15 +725,15 @@
         this.waveCount++;
         const numEnemies = 2 + this.waveCount * 2; 
         
+        // Wrogowie pojawiają się wokół bazy, a nie na końcach mapy
         for (let i = 0; i < numEnemies; i++) {
-          let x, y;
-          const side = Phaser.Math.Between(0, 3);
-          if (side === 0) { x = Phaser.Math.Between(100, TILE * GRID - 100); y = 50; } 
-          else if (side === 1) { x = Phaser.Math.Between(100, TILE * GRID - 100); y = TILE * GRID - 50; } 
-          else if (side === 2) { x = 50; y = Phaser.Math.Between(100, TILE * GRID - 100); } 
-          else { x = TILE * GRID - 50; y = Phaser.Math.Between(100, TILE * GRID - 100); } 
+          const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+          const distance = Phaser.Math.Between(400, 600); 
           
-          const sprite = this.add.text(x, y, '👹', { fontSize: '24px' }).setOrigin(0.5);
+          const x = this.centerBase.x + Math.cos(angle) * distance;
+          const y = this.centerBase.y + Math.sin(angle) * distance;
+          
+          const sprite = this.add.text(x, y, '👹', { fontSize: '28px' }).setOrigin(0.5);
           const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
           
           this.enemies.push({
