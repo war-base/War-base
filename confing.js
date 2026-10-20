@@ -2,18 +2,25 @@
 const TILE = 64; 
 const GRID = 25; 
 
-// Stan początkowy
+// Stan gry
 let gold = 1000;
 let elixir = 1000;
 let selectedBuildingType = null;
 let buildings = [];
 let prodTimer = 0;
 
-// Definicje budynków
+// Definicje budynków do stawiania
 const BUILDINGS = {
   townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 } },
   mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 } },
   barracks: { name: 'Koszary', cost: { gold: 0, elixir: 300 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 } }
+};
+
+// Statystyki wojsk (do ataku)
+const TROOP_STATS = {
+  damage: 15,   // Obrażenia na sekundę
+  speed: 150,   // Prędkość poruszania się
+  range: 40     // Zasięg ataku
 };
 
 // --- INTERFEJS ---
@@ -43,7 +50,7 @@ function showMessage(text) {
   if (!msg) return;
   msg.innerText = text;
   msg.style.display = 'block';
-  setTimeout(() => { msg.style.display = 'none'; }, 1500);
+  setTimeout(() => { msg.style.display = 'none'; }, 2000);
 }
 
 // --- ZAPIS I ODCZYT ---
