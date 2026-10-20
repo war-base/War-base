@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>War Base - Prototyp</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; }
+    #game { width: 100vw; height: 100vh; touch-action: none; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  
+  <!-- Ładowanie silnika Phaser z internetu -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  
+  <script>
+    const TILE = 64; // Rozmiar kratki
+    const GRID = 12; // Ile kratek w pionie i poziomie
+
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game',
+      backgroundColor: '#2d4a3e', // Ciemnozielone tło (trawa)
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      },
+      scene: { create, update }
+    };
+
+    let cam, buildings = [], preview, fpsText, isDragging = false;
+
+    function create() {
+      cam = this.cameras.main;
+
+      // Rysowanie siatki
+      let gridGraphics = this.add.graphics();
+      gridGraphics.lineStyle(1, 0x3d6b55, 1);
+      for (let i = 0; i <= GRID; i++) {
+        gridGraphics.lineBetween(i * TILE, 0, i * TILE, GRID * TILE);
+        gridGraphics.lineBetween(0, i * TILE, GRID * TILE, i * TILE);
+      }
+
+      // Podgląd budynku pod palcem
+      preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffcc00, 0.5)
+        .setVisible(false).setDepth(10);
+
+      // Tekst instrukcji i FPS
+      this.add.text(10, 10, 'Przesuń palcem: Kamera\nKliknij: Postaw budynek\nKliknij budynek: Usuń', { 
+        fontSize: '14px', color: '#ffffff', backgroundColor: '#00000088', padding: {x: 10, y: 10} 
+      }).setScrollFactor(0).setDepth(20);
+
+      fpsText = this.add.text(10, 90, 'FPS: 0', { 
+        fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} 
+      }).setScrollFactor(0).setDepth(20);
+
+      // --- OBSŁUGA DOTYKU ---
+      
+      // 1. Przesuwanie kamery
+      this.input.on('pointermove', (p) => {
+        if (p.isDown) {
+          isDragging = true;
+          cam.scrollX -= (p.x - p.prevPosition.x);
+          cam.scrollY -= (p.y - p.prevPosition.y);
+        }
+      });
+
+      // 2. Puszczenie palca (koniec przesuwania lub kliknięcie)
+      this.input.on('pointerup', (p) => {
+        if (isDragging) {
+          // Sprawdzamy, czy to było przesunięcie, czy zwykłe kliknięcie
+          const dist = Phaser.Math.Distance.Between(p.downX, p.downY, p.upX, p.upY);
+          if (dist < 15) {
+            placeBuilding.call(this, p);
+          }
+        }
+        isDragging = false;
+        preview.setVisible(false);
+      });
+
+      // 3. Pokazywanie podglądu przy dotknięciu
+      this.input.on('pointerdown', (p) => {
+        preview.setPosition(snap(p.worldX), snap(p.worldY)).setVisible(true);
+      });
+
+      // Ograniczenie kamery do rozmiaru planszy
+      cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
+      cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
+    }
+
+    function update() {
+      // Aktualizacja licznika FPS
+      if (fpsText) {
+        fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
+      }
+    }
+
+    function snap(v) {
+      return Math.floor(v / TILE) * TILE + TILE / 2;
+    }
+
+    function placeBuilding(p) {
+      const x = snap(p.worldX);
+      const y = snap(p.worldY);
+
+      // Sprawdzenie granic planszy
+      if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
+      
+      // Sprawdzenie, czy kratka jest pusta
+      if (buildings.some(b => b.x === x && b.y === y)) return;
+
+      // Tworzenie budynku (brązowy kwadrat)
+      const rect = this.add.rectangle(x, y, TILE - 6, TILE - 6, 0x8b4513)
+        .setStrokeStyle(2, 0x5a2d0c);
+
+      // Tymczasowe usuwanie po kliknięciu
+      rect.setInteractive({ useHandCursor: true });
+      rect.on('pointerdown', () => {
+        rect.destroy();
+        buildings = buildings.filter(b => b !== rect);
+      });
+
+      buildings.push(rect);
+      preview.setVisible(false);
+    }
+
+    new Phaser.Game(config);
+  </script>
+</body>
+</html>
