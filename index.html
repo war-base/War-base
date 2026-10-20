@@ -5,21 +5,25 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>War Base - Prototyp 2</title>
   <style>
-    html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
-    #game { width: 100vw; height: 100vh; }
+    html, body { 
+      margin: 0; padding: 0; overflow: hidden; 
+      background: #1a1a2e; touch-action: none; overscroll-behavior: none; 
+      font-family: Arial, sans-serif; 
+    }
     
-    /* --- INTERFEJS UŻYTKOWNIKA (UI) --- */
-    #ui-layer {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; /* Pozwala klikać w grę pod spodem */
-      display: flex; flex-direction: column; justify-content: space-between;
+    /* Mapa zajmuje cały ekran, jest pod interfejsem (z-index: 1) */
+    #game { 
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; 
+      z-index: 1; 
     }
 
-    /* Górny pasek surowców */
+    /* Górny pasek surowców (z-index: 10, na wierzchu) */
     #top-bar {
-      background: rgba(0, 0, 0, 0.7); color: white;
-      padding: 10px; display: flex; justify-content: space-around; font-weight: bold; font-size: 16px;
-      pointer-events: auto; /* Ten element przechwytuje dotyk */
+      position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.75); color: white;
+      padding: 12px; display: flex; justify-content: space-around; 
+      font-weight: bold; font-size: 16px; z-index: 10;
+      pointer-events: none; /* Przepuszcza dotyk w miejsca puste, ale same napisy są widoczne */
     }
     
     .res-gold { color: #ffd700; }
@@ -27,15 +31,17 @@
 
     /* Dolne menu budowy */
     #build-menu {
-      background: rgba(0, 0, 0, 0.8); padding: 10px;
+      position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.85); padding: 10px;
       display: flex; justify-content: space-around; gap: 10px;
-      pointer-events: auto; border-top: 2px solid #555;
+      border-top: 2px solid #555; z-index: 10;
     }
 
     .build-btn {
       flex: 1; padding: 10px 5px; border: none; border-radius: 8px;
       background: #444; color: white; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px;
+      pointer-events: auto; /* Przyciski muszą łapać dotyk */
     }
     
     .build-btn.selected { background: #2d8a4e; border: 2px solid #55ff88; }
@@ -45,38 +51,36 @@
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ff69b4; }
 
-    /* Ekran blokady (gdy brakuje surowców) */
+    /* Komunikat */
     #message {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(200, 0, 0, 0.9); color: white; padding: 10px 20px;
       border-radius: 8px; font-weight: bold; display: none; pointer-events: none;
+      z-index: 20;
     }
   </style>
 </head>
 <body>
   <div id="game"></div>
 
-  <!-- Nakładka UI -->
-  <div id="ui-layer">
-    <div id="top-bar">
-      <div class="res-gold">🪙 Złoto: <span id="ui-gold">1000</span></div>
-      <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">1000</span></div>
-    </div>
-    
-    <div id="build-menu">
-      <button class="build-btn" onclick="selectBuilding('townhall')">
-        🏰 Ratusz
-        <span class="btn-sub gold">1000 🪙</span>
-      </button>
-      <button class="build-btn" onclick="selectBuilding('mine')">
-        ⛏️ Kopalnia
-        <span class="btn-sub elixir">150 💧</span>
-      </button>
-      <button class="build-btn" onclick="selectBuilding('barracks')">
-        ⚔️ Koszary
-        <span class="btn-sub elixir">300 💧</span>
-      </button>
-    </div>
+  <div id="top-bar">
+    <div class="res-gold">🪙 Złoto: <span id="ui-gold">1000</span></div>
+    <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">1000</span></div>
+  </div>
+  
+  <div id="build-menu">
+    <button class="build-btn" onclick="selectBuilding('townhall')">
+      🏰 Ratusz
+      <span class="btn-sub gold">1000 🪙</span>
+    </button>
+    <button class="build-btn" onclick="selectBuilding('mine')">
+      ⛏️ Kopalnia
+      <span class="btn-sub elixir">150 💧</span>
+    </button>
+    <button class="build-btn" onclick="selectBuilding('barracks')">
+      ⚔️ Koszary
+      <span class="btn-sub elixir">300 💧</span>
+    </button>
   </div>
   
   <div id="message">Za mało surowców!</div>
@@ -84,11 +88,9 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   
   <script>
-    // --- STAN GRY (Ekonomia) ---
     let gold = 1000;
     let elixir = 1000;
     
-    // Definicje budynków
     const BUILDINGS = {
       townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c },
       mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b },
@@ -97,24 +99,25 @@
     
     let selectedBuildingType = null;
 
-    // --- INTERFEJS HTML ---
     function updateUI() {
-      document.getElementById('ui-gold').innerText = gold;
-      document.getElementById('ui-elixir').innerText = elixir;
+      const gEl = document.getElementById('ui-gold');
+      const eEl = document.getElementById('ui-elixir');
+      if (gEl) gEl.innerText = gold;
+      if (eEl) eEl.innerText = elixir;
       
-      // Podświetlanie wybranego przycisku
       const btns = document.querySelectorAll('.build-btn');
-      btns.forEach(btn => btn.classList.remove('selected'));
-      
-      if (selectedBuildingType === 'townhall') btns[0].classList.add('selected');
-      if (selectedBuildingType === 'mine') btns[1].classList.add('selected');
-      if (selectedBuildingType === 'barracks') btns[2].classList.add('selected');
+      if (btns.length >= 3) {
+        btns.forEach(btn => btn.classList.remove('selected'));
+        if (selectedBuildingType === 'townhall') btns[0].classList.add('selected');
+        if (selectedBuildingType === 'mine') btns[1].classList.add('selected');
+        if (selectedBuildingType === 'barracks') btns[2].classList.add('selected');
+      }
     }
 
     function selectBuilding(type) {
       if (selectedBuildingType === type) {
-        selectedBuildingType = null; // Odkliknięcie
-        preview.setVisible(false);
+        selectedBuildingType = null;
+        if (window.preview) window.preview.setVisible(false);
       } else {
         selectedBuildingType = type;
       }
@@ -123,12 +126,12 @@
     
     function showMessage(text) {
       const msg = document.getElementById('message');
+      if (!msg) return;
       msg.innerText = text;
       msg.style.display = 'block';
       setTimeout(() => { msg.style.display = 'none'; }, 1500);
     }
 
-    // --- KONFIGURACJA PHASERA ---
     const TILE = 64; 
     const GRID = 25; 
 
@@ -160,8 +163,10 @@
       // Podgląd budynku
       preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5)
         .setVisible(false).setDepth(10);
+      
+      window.preview = preview; // Referencja globalna dla HTML
 
-      fpsText = this.add.text(10, 10, 'FPS: 0', { 
+      fpsText = this.add.text(10, 50, 'FPS: 0', { 
         fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} 
       }).setScrollFactor(0).setDepth(20);
 
@@ -175,15 +180,13 @@
       });
 
       this.input.on('pointerup', (p) => {
-        if (isDragging) {
-          const dist = Phaser.Math.Distance.Between(p.downX, p.downY, p.upX, p.upY);
-          // Jeśli to było kliknięcie (a nie przesunięcie) i mamy wybrany budynek -> buduj
-          if (dist < 15 && selectedBuildingType) {
-            placeBuilding.call(this, p);
-          }
+        // Jeśli to było kliknięcie (a nie przesunięcie), buduj
+        const dist = Phaser.Math.Distance.Between(p.downX, p.downY, p.upX, p.upY);
+        if (dist < 15 && selectedBuildingType) {
+          placeBuilding.call(this, p);
         }
         isDragging = false;
-        preview.setVisible(false);
+        if (preview) preview.setVisible(false);
       });
 
       this.input.on('pointerdown', (p) => {
@@ -215,33 +218,26 @@
       const x = snap(p.worldX);
       const y = snap(p.worldY);
 
-      // Granice
       if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
-      // Kolizja
       if (buildings.some(b => b.x === x && b.y === y)) return;
 
-      // Sprawdzanie surowców
       if (gold < def.cost.gold) { showMessage('Za mało złota!'); return; }
       if (elixir < def.cost.elixir) { showMessage('Za mało eliksiru!'); return; }
 
-      // Odejmowanie kosztów
       gold -= def.cost.gold;
       elixir -= def.cost.elixir;
       updateUI();
 
-      // Tworzenie obiektu
       const rect = this.add.rectangle(x, y, TILE - 6, TILE - 6, def.color)
         .setStrokeStyle(2, def.stroke);
 
       rect.setInteractive({ useHandCursor: true });
       
-      // Kliknięcie w budynek (żeby go usunąć i odzyskać kasę)
+      // Usuwanie budynku
       rect.on('pointerdown', (pointer, localX, localY, event) => {
-        event.stopPropagation(); // Blokuje przesuwanie kamery
+        if (event) event.stopPropagation();
+        if (selectedBuildingType) return;
         
-        if (selectedBuildingType) return; // Jeśli budujemy, nie usuwamy
-        
-        // Zwrot 50% surowców
         gold += Math.floor(def.cost.gold * 0.5);
         elixir += Math.floor(def.cost.elixir * 0.5);
         updateUI();
@@ -251,7 +247,7 @@
       });
 
       buildings.push(rect);
-      preview.setVisible(false);
+      if (preview) preview.setVisible(false);
     }
 
     new Phaser.Game(config);
