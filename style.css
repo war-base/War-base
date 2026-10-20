@@ -1,7 +1,6 @@
 html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
 #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; }
 
-/* Górny pasek surowców */
 #top-bar {
   position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
   background: rgba(0, 0, 0, 0.75); color: white; padding: 12px; 
@@ -10,7 +9,6 @@ html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch
 .res-gold { color: #ffd700; }
 .res-elixir { color: #ff69b4; }
 
-/* Dolne menu budowy */
 #build-menu {
   position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
   background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; justify-content: space-around; gap: 10px;
@@ -27,7 +25,6 @@ html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch
 .btn-sub.gold { color: #ffd700; }
 .btn-sub.elixir { color: #ff69b4; }
 
-/* Przycisk Ataku */
 #attack-btn {
   position: absolute; bottom: 100px; right: 20px;
   background: #cc0000; color: white; border: 2px solid #ff4444;
@@ -37,7 +34,6 @@ html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch
 }
 #attack-btn:active { background: #990000; transform: scale(0.95); }
 
-/* Interfejs Walki */
 #battle-ui {
   position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
   z-index: 10; pointer-events: none;
@@ -52,7 +48,6 @@ html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch
   border-radius: 8px; font-weight: bold;
 }
 
-/* Komunikaty */
 #message {
   position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
   background: rgba(200, 0, 0, 0.9); color: white; padding: 10px 20px;
