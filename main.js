@@ -1,6 +1,5 @@
 let cam, preview, fpsText, isDragging = false;
 
-// --- PRZEŁĄCZANIE EKRANÓW ---
 function startAttack() {
   document.getElementById('build-menu').style.display = 'none';
   document.getElementById('attack-btn').style.display = 'none';
@@ -30,12 +29,14 @@ function endBattle(won = false) {
 }
 
 // ==========================================
-// SCENA 1: BAZA (Budowanie)
+// SCENA 1: BAZA
 // ==========================================
 class BaseScene extends Phaser.Scene {
   constructor() { super('BaseScene'); }
 
   create() {
+    this.cameras.main.setBackgroundColor('#2d4a3e'); // ZIELONE TŁO
+    
     cam = this.cameras.main;
     cam.setZoom(0.8);
 
@@ -148,7 +149,7 @@ class BaseScene extends Phaser.Scene {
 }
 
 // ==========================================
-// SCENA 2: WALKA (Atak)
+// SCENA 2: WALKA
 // ==========================================
 class BattleScene extends Phaser.Scene {
   constructor() { 
@@ -160,23 +161,22 @@ class BattleScene extends Phaser.Scene {
   }
 
   create() {
+    this.cameras.main.setBackgroundColor('#3e1a1a'); // CZERWONE TŁO
+    
     this.enemyBuildings = [];
     this.troops = [];
     this.armyLeft = 20;
     this.battleEnded = false;
 
-    this.cameras.main.setBackgroundColor('#3e1a1a');
-    
-    const cx = this.cameras.main.width / 2;
-    const cy = this.cameras.main.height / 2;
+    // Używamy this.scale, żeby idealnie wyśrodkować bazę wroga
+    const cx = this.scale.width / 2;
+    const cy = this.scale.height / 2;
 
-    // Tworzenie bazy wroga
     this.createEnemyBuilding(cx, cy, 200, 0x8b0000); // Ratusz
     this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); // Kopalnia
     this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); // Kopalnia
     this.createEnemyBuilding(cx, cy + 120, 150, 0x555555); // Wieża
 
-    // Kliknięcie zrzuca wojsko
     this.input.on('pointerdown', (pointer) => {
       if (this.armyLeft > 0 && !this.battleEnded) {
         this.spawnTroop(pointer.x, pointer.y);
@@ -189,38 +189,23 @@ class BattleScene extends Phaser.Scene {
   createEnemyBuilding(x, y, hp, color) {
     const size = 60;
     const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
-    
-    // Pasek zdrowia
     const hpBarBg = this.add.rectangle(x, y - 40, size, 8, 0x000000);
     const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
 
     this.enemyBuildings.push({
-      sprite: rect,
-      hpBar: hpBar,
-      hp: hp,
-      maxHp: hp,
-      x: x,
-      y: y,
-      alive: true
+      sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true
     });
   }
 
   spawnTroop(x, y) {
     const troopSprite = this.add.circle(x, y, 12, 0x1e90ff).setStrokeStyle(2, 0xffffff);
-    
-    this.troops.push({
-      sprite: troopSprite,
-      x: x,
-      y: y,
-      target: null
-    });
+    this.troops.push({ sprite: troopSprite, x: x, y: y, target: null });
   }
 
   update(time, delta) {
     if (this.battleEnded) return;
     const dt = delta / 1000; 
 
-    // Logika poruszania się i atakowania wojsk
     this.troops.forEach(troop => {
       if (!troop.target || !troop.target.alive) {
         troop.target = this.findNearestBuilding(troop.x, troop.y);
@@ -230,13 +215,11 @@ class BattleScene extends Phaser.Scene {
         const dist = Phaser.Math.Distance.Between(troop.x, troop.y, troop.target.x, troop.target.y);
         
         if (dist > TROOP_STATS.range) {
-          // Ruch
           const angle = Phaser.Math.Angle.Between(troop.x, troop.y, troop.target.x, troop.target.y);
           troop.x += Math.cos(angle) * TROOP_STATS.speed * dt;
           troop.y += Math.sin(angle) * TROOP_STATS.speed * dt;
           troop.sprite.setPosition(troop.x, troop.y);
         } else {
-          // Atak
           troop.target.hp -= TROOP_STATS.damage * dt;
           const hpPercent = Math.max(0, troop.target.hp / troop.target.maxHp);
           troop.target.hpBar.scaleX = hpPercent;
@@ -251,7 +234,6 @@ class BattleScene extends Phaser.Scene {
       }
     });
 
-    // Warunek wygranej
     const aliveBuildings = this.enemyBuildings.filter(b => b.alive);
     if (aliveBuildings.length === 0) {
       this.battleEnded = true;
@@ -265,10 +247,7 @@ class BattleScene extends Phaser.Scene {
     this.enemyBuildings.forEach(b => {
       if (b.alive) {
         const dist = Phaser.Math.Distance.Between(x, y, b.x, b.y);
-        if (dist < minDist) {
-          minDist = dist;
-          nearest = b;
-        }
+        if (dist < minDist) { minDist = dist; nearest = b; }
       }
     });
     return nearest;
@@ -279,6 +258,7 @@ class BattleScene extends Phaser.Scene {
 const config = {
   type: Phaser.AUTO,
   parent: 'game',
+  backgroundColor: '#2d4a3e', // DODANE TŁO DLA CAŁEJ GRY
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [BaseScene, BattleScene]
 };
