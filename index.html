@@ -52,7 +52,6 @@
     }
     #battle-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
-    /* Panel budynku */
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(0,0,0,0.95); color: white; padding: 20px; border-radius: 10px;
@@ -65,14 +64,8 @@
     #bp-upgrade { background: #2d8a4e; color: white; }
     #bp-sell { background: #8b0000; color: white; }
     #bp-close { background: #555; color: white; }
-
-    /* Sekcja Rekrutacji w Koszarach */
-    #bp-train-section { 
-      display: none; margin: 15px 0; padding: 10px; 
-      background: rgba(30, 144, 255, 0.2); border-radius: 8px; border: 1px solid #1e90ff; 
-    }
+    #bp-train-section { display: none; margin: 15px 0; padding: 10px; background: rgba(30, 144, 255, 0.2); border-radius: 8px; border: 1px solid #1e90ff; }
     #bp-train-btn { background: #1e90ff; color: white; margin-top: 5px; }
-    #bp-train-btn:active { background: #104e8b; }
 
     #message {
       position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
@@ -105,7 +98,6 @@
     </div>
   </div>
 
-  <!-- Panel Budynku -->
   <div id="building-panel">
     <h3 id="bp-name">Budynek</h3>
     <p>Poziom: <span id="bp-level">1</span></p>
@@ -126,13 +118,12 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   
   <script>
-    // --- USTAWIENIA ---
     const TILE = 64; 
     const GRID = 35; 
     
     let gold = 1000;
     let elixir = 1000;
-    let currentArmy = 20; // Zaczynamy z 20 wojskami do testów
+    let currentArmy = 20; 
     const MAX_ARMY_BASE = 20;
     const TROOP_COST_ELIXIR = 50;
 
@@ -146,9 +137,10 @@
       mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 } },
       barracks: { name: 'Koszary', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 } }
     };
-    const TROOP_STATS = { damage: 15, speed: 150, range: 40 };
 
-    // --- INTERFEJS ---
+    // Wojska mają teraz HP!
+    const TROOP_STATS = { hp: 60, damage: 15, speed: 150, range: 40 };
+
     function updateUI() {
       document.getElementById('ui-gold').innerText = Math.floor(gold);
       document.getElementById('ui-elixir').innerText = Math.floor(elixir);
@@ -175,7 +167,6 @@
       setTimeout(() => { msg.style.display = 'none'; }, 2000);
     }
 
-    // --- PANEL BUDYNKU I REKRUTACJA ---
     function openBuildingPanel(building) {
       currentlySelectedBuilding = building;
       const def = BUILDINGS[building.type];
@@ -198,14 +189,12 @@
       const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
       document.getElementById('bp-sell').innerText = `Sprzedaj (+${sellValueGold} 🪙, +${sellValueElixir} 💧)`;
       
-      // Pokazujemy sekcję rekrutacji tylko dla Koszar
       if (building.type === 'barracks') {
         document.getElementById('bp-train-section').style.display = 'block';
         updateTrainUI();
       } else {
         document.getElementById('bp-train-section').style.display = 'none';
       }
-      
       document.getElementById('building-panel').style.display = 'block';
     }
 
@@ -213,7 +202,6 @@
       let maxArmy = MAX_ARMY_BASE;
       const barracks = buildings.find(b => b.type === 'barracks');
       if (barracks) maxArmy += (barracks.level - 1) * 10;
-      
       document.getElementById('bp-army').innerText = currentArmy;
       document.getElementById('bp-max-army').innerText = maxArmy;
     }
@@ -221,7 +209,6 @@
     function trainTroop() {
       const barracks = buildings.find(b => b.type === 'barracks');
       if (!barracks) return;
-
       let maxArmy = MAX_ARMY_BASE + (barracks.level - 1) * 10;
       
       if (currentArmy >= maxArmy) { showMessage('Twoja armia jest pełna! Ulepsz Koszary.'); return; }
@@ -229,10 +216,7 @@
 
       elixir -= TROOP_COST_ELIXIR;
       currentArmy++;
-      
-      updateUI();
-      updateTrainUI();
-      saveGame();
+      updateUI(); updateTrainUI(); saveGame();
     }
 
     function closeBuildingPanel() {
@@ -249,15 +233,11 @@
       if (gold < costGold) { showMessage('Za mało złota!'); return; }
       if (elixir < costElixir) { showMessage('Za mało eliksiru!'); return; }
       
-      gold -= costGold;
-      elixir -= costElixir;
+      gold -= costGold; elixir -= costElixir;
       currentlySelectedBuilding.level++;
-      
       currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
       
-      updateUI();
-      saveGame();
-      openBuildingPanel(currentlySelectedBuilding); 
+      updateUI(); saveGame(); openBuildingPanel(currentlySelectedBuilding); 
     }
 
     function sellBuilding() {
@@ -266,26 +246,15 @@
       const refundGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
       const refundElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
       
-      gold += refundGold;
-      elixir += refundElixir;
-      
+      gold += refundGold; elixir += refundElixir;
       currentlySelectedBuilding.destroy();
       buildings = buildings.filter(b => b !== currentlySelectedBuilding);
       
-      updateUI();
-      saveGame();
-      closeBuildingPanel();
+      updateUI(); saveGame(); closeBuildingPanel();
     }
 
-    // --- ZAPIS ---
     function saveGame() {
-      const data = { 
-        version: 4, 
-        gold: gold, 
-        elixir: elixir, 
-        currentArmy: currentArmy,
-        buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level })) 
-      };
+      const data = { version: 4, gold: gold, elixir: elixir, currentArmy: currentArmy, buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level })) };
       localStorage.setItem('warBaseSave', JSON.stringify(data));
     }
     function loadGame() {
@@ -294,9 +263,7 @@
         try {
           const data = JSON.parse(saved);
           if (data.version === 4 && typeof data.gold === 'number') {
-            gold = data.gold; 
-            elixir = data.elixir; 
-            currentArmy = data.currentArmy || 0;
+            gold = data.gold; elixir = data.elixir; currentArmy = data.currentArmy || 0;
             return data.buildings;
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -304,14 +271,12 @@
       return [];
     }
 
-    // --- EKRANY ---
     function startAttack() {
       closeBuildingPanel();
       if (currentArmy <= 0) {
         showMessage('Nie masz wojska! Zbuduj Koszary i zrekrutuj armię.');
         return;
       }
-      
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
@@ -321,10 +286,8 @@
     }
 
     function endBattle(won = false) {
-      // Wojska giną w bitwie
       currentArmy = 0; 
       saveGame();
-
       document.getElementById('build-menu').style.display = 'flex';
       document.getElementById('attack-btn').style.display = 'block';
       document.getElementById('top-bar').style.display = 'flex';
@@ -334,9 +297,8 @@
         gold += 500; elixir += 200; updateUI(); saveGame();
         showMessage("Zwycięstwo!\nZdobyto 500 🪙 i 200 💧");
       } else {
-        showMessage("Wycofano wojska.\nTwoja armia została zniszczona.");
+        showMessage("Przegrana.\nTwoja armia została zniszczona.");
       }
-      
       game.scene.start('BaseScene');
     }
 
@@ -411,17 +373,12 @@
       createBuilding(x, y, type, isNew, level) {
         const def = BUILDINGS[type];
         const container = this.add.container(x, y);
-        
         const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
         const label = this.add.text(0, 0, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
         
         container.add([rect, label]);
         container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
-        container.type = type; 
-        container.gridX = x; 
-        container.gridY = y;
-        container.level = level;
-        container.label = label;
+        container.type = type; container.gridX = x; container.gridY = y; container.level = level; container.label = label;
 
         container.on('pointerdown', (pointer, localX, localY, event) => {
           if (event) event.stopPropagation();
@@ -440,22 +397,32 @@
       create() {
         let cam = this.cameras.main;
         cam.setBackgroundColor('#3e1a1a');
-        cam.setScroll(0, 0); 
-        cam.setZoom(1);
+        cam.setScroll(0, 0); cam.setZoom(1);
 
         this.enemyBuildings = [];
         this.troops = [];
-        this.armyLeft = currentArmy; // Pobieramy aktualną armię
+        this.armyLeft = currentArmy; 
         this.battleEnded = false;
 
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
-        this.createEnemyBuilding(cx, cy, 200, 0x8b0000); 
-        this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); 
-        this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); 
-        this.createEnemyBuilding(cx, cy + 120, 150, 0x555555); 
+        // WROGIE BUDYNKI
+        this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz'); 
+        
+        // WROGIE WIEŻE (strzelają!)
+        this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża');
+        this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża'); 
+        
+        this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia'); 
+        this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia'); 
 
+        // Timery do strzelania wież (co 1.5 sekundy)
+        this.time.addEvent({
+          delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this
+        });
+
+        // Kliknięcie zrzuca wojsko
         this.input.on('pointerdown', (pointer) => {
           if (this.armyLeft > 0 && !this.battleEnded) {
             this.spawnTroop(pointer.x, pointer.y);
@@ -465,49 +432,108 @@
         });
       }
 
-      createEnemyBuilding(x, y, hp, color) {
+      createEnemyBuilding(x, y, hp, color, name) {
         const size = 60;
         const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
+        this.add.text(x, y, name, {fontSize: '10px', color: '#fff'}).setOrigin(0.5);
+        
         this.add.rectangle(x, y - 40, size, 8, 0x000000);
         const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
-        this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true });
+        
+        this.enemyBuildings.push({ 
+          sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isTower: (name === 'Wieża') 
+        });
       }
 
       spawnTroop(x, y) {
         const troopSprite = this.add.circle(x, y, 12, 0x1e90ff).setStrokeStyle(2, 0xffffff);
-        this.troops.push({ sprite: troopSprite, x: x, y: y, target: null });
+        // Pasek HP dla wojska
+        const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
+
+        this.troops.push({ 
+          sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: TROOP_STATS.hp 
+        });
+      }
+
+      towersShoot() {
+        if (this.battleEnded) return;
+        
+        this.enemyBuildings.forEach(tower => {
+          if (tower.alive && tower.isTower) {
+            // Znajdź najbliższe wojsko
+            let nearestTroop = null;
+            let minDist = 300; // Zasięg wieży
+            
+            this.troops.forEach(troop => {
+              const dist = Phaser.Math.Distance.Between(tower.x, tower.y, troop.x, troop.y);
+              if (dist < minDist) { minDist = dist; nearestTroop = troop; }
+            });
+
+            if (nearestTroop) {
+              // Rysowanie pocisku (czerwona linia)
+              const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000);
+              laser.setOrigin(0, 0);
+              setTimeout(() => laser.destroy(), 100); // Znika po 0.1s
+
+              // Obrażenia
+              nearestTroop.hp -= 25;
+            }
+          }
+        });
       }
 
       update(time, delta) {
         if (this.battleEnded) return;
         const dt = delta / 1000; 
-        this.troops.forEach(troop => {
+
+        // --- LOGIKA WOJSK ---
+        for (let i = this.troops.length - 1; i >= 0; i--) {
+          let troop = this.troops[i];
+
+          // Jeśli wojsko zginęło
+          if (troop.hp <= 0) {
+            troop.sprite.destroy();
+            troop.hpBar.destroy();
+            this.troops.splice(i, 1);
+            continue;
+          }
+
+          // Aktualizacja paska HP wojska
+          troop.hpBar.width = 24 * (troop.hp / TROOP_STATS.hp);
+          troop.hpBar.setPosition(troop.x - 12, troop.y - 20);
+
+          // Szukanie celu
           if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y);
+          
           if (troop.target) {
             const dist = Phaser.Math.Distance.Between(troop.x, troop.y, troop.target.x, troop.target.y);
             if (dist > TROOP_STATS.range) {
+              // Ruch
               const angle = Phaser.Math.Angle.Between(troop.x, troop.y, troop.target.x, troop.target.y);
               troop.x += Math.cos(angle) * TROOP_STATS.speed * dt;
               troop.y += Math.sin(angle) * TROOP_STATS.speed * dt;
               troop.sprite.setPosition(troop.x, troop.y);
             } else {
+              // Atak
               troop.target.hp -= TROOP_STATS.damage * dt;
               troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
               if (troop.target.hp <= 0) {
                 troop.target.alive = false;
-                troop.target.sprite.destroy(); troop.target.hpBar.destroy();
+                troop.target.sprite.destroy(); 
+                troop.target.hpBar.destroy();
                 troop.target = null; 
               }
             }
           }
-        });
+        }
 
+        // --- WARUNKI KOŃCA BITWY ---
         if (this.enemyBuildings.filter(b => b.alive).length === 0) {
           this.battleEnded = true;
           setTimeout(() => endBattle(true), 1000);
         } else if (this.armyLeft === 0 && this.troops.length === 0 && !this.battleEnded) {
           this.battleEnded = true;
-          setTimeout(() => endBattle(false), 1000); // Przegrana, jeśli nie ma już wojsk i wszystkie zginęły
+          setTimeout(() => endBattle(false), 1000);
         }
       }
 
@@ -523,7 +549,6 @@
       }
     }
 
-    // --- START GRY ---
     const config = {
       type: Phaser.CANVAS, 
       parent: 'game',
