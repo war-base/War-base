@@ -32,6 +32,7 @@
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ff69b4; }
 
+    /* Przyciski akcji */
     #attack-btn {
       position: absolute; bottom: 100px; right: 20px;
       background: #cc0000; color: white; border: 2px solid #ff4444;
@@ -41,6 +42,16 @@
     }
     #attack-btn:active { background: #990000; transform: scale(0.95); }
 
+    #defend-btn {
+      position: absolute; bottom: 170px; right: 20px;
+      background: #1e90ff; color: white; border: 2px solid #00bfff;
+      padding: 15px 25px; border-radius: 50px;
+      font-size: 18px; font-weight: bold; z-index: 15;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
+    }
+    #defend-btn:active { background: #104e8b; transform: scale(0.95); }
+
+    /* Interfejs Ataku */
     #battle-ui {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       z-index: 10; pointer-events: none; display: none;
@@ -52,6 +63,19 @@
     }
     #battle-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
+    /* Interfejs Obrony */
+    #defense-ui {
+      position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
+      z-index: 10; pointer-events: none; display: none;
+    }
+    #defense-top-bar {
+      background: rgba(0, 0, 0, 0.85); color: white; padding: 15px;
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 18px; font-weight: bold; pointer-events: auto;
+    }
+    #defense-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
+
+    /* Panel Budynku */
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(0,0,0,0.95); color: white; padding: 20px; border-radius: 10px;
@@ -90,11 +114,19 @@
   </div>
 
   <button id="attack-btn" onclick="startAttack()">⚔️ Atakuj</button>
+  <button id="defend-btn" onclick="startDefense()">🛡️ Broń</button>
 
   <div id="battle-ui">
     <div id="battle-top-bar">
       <div>🪖 Armia: <span id="ui-army">0</span></div>
       <button onclick="endBattle(false)">Poddaj się</button>
+    </div>
+  </div>
+
+  <div id="defense-ui">
+    <div id="defense-top-bar">
+      <div id="defense-status">🛡️ Obrona Bazy (Moździerz: Gotowy)</div>
+      <button onclick="endDefense(false)">Poddaj się</button>
     </div>
   </div>
 
@@ -133,12 +165,11 @@
     let currentlySelectedBuilding = null;
 
     const BUILDINGS = {
-      townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 } },
-      mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 } },
-      barracks: { name: 'Koszary', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 } }
+      townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000 },
+      mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400 },
+      barracks: { name: 'Koszary', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 }, hp: 600 }
     };
 
-    // Wojska mają teraz HP!
     const TROOP_STATS = { hp: 60, damage: 15, speed: 150, range: 40 };
 
     function updateUI() {
@@ -164,7 +195,7 @@
       const msg = document.getElementById('message');
       msg.innerText = text;
       msg.style.display = 'block';
-      setTimeout(() => { msg.style.display = 'none'; }, 2000);
+      setTimeout(() => { msg.style.display = 'none'; }, 2500);
     }
 
     function openBuildingPanel(building) {
@@ -235,6 +266,10 @@
       
       gold -= costGold; elixir -= costElixir;
       currentlySelectedBuilding.level++;
+      currentlySelectedBuilding.hp = def.hp * currentlySelectedBuilding.level; // resetowanie hp przy ulepszeniu
+      currentlySelectedBuilding.maxHp = def.hp * currentlySelectedBuilding.level;
+      currentlySelectedBuilding.hpBar.scaleX = 1;
+      
       currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
       
       updateUI(); saveGame(); openBuildingPanel(currentlySelectedBuilding); 
@@ -254,16 +289,25 @@
     }
 
     function saveGame() {
-      const data = { version: 4, gold: gold, elixir: elixir, currentArmy: currentArmy, buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level })) };
+      const data = { 
+        version: 4, 
+        gold: gold, 
+        elixir: elixir, 
+        currentArmy: currentArmy, 
+        buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp })) 
+      };
       localStorage.setItem('warBaseSave', JSON.stringify(data));
     }
+
     function loadGame() {
       const saved = localStorage.getItem('warBaseSave');
       if (saved) {
         try {
           const data = JSON.parse(saved);
           if (data.version === 4 && typeof data.gold === 'number') {
-            gold = data.gold; elixir = data.elixir; currentArmy = data.currentArmy || 0;
+            gold = data.gold; 
+            elixir = data.elixir; 
+            currentArmy = data.currentArmy || 0;
             return data.buildings;
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -271,14 +315,13 @@
       return [];
     }
 
+    // --- ATAK ---
     function startAttack() {
       closeBuildingPanel();
-      if (currentArmy <= 0) {
-        showMessage('Nie masz wojska! Zbuduj Koszary i zrekrutuj armię.');
-        return;
-      }
+      if (currentArmy <= 0) { showMessage('Nie masz wojska!'); return; }
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
+      document.getElementById('defend-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
       document.getElementById('battle-ui').style.display = 'block';
       document.getElementById('ui-army').innerText = currentArmy; 
@@ -290,6 +333,7 @@
       saveGame();
       document.getElementById('build-menu').style.display = 'flex';
       document.getElementById('attack-btn').style.display = 'block';
+      document.getElementById('defend-btn').style.display = 'block';
       document.getElementById('top-bar').style.display = 'flex';
       document.getElementById('battle-ui').style.display = 'none';
       
@@ -298,6 +342,52 @@
         showMessage("Zwycięstwo!\nZdobyto 500 🪙 i 200 💧");
       } else {
         showMessage("Przegrana.\nTwoja armia została zniszczona.");
+      }
+      game.scene.start('BaseScene');
+    }
+
+    // --- OBRONA ---
+    function startDefense() {
+      closeBuildingPanel();
+      saveGame(); 
+      
+      document.getElementById('build-menu').style.display = 'none';
+      document.getElementById('attack-btn').style.display = 'none';
+      document.getElementById('defend-btn').style.display = 'none';
+      document.getElementById('top-bar').style.display = 'none';
+      
+      document.getElementById('defense-ui').style.display = 'block';
+      document.getElementById('defense-status').innerText = '🛡️ Obrona Bazy (Moździerz: Gotowy)';
+      
+      game.scene.start('DefenseScene');
+    }
+
+    function endDefense(won) {
+      document.getElementById('build-menu').style.display = 'flex';
+      document.getElementById('attack-btn').style.display = 'block';
+      document.getElementById('defend-btn').style.display = 'block';
+      document.getElementById('top-bar').style.display = 'flex';
+      document.getElementById('defense-ui').style.display = 'none';
+      
+      const defenseScene = game.scene.getScene('DefenseScene');
+      if (defenseScene) {
+        const survivingBuildings = defenseScene.playerBuildings
+          .filter(b => b.alive)
+          .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp }));
+          
+        let data = JSON.parse(localStorage.getItem('warBaseSave'));
+        if (!data) data = { version: 4, gold: 1000, elixir: 1000, currentArmy: 20, buildings: [] };
+        data.buildings = survivingBuildings;
+        
+        if (won) {
+          data.gold += 300;
+          data.elixir += 150;
+          showMessage("Obrona udana!\nZdobyto 300 🪙 i 150 💧");
+        } else {
+          showMessage("Twoja baza została zniszczona!");
+        }
+        
+        localStorage.setItem('warBaseSave', JSON.stringify(data));
       }
       game.scene.start('BaseScene');
     }
@@ -314,7 +404,7 @@
         this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
         buildings = []; 
-        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1));
+        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1, b.hp || null));
         updateUI();
 
         this.input.on('pointermove', (p) => {
@@ -370,15 +460,27 @@
         updateUI(); saveGame();
       }
 
-      createBuilding(x, y, type, isNew, level) {
+      createBuilding(x, y, type, isNew, level, hp = null) {
         const def = BUILDINGS[type];
         const container = this.add.container(x, y);
+        
         const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
         const label = this.add.text(0, 0, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
         
-        container.add([rect, label]);
+        const hpBarBg = this.add.rectangle(0, -TILE/2 + 5, TILE - 10, 6, 0x000000);
+        const hpBar = this.add.rectangle(-(TILE - 10)/2, -TILE/2 + 5, TILE - 10, 6, 0x00ff00).setOrigin(0, 0.5);
+        
+        container.add([rect, label, hpBarBg, hpBar]);
         container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
-        container.type = type; container.gridX = x; container.gridY = y; container.level = level; container.label = label;
+        container.type = type; 
+        container.gridX = x; 
+        container.gridY = y;
+        container.level = level;
+        container.label = label;
+        container.hpBar = hpBar;
+        container.hp = hp !== null ? hp : def.hp * level;
+        container.maxHp = def.hp * level;
+        container.hpBar.scaleX = container.hp / container.maxHp;
 
         container.on('pointerdown', (pointer, localX, localY, event) => {
           if (event) event.stopPropagation();
@@ -391,7 +493,7 @@
       }
     }
 
-    // --- SCENA WALKI ---
+    // --- SCENA WALKI (ATAK) ---
     class BattleScene extends Phaser.Scene {
       constructor() { super('BattleScene'); }
       create() {
@@ -407,22 +509,14 @@
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
-        // WROGIE BUDYNKI
         this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz'); 
-        
-        // WROGIE WIEŻE (strzelają!)
         this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża');
         this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża'); 
-        
         this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia'); 
         this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia'); 
 
-        // Timery do strzelania wież (co 1.5 sekundy)
-        this.time.addEvent({
-          delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this
-        });
+        this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
 
-        // Kliknięcie zrzuca wojsko
         this.input.on('pointerdown', (pointer) => {
           if (this.armyLeft > 0 && !this.battleEnded) {
             this.spawnTroop(pointer.x, pointer.y);
@@ -436,46 +530,32 @@
         const size = 60;
         const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
         this.add.text(x, y, name, {fontSize: '10px', color: '#fff'}).setOrigin(0.5);
-        
         this.add.rectangle(x, y - 40, size, 8, 0x000000);
         const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
-        
-        this.enemyBuildings.push({ 
-          sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isTower: (name === 'Wieża') 
-        });
+        this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isTower: (name === 'Wieża') });
       }
 
       spawnTroop(x, y) {
         const troopSprite = this.add.circle(x, y, 12, 0x1e90ff).setStrokeStyle(2, 0xffffff);
-        // Pasek HP dla wojska
         const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
-
-        this.troops.push({ 
-          sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: TROOP_STATS.hp 
-        });
+        this.troops.push({ sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: TROOP_STATS.hp });
       }
 
       towersShoot() {
         if (this.battleEnded) return;
-        
         this.enemyBuildings.forEach(tower => {
           if (tower.alive && tower.isTower) {
-            // Znajdź najbliższe wojsko
             let nearestTroop = null;
-            let minDist = 300; // Zasięg wieży
-            
+            let minDist = 300; 
             this.troops.forEach(troop => {
               const dist = Phaser.Math.Distance.Between(tower.x, tower.y, troop.x, troop.y);
               if (dist < minDist) { minDist = dist; nearestTroop = troop; }
             });
 
             if (nearestTroop) {
-              // Rysowanie pocisku (czerwona linia)
               const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000);
               laser.setOrigin(0, 0);
-              setTimeout(() => laser.destroy(), 100); // Znika po 0.1s
-
-              // Obrażenia
+              setTimeout(() => laser.destroy(), 100); 
               nearestTroop.hp -= 25;
             }
           }
@@ -486,48 +566,33 @@
         if (this.battleEnded) return;
         const dt = delta / 1000; 
 
-        // --- LOGIKA WOJSK ---
         for (let i = this.troops.length - 1; i >= 0; i--) {
           let troop = this.troops[i];
-
-          // Jeśli wojsko zginęło
           if (troop.hp <= 0) {
-            troop.sprite.destroy();
-            troop.hpBar.destroy();
-            this.troops.splice(i, 1);
-            continue;
+            troop.sprite.destroy(); troop.hpBar.destroy(); this.troops.splice(i, 1); continue;
           }
-
-          // Aktualizacja paska HP wojska
           troop.hpBar.width = 24 * (troop.hp / TROOP_STATS.hp);
           troop.hpBar.setPosition(troop.x - 12, troop.y - 20);
 
-          // Szukanie celu
           if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y);
           
           if (troop.target) {
             const dist = Phaser.Math.Distance.Between(troop.x, troop.y, troop.target.x, troop.target.y);
             if (dist > TROOP_STATS.range) {
-              // Ruch
               const angle = Phaser.Math.Angle.Between(troop.x, troop.y, troop.target.x, troop.target.y);
               troop.x += Math.cos(angle) * TROOP_STATS.speed * dt;
               troop.y += Math.sin(angle) * TROOP_STATS.speed * dt;
               troop.sprite.setPosition(troop.x, troop.y);
             } else {
-              // Atak
               troop.target.hp -= TROOP_STATS.damage * dt;
               troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
               if (troop.target.hp <= 0) {
-                troop.target.alive = false;
-                troop.target.sprite.destroy(); 
-                troop.target.hpBar.destroy();
-                troop.target = null; 
+                troop.target.alive = false; troop.target.sprite.destroy(); troop.target.hpBar.destroy(); troop.target = null; 
               }
             }
           }
         }
 
-        // --- WARUNKI KOŃCA BITWY ---
         if (this.enemyBuildings.filter(b => b.alive).length === 0) {
           this.battleEnded = true;
           setTimeout(() => endBattle(true), 1000);
@@ -549,13 +614,163 @@
       }
     }
 
+    // --- SCENA OBRONY ---
+    class DefenseScene extends Phaser.Scene {
+      constructor() { super('DefenseScene'); }
+      
+      create() {
+        let cam = this.cameras.main;
+        cam.setBackgroundColor('#2d4a3e');
+        let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
+        grid.setOrigin(0, 0);
+        
+        cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
+        cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
+        cam.setZoom(0.7);
+        
+        this.playerBuildings = [];
+        const saved = loadGame(); 
+        
+        saved.forEach(b => {
+          const def = BUILDINGS[b.type];
+          const container = this.add.container(b.x, b.y);
+          const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
+          const label = this.add.text(0, 0, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff' }).setOrigin(0.5);
+          const hpBarBg = this.add.rectangle(0, -TILE/2 + 5, TILE - 10, 6, 0x000000);
+          const hpBar = this.add.rectangle(-(TILE - 10)/2, -TILE/2 + 5, TILE - 10, 6, 0x00ff00).setOrigin(0, 0.5);
+          container.add([rect, label, hpBarBg, hpBar]);
+          
+          this.playerBuildings.push({
+            sprite: container, rect: rect, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true
+          });
+        });
+        
+        this.enemies = [];
+        this.waveCount = 0;
+        this.battleEnded = false;
+        this.mortarCooldown = 0; 
+        
+        this.spawnWave();
+        
+        this.input.on('pointerdown', (pointer) => {
+          if (this.battleEnded || this.mortarCooldown > 0) return;
+          
+          const clickX = pointer.worldX;
+          const clickY = pointer.worldY;
+          
+          const blast = this.add.circle(clickX, clickY, 80, 0xffaa00, 0.6);
+          this.time.delayedCall(200, () => blast.destroy());
+          
+          this.enemies.forEach(enemy => {
+            if (!enemy.alive) return;
+            const dist = Phaser.Math.Distance.Between(clickX, clickY, enemy.x, enemy.y);
+            if (dist <= 80) enemy.hp -= 100;
+          });
+          
+          this.mortarCooldown = 3000;
+          document.getElementById('defense-status').innerText = '🛡️ Obrona Bazy (Moździerz: 3s)';
+          
+          this.time.addEvent({
+            delay: 1000, repeat: 2, callback: () => {
+              if (this.battleEnded) return;
+              this.mortarCooldown -= 1000;
+              if (this.mortarCooldown <= 0) {
+                document.getElementById('defense-status').innerText = '🛡️ Obrona Bazy (Moździerz: Gotowy)';
+              } else {
+                document.getElementById('defense-status').innerText = `🛡️ Obrona Bazy (Moździerz: ${this.mortarCooldown/1000}s)`;
+              }
+            }
+          });
+        });
+        
+        this.time.addEvent({
+          delay: 10000, loop: true, callback: () => {
+            if (!this.battleEnded) this.spawnWave();
+          }
+        });
+      }
+      
+      spawnWave() {
+        this.waveCount++;
+        const numEnemies = 2 + this.waveCount * 2; 
+        
+        for (let i = 0; i < numEnemies; i++) {
+          let x, y;
+          const side = Phaser.Math.Between(0, 3);
+          if (side === 0) { x = Phaser.Math.Between(100, TILE * GRID - 100); y = 50; } 
+          else if (side === 1) { x = Phaser.Math.Between(100, TILE * GRID - 100); y = TILE * GRID - 50; } 
+          else if (side === 2) { x = 50; y = Phaser.Math.Between(100, TILE * GRID - 100); } 
+          else { x = TILE * GRID - 50; y = Phaser.Math.Between(100, TILE * GRID - 100); } 
+          
+          const sprite = this.add.circle(x, y, 12, 0xff0000).setStrokeStyle(2, 0xffffff);
+          const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
+          
+          this.enemies.push({
+            sprite, hpBar, x, y, hp: 100, maxHp: 100, target: null, alive: true, damage: 15, speed: 80
+          });
+        }
+      }
+      
+      update(time, delta) {
+        if (this.battleEnded) return;
+        const dt = delta / 1000;
+        
+        for (let i = this.enemies.length - 1; i >= 0; i--) {
+          let enemy = this.enemies[i];
+          if (enemy.hp <= 0) {
+            enemy.alive = false; enemy.sprite.destroy(); enemy.hpBar.destroy(); this.enemies.splice(i, 1); continue;
+          }
+          enemy.hpBar.width = 24 * (enemy.hp / enemy.maxHp);
+          enemy.hpBar.setPosition(enemy.x - 12, enemy.y - 20);
+          
+          if (!enemy.target || !enemy.target.alive) {
+            let nearest = null, minDist = Infinity;
+            this.playerBuildings.forEach(b => {
+              if (b.alive) {
+                const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, b.x, b.y);
+                if (dist < minDist) { minDist = dist; nearest = b; }
+              }
+            });
+            enemy.target = nearest;
+          }
+          
+          if (enemy.target) {
+            const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, enemy.target.x, enemy.target.y);
+            if (dist > 40) {
+              const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, enemy.target.x, enemy.target.y);
+              enemy.x += Math.cos(angle) * enemy.speed * dt;
+              enemy.y += Math.sin(angle) * enemy.speed * dt;
+              enemy.sprite.setPosition(enemy.x, enemy.y);
+            } else {
+              enemy.target.hp -= enemy.damage * dt;
+              enemy.target.hpBar.scaleX = Math.max(0, enemy.target.hp / enemy.target.maxHp);
+              if (enemy.target.hp <= 0) {
+                enemy.target.alive = false;
+                enemy.target.sprite.destroy();
+                enemy.target = null;
+              }
+            }
+          }
+        }
+        
+        const alivePlayerBuildings = this.playerBuildings.filter(b => b.alive);
+        if (alivePlayerBuildings.length === 0) {
+          this.battleEnded = true;
+          setTimeout(() => endDefense(false), 1000);
+        } else if (this.waveCount >= 3 && this.enemies.length === 0) {
+          this.battleEnded = true;
+          setTimeout(() => endDefense(true), 1000);
+        }
+      }
+    }
+
     const config = {
       type: Phaser.CANVAS, 
       parent: 'game',
       width: window.innerWidth,
       height: window.innerHeight,
       backgroundColor: '#2d4a3e',
-      scene: [BaseScene, BattleScene]
+      scene: [BaseScene, BattleScene, DefenseScene]
     };
     const game = new Phaser.Game(config);
   </script>
