@@ -1,29 +1,22 @@
-// --- USTAWIENIA GLOBALNE ---
 const TILE = 64; 
 const GRID = 25; 
 
-// Stan gry
 let gold = 1000;
 let elixir = 1000;
 let selectedBuildingType = null;
 let buildings = [];
 let prodTimer = 0;
 
-// Definicje budynków do stawiania
 const BUILDINGS = {
   townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 } },
   mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 } },
   barracks: { name: 'Koszary', cost: { gold: 0, elixir: 300 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 } }
 };
 
-// Statystyki wojsk (do ataku)
 const TROOP_STATS = {
-  damage: 15,   // Obrażenia na sekundę
-  speed: 150,   // Prędkość poruszania się
-  range: 40     // Zasięg ataku
+  damage: 15, speed: 150, range: 40
 };
 
-// --- INTERFEJS ---
 function updateUI() {
   const gEl = document.getElementById('ui-gold');
   const eEl = document.getElementById('ui-elixir');
@@ -53,18 +46,30 @@ function showMessage(text) {
   setTimeout(() => { msg.style.display = 'none'; }, 2000);
 }
 
-// --- ZAPIS I ODCZYT ---
 function saveGame() {
-  const data = { gold: gold, elixir: elixir, buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type })) };
+  const data = { 
+    version: 2, 
+    gold: gold, 
+    elixir: elixir, 
+    buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type })) 
+  };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
 }
 
 function loadGame() {
   const saved = localStorage.getItem('warBaseSave');
   if (saved) {
-    const data = JSON.parse(saved);
-    gold = data.gold; elixir = data.elixir;
-    return data.buildings;
+    try {
+      const data = JSON.parse(saved);
+      if (data.version === 2 && typeof data.gold === 'number') {
+        gold = data.gold; elixir = data.elixir;
+        return data.buildings;
+      } else {
+        localStorage.removeItem('warBaseSave'); // Usuwa stary, zepsuty zapis
+      }
+    } catch (e) {
+      localStorage.removeItem('warBaseSave');
+    }
   }
   return [];
 }
