@@ -34,17 +34,10 @@ class BaseScene extends Phaser.Scene {
 
   create() {
     let cam = this.cameras.main;
-    cam.setBackgroundColor('#2d4a3e');
     
-    // Wymuszone malowanie dużego zielonego tła
-    this.add.rectangle(0, 0, 3000, 3000, 0x2d4a3e).setOrigin(0, 0);
-
-    let gridGraphics = this.add.graphics();
-    gridGraphics.lineStyle(1, 0x3d6b55, 1);
-    for (let i = 0; i <= GRID; i++) {
-      gridGraphics.lineBetween(i * TILE, 0, i * TILE, GRID * TILE);
-      gridGraphics.lineBetween(0, i * TILE, GRID * TILE, i * TILE);
-    }
+    // Używamy wbudowanej siatki Phasera - nie ma opcji, żeby się nie narysowała
+    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
+    grid.setOrigin(0, 0);
 
     let preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
     window.preview = preview;
@@ -82,6 +75,7 @@ class BaseScene extends Phaser.Scene {
       }
     });
 
+    // Ustawienie kamery
     cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
     cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
     cam.setZoom(0.8);
@@ -165,11 +159,10 @@ class BattleScene extends Phaser.Scene {
   create() {
     let cam = this.cameras.main;
     cam.setBackgroundColor('#3e1a1a');
-    
-    // Wymuszone malowanie dużego czerwonego tła
-    this.add.rectangle(0, 0, 3000, 3000, 0x3e1a1a).setOrigin(0, 0);
+    cam.setScroll(0, 0);
+    cam.setZoom(1);
 
-    // Pobieramy szerokość i wysokość z kamery, a nie z this.scale (co powodowało błąd!)
+    // Pobieramy środek ekranu z kamery
     const cx = cam.width / 2;
     const cy = cam.height / 2;
 
@@ -178,6 +171,7 @@ class BattleScene extends Phaser.Scene {
     this.armyLeft = 20;
     this.battleEnded = false;
 
+    // Rysowanie wrogiej bazy
     this.createEnemyBuilding(cx, cy, 200, 0x8b0000); 
     this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); 
     this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); 
@@ -262,7 +256,7 @@ class BattleScene extends Phaser.Scene {
 
 // --- URUCHOMIENIE GRY ---
 const config = {
-  type: Phaser.CANVAS, 
+  type: Phaser.AUTO, 
   parent: 'game',
   backgroundColor: '#2d4a3e',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
