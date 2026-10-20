@@ -1,4 +1,3 @@
-// --- PRZEŁĄCZANIE EKRANÓW ---
 function startAttack() {
   document.getElementById('build-menu').style.display = 'none';
   document.getElementById('attack-btn').style.display = 'none';
@@ -36,7 +35,6 @@ class BaseScene extends Phaser.Scene {
   create() {
     this.cameras.main.setBackgroundColor('#2d4a3e');
     
-    // Ustawiamy kamerę dla bazy
     let cam = this.cameras.main;
     cam.setZoom(0.8);
 
@@ -83,11 +81,9 @@ class BaseScene extends Phaser.Scene {
       }
     });
 
-    // Ustawiamy granice i środek kamery dla bazy
     cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
     cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
     
-    // Aktualizacja FPS w pętli
     this.time.addEvent({
       delay: 500, loop: true, callback: () => {
         if (fpsText) fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
@@ -169,29 +165,27 @@ class BattleScene extends Phaser.Scene {
   }
 
   create() {
-    // Resetujemy i ustawiamy kamerę idealnie na środku ekranu
     let cam = this.cameras.main;
     cam.setBackgroundColor('#3e1a1a');
     cam.setZoom(1);
     cam.setScroll(0, 0);
-    cam.centerOn(cam.width / 2, cam.height / 2);
+    
+    // Używamy this.scale do pobrania dokładnego rozmiaru ekranu
+    cam.centerOn(this.scale.width / 2, this.scale.height / 2);
     
     this.enemyBuildings = [];
     this.troops = [];
     this.armyLeft = 20;
     this.battleEnded = false;
 
-    // Pobieramy środek ekranu
-    const cx = cam.width / 2;
-    const cy = cam.height / 2;
+    const cx = this.scale.width / 2;
+    const cy = this.scale.height / 2;
 
-    // Tworzymy bazę wroga
-    this.createEnemyBuilding(cx, cy, 200, 0x8b0000); // Ratusz
-    this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); // Kopalnia
-    this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); // Kopalnia
-    this.createEnemyBuilding(cx, cy + 120, 150, 0x555555); // Wieża
+    this.createEnemyBuilding(cx, cy, 200, 0x8b0000); 
+    this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); 
+    this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); 
+    this.createEnemyBuilding(cx, cy + 120, 150, 0x555555); 
 
-    // Kliknięcie zrzuca wojsko
     this.input.on('pointerdown', (pointer) => {
       if (this.armyLeft > 0 && !this.battleEnded) {
         this.spawnTroop(pointer.x, pointer.y);
@@ -204,7 +198,6 @@ class BattleScene extends Phaser.Scene {
   createEnemyBuilding(x, y, hp, color) {
     const size = 60;
     const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
-    
     const hpBarBg = this.add.rectangle(x, y - 40, size, 8, 0x000000);
     const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
 
@@ -272,7 +265,7 @@ class BattleScene extends Phaser.Scene {
 
 // --- URUCHOMIENIE GRY ---
 const config = {
-  type: Phaser.AUTO,
+  type: Phaser.CANVAS, // WYMUSZAMY CANVAS (często naprawia czarny ekran na Androidzie)
   parent: 'game',
   backgroundColor: '#2d4a3e',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
