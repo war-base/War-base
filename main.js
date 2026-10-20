@@ -5,13 +5,27 @@ function startAttack() {
   document.getElementById('build-menu').style.display = 'none';
   document.getElementById('attack-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
+  
+  document.getElementById('battle-ui').style.display = 'block';
+  document.getElementById('ui-army').innerText = "20"; 
+  
   game.scene.start('BattleScene');
 }
 
-function endBattle() {
+function endBattle(won = false) {
   document.getElementById('build-menu').style.display = 'flex';
   document.getElementById('attack-btn').style.display = 'block';
   document.getElementById('top-bar').style.display = 'flex';
+  document.getElementById('battle-ui').style.display = 'none';
+  
+  if (won) {
+    gold += 500; 
+    elixir += 200;
+    updateUI();
+    saveGame();
+    showMessage("Zwycięstwo!\nZdobyto 500 🪙 i 200 💧");
+  }
+  
   game.scene.start('BaseScene');
 }
 
@@ -37,7 +51,7 @@ class BaseScene extends Phaser.Scene {
 
     fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
-    buildings = []; // Reset tablicy przy starcie
+    buildings = []; 
     const savedBuildings = loadGame();
     savedBuildings.forEach(b => this.createBuilding(b.x, b.y, b.type, false));
     updateUI();
@@ -134,35 +148,130 @@ class BaseScene extends Phaser.Scene {
 }
 
 // ==========================================
-// SCENA 2: WALKA (Atak na wroga)
+// SCENA 2: WALKA (Atak)
 // ==========================================
 class BattleScene extends Phaser.Scene {
-  constructor() { super('BattleScene'); }
+  constructor() { 
+    super('BattleScene'); 
+    this.enemyBuildings = [];
+    this.troops = [];
+    this.armyLeft = 20;
+    this.battleEnded = false;
+  }
 
   create() {
+    this.enemyBuildings = [];
+    this.troops = [];
+    this.armyLeft = 20;
+    this.battleEnded = false;
+
     this.cameras.main.setBackgroundColor('#3e1a1a');
-    this.cameras.main.setZoom(1);
-    this.cameras.main.centerOn(0, 0);
+    
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2;
 
-    const centerX = this.cameras.main.width / 2;
-    const centerY = this.cameras.main.height / 2;
+    // Tworzenie bazy wroga
+    this.createEnemyBuilding(cx, cy, 200, 0x8b0000); // Ratusz
+    this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); // Kopalnia
+    this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); // Kopalnia
+    this.createEnemyBuilding(cx, cy + 120, 150, 0x555555); // Wieża
 
-    this.add.text(centerX, 80, 'WROGI OBOZ', { fontSize: '36px', color: '#ff4444', fontStyle: 'bold' }).setOrigin(0.5);
+    // Kliknięcie zrzuca wojsko
+    this.input.on('pointerdown', (pointer) => {
+      if (this.armyLeft > 0 && !this.battleEnded) {
+        this.spawnTroop(pointer.x, pointer.y);
+        this.armyLeft--;
+        document.getElementById('ui-army').innerText = this.armyLeft;
+      }
+    });
+  }
 
-    this.add.rectangle(centerX, centerY, 100, 100, 0x8b0000).setStrokeStyle(4, 0x000000);
-    this.add.text(centerX, centerY, 'Wrogi\nRatusz', { fontSize: '14px', color: '#fff', align: 'center' }).setOrigin(0.5);
+  createEnemyBuilding(x, y, hp, color) {
+    const size = 60;
+    const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
+    
+    // Pasek zdrowia
+    const hpBarBg = this.add.rectangle(x, y - 40, size, 8, 0x000000);
+    const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
 
-    this.add.rectangle(centerX - 150, centerY - 100, 60, 60, 0x555555).setStrokeStyle(2, 0x000000);
-    this.add.rectangle(centerX + 150, centerY - 100, 60, 60, 0x555555).setStrokeStyle(2, 0x000000);
+    this.enemyBuildings.push({
+      sprite: rect,
+      hpBar: hpBar,
+      hp: hp,
+      maxHp: hp,
+      x: x,
+      y: y,
+      alive: true
+    });
+  }
 
-    this.add.rectangle(centerX - 120, centerY + 80, 50, 50, 0xffd700);
-    this.add.rectangle(centerX + 120, centerY + 80, 50, 50, 0xffd700);
+  spawnTroop(x, y) {
+    const troopSprite = this.add.circle(x, y, 12, 0x1e90ff).setStrokeStyle(2, 0xffffff);
+    
+    this.troops.push({
+      sprite: troopSprite,
+      x: x,
+      y: y,
+      target: null
+    });
+  }
 
-    const backBtn = this.add.text(centerX, this.cameras.main.height - 80, 'WRÓĆ DO BAZY', { 
-      fontSize: '20px', backgroundColor: '#ffffff', color: '#000000', padding: {x: 20, y: 15}, fontStyle: 'bold' 
-    }).setOrigin(0.5).setInteractive();
+  update(time, delta) {
+    if (this.battleEnded) return;
+    const dt = delta / 1000; 
 
-    backBtn.on('pointerdown', () => { endBattle(); });
+    // Logika poruszania się i atakowania wojsk
+    this.troops.forEach(troop => {
+      if (!troop.target || !troop.target.alive) {
+        troop.target = this.findNearestBuilding(troop.x, troop.y);
+      }
+
+      if (troop.target) {
+        const dist = Phaser.Math.Distance.Between(troop.x, troop.y, troop.target.x, troop.target.y);
+        
+        if (dist > TROOP_STATS.range) {
+          // Ruch
+          const angle = Phaser.Math.Angle.Between(troop.x, troop.y, troop.target.x, troop.target.y);
+          troop.x += Math.cos(angle) * TROOP_STATS.speed * dt;
+          troop.y += Math.sin(angle) * TROOP_STATS.speed * dt;
+          troop.sprite.setPosition(troop.x, troop.y);
+        } else {
+          // Atak
+          troop.target.hp -= TROOP_STATS.damage * dt;
+          const hpPercent = Math.max(0, troop.target.hp / troop.target.maxHp);
+          troop.target.hpBar.scaleX = hpPercent;
+
+          if (troop.target.hp <= 0) {
+            troop.target.alive = false;
+            troop.target.sprite.destroy();
+            troop.target.hpBar.destroy();
+            troop.target = null; 
+          }
+        }
+      }
+    });
+
+    // Warunek wygranej
+    const aliveBuildings = this.enemyBuildings.filter(b => b.alive);
+    if (aliveBuildings.length === 0) {
+      this.battleEnded = true;
+      setTimeout(() => endBattle(true), 1000);
+    }
+  }
+
+  findNearestBuilding(x, y) {
+    let nearest = null;
+    let minDist = Infinity;
+    this.enemyBuildings.forEach(b => {
+      if (b.alive) {
+        const dist = Phaser.Math.Distance.Between(x, y, b.x, b.y);
+        if (dist < minDist) {
+          minDist = dist;
+          nearest = b;
+        }
+      }
+    });
+    return nearest;
   }
 }
 
