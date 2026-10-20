@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>War Base</title>
+  <style>
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; }
+    #game { width: 100vw; height: 100vh; touch-action: none; }
+  </style>
+</head>
+<body>
+  <div id="game"></div>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
+  <script>
+    const TILE = 64;
+    const GRID = 12;
+
+    const config = {
+      type: Phaser.AUTO,
+      parent: 'game',
+      backgroundColor: '#2d4a3e',
+      scale: {
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH
+      },
+      scene: { create, update }
+    };
+
+    let cam, gridGraphics, buildings = [], selected = false, preview;
+
+    function create() {
+      cam = this.cameras.main;
+
+      // Siatka
+      gridGraphics = this.add.graphics();
+      drawGrid(gridGraphics);
+
+      // Podgląd budynku pod palcem
+      preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffcc00, 0.5)
+        .setVisible(false).setDepth(10);
+
+      // Przesuwanie kamery jednym palcem
+      this.input.on('pointermove', (p) => {
+        if (p.isDown && p.getDistance() > 10) {
+          cam.scrollX -= (p.x - p.prevPosition.x);
+          cam.scrollY -= (p.y - p.prevPosition.y);
+        }
+      });
+
+      // Krótkie dotknięcie = postaw budynek
+      this.input.on('pointerup', (p) => {
+        const dist = Phaser.Math.Distance.Between(
+          p.downX, p.downY, p.upX, p.upY
+        );
+        if (dist < 10) placeBuilding.call(this, p);
+      });
+
+      // Dwukrotne dotknięcie = wyśrodkuj kamerę
+      this.input.on('pointerdown', (p) => {
+        if (p.getDuration() < 200) {
+          preview.setPosition(snap(p.worldX), snap(p.worldY)).setVisible(true);
+        }
+      });
+
+      cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
+      cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
+    }
+
+    function update() {
+      // Podgląd podąża za palcem tylko gdy nie przesuwamy
+    }
+
+    function snap(v) {
+      return Math.floor(v / TILE) * TILE + TILE / 2;
+    }
+
+    function drawGrid(g) {
+      g.lineStyle(1, 0x3d6b55, 1);
+      for (let i = 0; i <= GRID; i++) {
+        g.lineBetween(i * TILE, 0, i * TILE, GRID * TILE);
+        g.lineBetween(0, i * TILE, GRID * TILE, i * TILE);
+      }
+    }
+
+    function placeBuilding(p) {
+      const x = snap(p.worldX);
+      const y = snap(p.worldY);
+      if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
+      if (buildings.some(b => b.x === x && b.y === y)) return;
+
+      const rect = this.add.rectangle(x, y, TILE - 6, TILE - 6, 0x8b4513)
+        .setStrokeStyle(2, 0x5a2d0c)
+        .setInteractive();
+
+      rect.on('pointerdown', () => {
+        // Tymczasowo: klik usuwa budynek (później menu)
+        rect.destroy();
+        buildings = buildings.filter(b => b !== rect);
+      });
+
+      buildings.push(rect);
+      preview.setVisible(false);
+    }
+
+    new Phaser.Game(config);
+  </script>
+</body>
+</html>
