@@ -1,5 +1,4 @@
-let cam, preview, fpsText, isDragging = false;
-
+// --- PRZEŁĄCZANIE EKRANÓW ---
 function startAttack() {
   document.getElementById('build-menu').style.display = 'none';
   document.getElementById('attack-btn').style.display = 'none';
@@ -35,9 +34,10 @@ class BaseScene extends Phaser.Scene {
   constructor() { super('BaseScene'); }
 
   create() {
-    this.cameras.main.setBackgroundColor('#2d4a3e'); // ZIELONE TŁO
+    this.cameras.main.setBackgroundColor('#2d4a3e');
     
-    cam = this.cameras.main;
+    // Ustawiamy kamerę dla bazy
+    let cam = this.cameras.main;
     cam.setZoom(0.8);
 
     let gridGraphics = this.add.graphics();
@@ -47,15 +47,17 @@ class BaseScene extends Phaser.Scene {
       gridGraphics.lineBetween(0, i * TILE, GRID * TILE, i * TILE);
     }
 
-    preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
+    let preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
     window.preview = preview;
 
-    fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
+    let fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
     buildings = []; 
     const savedBuildings = loadGame();
     savedBuildings.forEach(b => this.createBuilding(b.x, b.y, b.type, false));
     updateUI();
+
+    let isDragging = false;
 
     this.input.on('pointermove', (p) => {
       if (p.isDown) {
@@ -81,13 +83,19 @@ class BaseScene extends Phaser.Scene {
       }
     });
 
+    // Ustawiamy granice i środek kamery dla bazy
     cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
     cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
+    
+    // Aktualizacja FPS w pętli
+    this.time.addEvent({
+      delay: 500, loop: true, callback: () => {
+        if (fpsText) fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
+      }
+    });
   }
 
   update(time, delta) {
-    if (fpsText) fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
-
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let addedGold = 0, addedElixir = 0;
@@ -144,7 +152,7 @@ class BaseScene extends Phaser.Scene {
     });
 
     buildings.push(container);
-    if (isNew && preview) preview.setVisible(false);
+    if (isNew && window.preview) window.preview.setVisible(false);
   }
 }
 
@@ -161,22 +169,29 @@ class BattleScene extends Phaser.Scene {
   }
 
   create() {
-    this.cameras.main.setBackgroundColor('#3e1a1a'); // CZERWONE TŁO
+    // Resetujemy i ustawiamy kamerę idealnie na środku ekranu
+    let cam = this.cameras.main;
+    cam.setBackgroundColor('#3e1a1a');
+    cam.setZoom(1);
+    cam.setScroll(0, 0);
+    cam.centerOn(cam.width / 2, cam.height / 2);
     
     this.enemyBuildings = [];
     this.troops = [];
     this.armyLeft = 20;
     this.battleEnded = false;
 
-    // Używamy this.scale, żeby idealnie wyśrodkować bazę wroga
-    const cx = this.scale.width / 2;
-    const cy = this.scale.height / 2;
+    // Pobieramy środek ekranu
+    const cx = cam.width / 2;
+    const cy = cam.height / 2;
 
+    // Tworzymy bazę wroga
     this.createEnemyBuilding(cx, cy, 200, 0x8b0000); // Ratusz
     this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); // Kopalnia
     this.createEnemyBuilding(cx + 120, cy - 100, 100, 0xffd700); // Kopalnia
     this.createEnemyBuilding(cx, cy + 120, 150, 0x555555); // Wieża
 
+    // Kliknięcie zrzuca wojsko
     this.input.on('pointerdown', (pointer) => {
       if (this.armyLeft > 0 && !this.battleEnded) {
         this.spawnTroop(pointer.x, pointer.y);
@@ -189,6 +204,7 @@ class BattleScene extends Phaser.Scene {
   createEnemyBuilding(x, y, hp, color) {
     const size = 60;
     const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
+    
     const hpBarBg = this.add.rectangle(x, y - 40, size, 8, 0x000000);
     const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
 
@@ -258,7 +274,7 @@ class BattleScene extends Phaser.Scene {
 const config = {
   type: Phaser.AUTO,
   parent: 'game',
-  backgroundColor: '#2d4a3e', // DODANE TŁO DLA CAŁEJ GRY
+  backgroundColor: '#2d4a3e',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
   scene: [BaseScene, BattleScene]
 };
