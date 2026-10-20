@@ -33,10 +33,11 @@ class BaseScene extends Phaser.Scene {
   constructor() { super('BaseScene'); }
 
   create() {
-    this.cameras.main.setBackgroundColor('#2d4a3e');
-    
     let cam = this.cameras.main;
-    cam.setZoom(0.8);
+    cam.setBackgroundColor('#2d4a3e');
+    
+    // Wymuszone malowanie dużego zielonego tła
+    this.add.rectangle(0, 0, 3000, 3000, 0x2d4a3e).setOrigin(0, 0);
 
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x3d6b55, 1);
@@ -48,7 +49,7 @@ class BaseScene extends Phaser.Scene {
     let preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
     window.preview = preview;
 
-    let fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
+    this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
     buildings = []; 
     const savedBuildings = loadGame();
@@ -83,15 +84,12 @@ class BaseScene extends Phaser.Scene {
 
     cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
     cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
-    
-    this.time.addEvent({
-      delay: 500, loop: true, callback: () => {
-        if (fpsText) fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
-      }
-    });
+    cam.setZoom(0.8);
   }
 
   update(time, delta) {
+    if (this.fpsText) this.fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
+
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let addedGold = 0, addedElixir = 0;
@@ -167,19 +165,18 @@ class BattleScene extends Phaser.Scene {
   create() {
     let cam = this.cameras.main;
     cam.setBackgroundColor('#3e1a1a');
-    cam.setZoom(1);
-    cam.setScroll(0, 0);
     
-    // Używamy this.scale do pobrania dokładnego rozmiaru ekranu
-    cam.centerOn(this.scale.width / 2, this.scale.height / 2);
-    
+    // Wymuszone malowanie dużego czerwonego tła
+    this.add.rectangle(0, 0, 3000, 3000, 0x3e1a1a).setOrigin(0, 0);
+
+    // Pobieramy szerokość i wysokość z kamery, a nie z this.scale (co powodowało błąd!)
+    const cx = cam.width / 2;
+    const cy = cam.height / 2;
+
     this.enemyBuildings = [];
     this.troops = [];
     this.armyLeft = 20;
     this.battleEnded = false;
-
-    const cx = this.scale.width / 2;
-    const cy = this.scale.height / 2;
 
     this.createEnemyBuilding(cx, cy, 200, 0x8b0000); 
     this.createEnemyBuilding(cx - 120, cy - 100, 100, 0xffd700); 
@@ -265,7 +262,7 @@ class BattleScene extends Phaser.Scene {
 
 // --- URUCHOMIENIE GRY ---
 const config = {
-  type: Phaser.CANVAS, // WYMUSZAMY CANVAS (często naprawia czarny ekran na Androidzie)
+  type: Phaser.CANVAS, 
   parent: 'game',
   backgroundColor: '#2d4a3e',
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
