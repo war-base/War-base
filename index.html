@@ -8,7 +8,6 @@
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
 
-    /* Górny pasek */
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.75); color: white; padding: 12px; 
@@ -17,7 +16,6 @@
     .res-gold { color: #ffd700; }
     .res-elixir { color: #ff69b4; }
 
-    /* Menu budowania */
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; justify-content: space-around; gap: 10px;
@@ -34,7 +32,6 @@
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ff69b4; }
 
-    /* Przycisk ataku */
     #attack-btn {
       position: absolute; bottom: 100px; right: 20px;
       background: #cc0000; color: white; border: 2px solid #ff4444;
@@ -44,7 +41,6 @@
     }
     #attack-btn:active { background: #990000; transform: scale(0.95); }
 
-    /* Panel walki */
     #battle-ui {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       z-index: 10; pointer-events: none; display: none;
@@ -56,20 +52,28 @@
     }
     #battle-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
-    /* Panel budynku (Ulepszanie / Sprzedaż) */
+    /* Panel budynku */
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.9); color: white; padding: 20px; border-radius: 10px;
+      background: rgba(0,0,0,0.95); color: white; padding: 20px; border-radius: 10px;
       display: none; z-index: 30; text-align: center; min-width: 250px; border: 2px solid #ffd700;
     }
     #building-panel h3 { margin: 0 0 10px 0; color: #ffd700; font-size: 22px; }
     #building-panel p { margin: 5px 0; font-size: 16px; }
-    #building-panel button { margin: 5px; padding: 10px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; font-size: 14px; }
+    #building-panel button { margin: 5px 0; padding: 10px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; font-size: 14px; width: 100%; }
+    
     #bp-upgrade { background: #2d8a4e; color: white; }
     #bp-sell { background: #8b0000; color: white; }
-    #bp-close { background: #555; color: white; width: 90%; }
+    #bp-close { background: #555; color: white; }
 
-    /* Komunikaty */
+    /* Sekcja Rekrutacji w Koszarach */
+    #bp-train-section { 
+      display: none; margin: 15px 0; padding: 10px; 
+      background: rgba(30, 144, 255, 0.2); border-radius: 8px; border: 1px solid #1e90ff; 
+    }
+    #bp-train-btn { background: #1e90ff; color: white; margin-top: 5px; }
+    #bp-train-btn:active { background: #104e8b; }
+
     #message {
       position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(200, 0, 0, 0.9); color: white; padding: 10px 20px;
@@ -89,26 +93,31 @@
   <div id="build-menu">
     <button class="build-btn" onclick="selectBuilding('townhall')">🏰 Ratusz<span class="btn-sub gold">1000 🪙</span></button>
     <button class="build-btn" onclick="selectBuilding('mine')">⛏️ Kopalnia<span class="btn-sub elixir">150 💧</span></button>
-    <button class="build-btn" onclick="selectBuilding('barracks')">⚔️ Koszary<span class="btn-sub elixir">300 💧</span></button>
+    <button class="build-btn" onclick="selectBuilding('barracks')">⚔️ Koszary<span class="btn-sub elixir">150 💧</span></button>
   </div>
 
   <button id="attack-btn" onclick="startAttack()">⚔️ Atakuj</button>
 
-  <!-- Panel Walki -->
   <div id="battle-ui">
     <div id="battle-top-bar">
-      <div>🪖 Armia: <span id="ui-army">20</span></div>
+      <div>🪖 Armia: <span id="ui-army">0</span></div>
       <button onclick="endBattle(false)">Poddaj się</button>
     </div>
   </div>
 
-  <!-- Panel Ulepszania Budynku -->
+  <!-- Panel Budynku -->
   <div id="building-panel">
     <h3 id="bp-name">Budynek</h3>
     <p>Poziom: <span id="bp-level">1</span></p>
     <p>Produkcja: <span id="bp-prod">0</span></p>
-    <button id="bp-upgrade" onclick="upgradeBuilding()">Ulepsz (Koszt: <span id="bp-upgrade-cost">0</span>)</button>
-    <button id="bp-sell" onclick="sellBuilding()">Sprzedaj (Zwrot: <span id="bp-sell-value">0</span>)</button>
+    
+    <div id="bp-train-section">
+      <p>Twoja Armia: <span id="bp-army">0</span> / <span id="bp-max-army">20</span></p>
+      <button id="bp-train-btn" onclick="trainTroop()">Rekrutuj Wojownika (50 💧)</button>
+    </div>
+
+    <button id="bp-upgrade" onclick="upgradeBuilding()">Ulepsz</button>
+    <button id="bp-sell" onclick="sellBuilding()">Sprzedaj</button>
     <button id="bp-close" onclick="closeBuildingPanel()">Zamknij</button>
   </div>
   
@@ -119,10 +128,14 @@
   <script>
     // --- USTAWIENIA ---
     const TILE = 64; 
-    const GRID = 35; // ZWIĘKSZONO MAPĘ, żeby na pewno dało się ją przesuwać w pionie!
+    const GRID = 35; 
     
     let gold = 1000;
     let elixir = 1000;
+    let currentArmy = 20; // Zaczynamy z 20 wojskami do testów
+    const MAX_ARMY_BASE = 20;
+    const TROOP_COST_ELIXIR = 50;
+
     let selectedBuildingType = null;
     let buildings = [];
     let prodTimer = 0;
@@ -131,7 +144,7 @@
     const BUILDINGS = {
       townhall: { name: 'Ratusz', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 } },
       mine: { name: 'Kopalnia', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 } },
-      barracks: { name: 'Koszary', cost: { gold: 0, elixir: 300 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 } }
+      barracks: { name: 'Koszary', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 } }
     };
     const TROOP_STATS = { damage: 15, speed: 150, range: 40 };
 
@@ -162,7 +175,7 @@
       setTimeout(() => { msg.style.display = 'none'; }, 2000);
     }
 
-    // --- PANEL BUDYNKU ---
+    // --- PANEL BUDYNKU I REKRUTACJA ---
     function openBuildingPanel(building) {
       currentlySelectedBuilding = building;
       const def = BUILDINGS[building.type];
@@ -177,16 +190,49 @@
       if (prodElixir > 0) prodStr.push(prodElixir + ' 💧');
       document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
       
-      // Koszt ulepszenia rośnie z poziomem
       const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
       const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
-      document.getElementById('bp-upgrade-cost').innerText = `${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧`;
+      document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧)`;
       
       const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
       const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
-      document.getElementById('bp-sell-value').innerText = `${sellValueGold} 🪙, ${sellValueElixir} 💧`;
+      document.getElementById('bp-sell').innerText = `Sprzedaj (+${sellValueGold} 🪙, +${sellValueElixir} 💧)`;
+      
+      // Pokazujemy sekcję rekrutacji tylko dla Koszar
+      if (building.type === 'barracks') {
+        document.getElementById('bp-train-section').style.display = 'block';
+        updateTrainUI();
+      } else {
+        document.getElementById('bp-train-section').style.display = 'none';
+      }
       
       document.getElementById('building-panel').style.display = 'block';
+    }
+
+    function updateTrainUI() {
+      let maxArmy = MAX_ARMY_BASE;
+      const barracks = buildings.find(b => b.type === 'barracks');
+      if (barracks) maxArmy += (barracks.level - 1) * 10;
+      
+      document.getElementById('bp-army').innerText = currentArmy;
+      document.getElementById('bp-max-army').innerText = maxArmy;
+    }
+
+    function trainTroop() {
+      const barracks = buildings.find(b => b.type === 'barracks');
+      if (!barracks) return;
+
+      let maxArmy = MAX_ARMY_BASE + (barracks.level - 1) * 10;
+      
+      if (currentArmy >= maxArmy) { showMessage('Twoja armia jest pełna! Ulepsz Koszary.'); return; }
+      if (elixir < TROOP_COST_ELIXIR) { showMessage('Za mało eliksiru!'); return; }
+
+      elixir -= TROOP_COST_ELIXIR;
+      currentArmy++;
+      
+      updateUI();
+      updateTrainUI();
+      saveGame();
     }
 
     function closeBuildingPanel() {
@@ -234,9 +280,10 @@
     // --- ZAPIS ---
     function saveGame() {
       const data = { 
-        version: 3, 
+        version: 4, 
         gold: gold, 
         elixir: elixir, 
+        currentArmy: currentArmy,
         buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level })) 
       };
       localStorage.setItem('warBaseSave', JSON.stringify(data));
@@ -246,8 +293,11 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 3 && typeof data.gold === 'number') {
-            gold = data.gold; elixir = data.elixir; return data.buildings;
+          if (data.version === 4 && typeof data.gold === 'number') {
+            gold = data.gold; 
+            elixir = data.elixir; 
+            currentArmy = data.currentArmy || 0;
+            return data.buildings;
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
       }
@@ -257,23 +307,36 @@
     // --- EKRANY ---
     function startAttack() {
       closeBuildingPanel();
+      if (currentArmy <= 0) {
+        showMessage('Nie masz wojska! Zbuduj Koszary i zrekrutuj armię.');
+        return;
+      }
+      
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
       document.getElementById('battle-ui').style.display = 'block';
-      document.getElementById('ui-army').innerText = "20"; 
+      document.getElementById('ui-army').innerText = currentArmy; 
       game.scene.start('BattleScene');
     }
 
     function endBattle(won = false) {
+      // Wojska giną w bitwie
+      currentArmy = 0; 
+      saveGame();
+
       document.getElementById('build-menu').style.display = 'flex';
       document.getElementById('attack-btn').style.display = 'block';
       document.getElementById('top-bar').style.display = 'flex';
       document.getElementById('battle-ui').style.display = 'none';
+      
       if (won) {
         gold += 500; elixir += 200; updateUI(); saveGame();
         showMessage("Zwycięstwo!\nZdobyto 500 🪙 i 200 💧");
+      } else {
+        showMessage("Wycofano wojska.\nTwoja armia została zniszczona.");
       }
+      
       game.scene.start('BaseScene');
     }
 
@@ -312,7 +375,7 @@
 
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
-        cam.setZoom(0.7); // Trochę bardziej oddalone, żeby widzieć więcej
+        cam.setZoom(0.7); 
       }
 
       update(time, delta) {
@@ -382,7 +445,7 @@
 
         this.enemyBuildings = [];
         this.troops = [];
-        this.armyLeft = 20;
+        this.armyLeft = currentArmy; // Pobieramy aktualną armię
         this.battleEnded = false;
 
         const cx = window.innerWidth / 2;
@@ -442,6 +505,9 @@
         if (this.enemyBuildings.filter(b => b.alive).length === 0) {
           this.battleEnded = true;
           setTimeout(() => endBattle(true), 1000);
+        } else if (this.armyLeft === 0 && this.troops.length === 0 && !this.battleEnded) {
+          this.battleEnded = true;
+          setTimeout(() => endBattle(false), 1000); // Przegrana, jeśli nie ma już wojsk i wszystkie zginęły
         }
       }
 
