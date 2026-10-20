@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
   <title>War Base - Moduły</title>
-  <!-- Ładowanie naszego arkusza stylów -->
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div id="game"></div>
 
+  <!-- Ekran Budowania -->
   <div id="top-bar">
     <div class="res-gold">🪙 Złoto: <span id="ui-gold">0</span></div>
     <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">0</span></div>
@@ -22,12 +22,18 @@
   </div>
 
   <button id="attack-btn" onclick="startAttack()">⚔️ Atakuj</button>
+
+  <!-- Ekran Walki (ukryty domyślnie) -->
+  <div id="battle-ui" style="display: none;">
+    <div id="battle-top-bar">
+      <div>🪖 Armia: <span id="ui-army">20</span></div>
+      <button onclick="endBattle(false)">Poddaj się</button>
+    </div>
+  </div>
+  
   <div id="message">Za mało surowców!</div>
 
-  <!-- Silnik Phaser (z internetu) -->
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  
-  <!-- Ładowanie naszych plików z grą (KOLEJNOŚĆ MA ZNACZENIE!) -->
   <script src="config.js"></script>
   <script src="main.js"></script>
 </body>
