@@ -65,7 +65,7 @@ function loadGame() {
         gold = data.gold; elixir = data.elixir;
         return data.buildings;
       } else {
-        localStorage.removeItem('warBaseSave'); // Usuwa stary, zepsuty zapis
+        localStorage.removeItem('warBaseSave');
       }
     } catch (e) {
       localStorage.removeItem('warBaseSave');
