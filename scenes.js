@@ -130,9 +130,12 @@ class BaseScene extends Phaser.Scene {
     });
     buildings.push(container); 
     if (isNew && window.preview) window.preview.setVisible(false);
+    
+    saveGame(); // GWARANCJA ZAPISU
   }
 }
 
+// ... Reszta klas BattleScene i DefenseScene zostaje bez zmian (są długie, ale ich nie ruszamy) ...
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
