@@ -1,5 +1,6 @@
-const TILE = 64; 
-const GRID = 25; 
+const TILE_W = 64; // Szerokość kafelka
+const TILE_H = 32; // Wysokość kafelka (połowa szerokości dla efektu izometrii)
+const GRID = 20;   // Zmniejszamy siatkę do 20x20, bo izometria zajmuje więcej miejsca
 
 let gold = 3000; 
 let elixir = 1000; 
@@ -9,10 +10,7 @@ let level = 1;
 let soundEnabled = true; 
 let lastDailyReward = 0; 
 
-// STATYSTYKI GRACZA
-let wins = 0;
-let losses = 0;
-let destroyedTotal = 0;
+let wins = 0, losses = 0, destroyedTotal = 0;
 
 let army = { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 }; 
 let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
@@ -31,14 +29,14 @@ let quests = [
 ];
 
 const BUILDINGS = {
-  townhall: { name: 'Warownia', short: 'W', cost: { gold: 1000, elixir: 0 }, color: 0x555555, roofColor: 0x333333, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
-  mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0x8b6508, roofColor: 0x5c4305, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
-  barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x5c2e2e, roofColor: 0x3b1a1a, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
-  camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x4a5c38, roofColor: 0x2e3b22, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30 },
-  lab: { name: 'Wieża Magów', short: 'M', cost: { gold: 0, elixir: 500 }, color: 0x483d8b, roofColor: 0x2e2757, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40 },
-  altar: { name: 'Ołtarz Krwi', short: '🩸', cost: { gold: 2000, elixir: 0 }, color: 0x2a1a30, roofColor: 0x550000, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50 },
-  wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x696969, roofColor: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
-  tower: { name: 'Wieża Straż.', short: 'WS', cost: { gold: 300, elixir: 0 }, color: 0x36454f, roofColor: 0x1a2025, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
+  townhall: { name: 'Warownia', short: 'W', cost: { gold: 1000, elixir: 0 }, color: 0x555555, roofColor: 0x333333, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60, size: 2 },
+  mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0x8b6508, roofColor: 0x5c4305, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15, size: 1 },
+  barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x5c2e2e, roofColor: 0x3b1a1a, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20, size: 1 },
+  camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x4a5c38, roofColor: 0x2e3b22, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30, size: 1 },
+  lab: { name: 'Wieża Magów', short: 'M', cost: { gold: 0, elixir: 500 }, color: 0x483d8b, roofColor: 0x2e2757, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40, size: 1 },
+  altar: { name: 'Ołtarz Krwi', short: '🩸', cost: { gold: 2000, elixir: 0 }, color: 0x2a1a30, roofColor: 0x550000, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50, size: 1 },
+  wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x696969, roofColor: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5, size: 1 },
+  tower: { name: 'Wieża Straż.', short: 'WS', cost: { gold: 300, elixir: 0 }, color: 0x36454f, roofColor: 0x1a2025, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30, size: 1 }
 };
 
 const BASE_TROOPS = {
@@ -64,11 +62,9 @@ function getTroopStats(type) {
   let lvl = troopLevels[type] || 1;
   let multiplier = 1 + (lvl - 1) * 0.3;
   if (type === 'hero' || type === 'wallbreaker') multiplier = 1; 
-  
   return {
     name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
-    hp: Math.floor(base.hp * multiplier),
-    damage: Math.floor(base.damage * multiplier)
+    hp: Math.floor(base.hp * multiplier), damage: Math.floor(base.damage * multiplier)
   };
 }
 
@@ -112,11 +108,11 @@ function playSound(type) {
 
 function saveGame() {
   const data = { 
-    version: 32, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    version: 33, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
     trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward,
     wins: wins, losses: losses, destroyedTotal: destroyedTotal,
     quests: quests, 
-    buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
+    buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
   };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
 }
@@ -126,18 +122,14 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 32 && typeof data.gold === 'number') {
+      if (data.version === 33 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
         army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
-        trophies = data.trophies || 0;
-        xp = data.xp || 0;
-        level = data.level || 1;
+        trophies = data.trophies || 0; xp = data.xp || 0; level = data.level || 1;
         soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true;
         lastDailyReward = data.lastDailyReward || 0;
-        wins = data.wins || 0;
-        losses = data.losses || 0;
-        destroyedTotal = data.destroyedTotal || 0;
+        wins = data.wins || 0; losses = data.losses || 0; destroyedTotal = data.destroyedTotal || 0;
         if(data.quests) quests = data.quests;
         return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
