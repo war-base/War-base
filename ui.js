@@ -59,7 +59,6 @@ function checkHeroAvailability() {
   }
 }
 
-// --- MENU GŁÓWNE I PROFIL ---
 function openMainMenu() { document.getElementById('main-menu-overlay').style.display = 'flex'; }
 function closeMainMenu() { document.getElementById('main-menu-overlay').style.display = 'none'; }
 
@@ -94,54 +93,42 @@ function resetGame() {
   }
 }
 
-// --- PANEL BUDYNKU ---
 function openBuildingPanel(building) {
   currentlySelectedBuilding = building;
   const def = BUILDINGS[building.type];
   document.getElementById('bp-name').innerText = def.name;
   document.getElementById('bp-level').innerText = building.level;
-  const now = Date.now();
-  const isBuilding = building.buildEndTime > now;
+  
+  document.getElementById('bp-status-text').innerHTML = `Produkcja: <span id="bp-prod">0</span>`;
+  const prodGold = (def.prod.gold || 0) * building.level;
+  const prodElixir = (def.prod.elixir || 0) * building.level;
+  let prodStr = [];
+  if (prodGold > 0) prodStr.push(prodGold + ' 💰');
+  if (prodElixir > 0) prodStr.push(prodElixir + ' 🔮');
+  document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
+  
+  const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
+  const costElixir = Math.floor(def.cost.elixir * building.level * 1.5);
+  document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${costElixir} 🔮)`;
+  
+  const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
+  const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
+  document.getElementById('bp-sell').innerText = `Zburz (+${sellValueGold} 💰, +${sellValueElixir} 🔮)`;
+  
+  document.getElementById('bp-upgrade').style.display = 'block';
+  document.getElementById('bp-sell').style.display = 'block';
 
-  if (isBuilding) {
-    const remain = Math.ceil((building.buildEndTime - now) / 1000);
-    document.getElementById('bp-status-text').innerHTML = `🔨 Budowa: <span style="color:#ffaa00">${remain}s</span>`;
-    document.getElementById('bp-upgrade').style.display = 'none';
-    document.getElementById('bp-sell').style.display = 'none';
-    document.getElementById('bp-train-section').style.display = 'none';
-    document.getElementById('bp-lab-section').style.display = 'none';
+  if (building.type === 'barracks') {
+    document.getElementById('bp-train-section').style.display = 'block';
+    updateUI(); 
   } else {
-    document.getElementById('bp-status-text').innerHTML = `Produkcja: <span id="bp-prod">0</span>`;
-    const prodGold = (def.prod.gold || 0) * building.level;
-    const prodElixir = (def.prod.elixir || 0) * building.level;
-    let prodStr = [];
-    if (prodGold > 0) prodStr.push(prodGold + ' 💰');
-    if (prodElixir > 0) prodStr.push(prodElixir + ' 🔮');
-    document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
-    
-    const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
-    const costElixir = Math.floor(def.cost.elixir * building.level * 1.5);
-    document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${costElixir} 🔮)`;
-    
-    const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
-    const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
-    document.getElementById('bp-sell').innerText = `Zburz (+${sellValueGold} 💰, +${sellValueElixir} 🔮)`;
-    
-    document.getElementById('bp-upgrade').style.display = 'block';
-    document.getElementById('bp-sell').style.display = 'block';
-
-    if (building.type === 'barracks') {
-      document.getElementById('bp-train-section').style.display = 'block';
-      updateUI(); 
-    } else {
-      document.getElementById('bp-train-section').style.display = 'none';
-    }
-    if (building.type === 'lab') {
-      document.getElementById('bp-lab-section').style.display = 'block';
-      updateLabUI();
-    } else {
-      document.getElementById('bp-lab-section').style.display = 'none';
-    }
+    document.getElementById('bp-train-section').style.display = 'none';
+  }
+  if (building.type === 'lab') {
+    document.getElementById('bp-lab-section').style.display = 'block';
+    updateLabUI();
+  } else {
+    document.getElementById('bp-lab-section').style.display = 'none';
   }
   document.getElementById('building-panel').style.display = 'block';
 }
@@ -170,8 +157,8 @@ function upgradeTroop(type) {
 }
 
 function trainTroop(type) {
-  const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
-  if (!barracks) { showMessage('Koszary są zniszczone lub w budowie!'); return; }
+  const barracks = buildings.find(b => b.type === 'barracks');
+  if (!barracks) { showMessage('Koszary są zniszczone!'); return; }
   if (getCurrentArmySize() >= getMaxArmy()) { showMessage('Brak miejsca w Obozach!'); return; }
   const cost = BASE_TROOPS[type].cost;
   if (elixir < cost) { showMessage('Za mało Many!'); return; }
@@ -187,14 +174,19 @@ function upgradeBuilding() {
   if (!currentlySelectedBuilding) return;
   const def = BUILDINGS[currentlySelectedBuilding.type];
   const townhall = buildings.find(b => b.type === 'townhall');
+  
+  // ZABEZPIECZENIE: Nie można ulepszyć ponad poziom Ratusza
   if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
     showMessage('Najpierw ulepsz Warownię!'); return;
   }
+  
   const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
   const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
+  
   if (gold < costGold) { showMessage('Za mało złota!'); return; }
   if (elixir < costElixir) { showMessage('Za mało Many!'); return; }
   
+  // NATYCHMIASTOWE ULEPSZENIE
   gold -= costGold; elixir -= costElixir;
   currentlySelectedBuilding.level++;
   playSound('build');
@@ -204,10 +196,13 @@ function upgradeBuilding() {
   }
   updateQuest('upgrade_any', 1);
 
-  currentlySelectedBuilding.buildEndTime = Date.now() + (def.buildTime * currentlySelectedBuilding.level * 1000);
-  currentlySelectedBuilding.container.setAlpha(0.5);
-  currentlySelectedBuilding.label.setAlpha(0.5);
+  // Aktualizacja wyglądu
   currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
+  
+  // Zwiększamy HP maksymalne i przywracamy pełne
+  currentlySelectedBuilding.maxHp = def.hp * currentlySelectedBuilding.level;
+  currentlySelectedBuilding.hp = currentlySelectedBuilding.maxHp;
+  currentlySelectedBuilding.hpBar.scaleX = 1;
   
   addXP(50); 
   updateUI(); saveGame(); openBuildingPanel(currentlySelectedBuilding); 
@@ -218,12 +213,15 @@ function sellBuilding() {
   const def = BUILDINGS[currentlySelectedBuilding.type];
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
+  
   currentlySelectedBuilding.container.destroy();
+  currentlySelectedBuilding.label.destroy();
+  currentlySelectedBuilding.hpBar.destroy();
+  
   buildings = buildings.filter(b => b !== currentlySelectedBuilding);
   updateUI(); saveGame(); closeBuildingPanel();
 }
 
-// --- QUESTS ---
 function updateQuest(type, amount = 1) {
   let questUpdated = false;
   quests.forEach(q => {
@@ -278,7 +276,6 @@ function claimQuest(id) {
   }
 }
 
-// --- SKLEP I SKRZYNIE ---
 function openShop() { closeMainMenu(); document.getElementById('shop-overlay').style.display = 'flex'; }
 function closeShop() { document.getElementById('shop-overlay').style.display = 'none'; }
 function buyGoldWithMana() {
@@ -317,7 +314,6 @@ function closeChest() {
   updateUI(); saveGame(); document.getElementById('chest-overlay').style.display = 'none'; showMessage('Odebrano łup ze skrzyni!');
 }
 
-// --- CODZIENNA NAGRODA ---
 function openDailyReward() {
   closeMainMenu();
   let now = Date.now(); let timePassed = now - lastDailyReward; let cooldown = 24 * 60 * 60 * 1000;
