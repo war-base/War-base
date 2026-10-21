@@ -37,7 +37,17 @@ class BaseScene extends Phaser.Scene {
     this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
     buildings = []; 
-    try { loadGame().forEach(b => this.createBuilding(b.gridX, b.gridY, b.type, false, b.level || 1, b.hp || null, b.buildEndTime || 0)); } catch (e) {}
+    try { 
+      loadGame().forEach(b => {
+        // NAPRAWA: Sprawdzamy przy wczytaniu, czy budowa już się nie skończyła
+        let finalBuildTime = b.buildEndTime;
+        if (finalBuildTime > 0 && Date.now() >= finalBuildTime) {
+          finalBuildTime = 0; // Uznajemy za wybudowane
+        }
+        this.createBuilding(b.gridX, b.gridY, b.type, false, b.level || 1, b.hp || null, finalBuildTime); 
+      }); 
+    } catch (e) {}
+    
     updateUI(); updateSoundButton(); updateDailyButtonState();
 
     this.lastGridX = -1; this.lastGridY = -1;
@@ -78,11 +88,10 @@ class BaseScene extends Phaser.Scene {
     if (this.fpsText) this.fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
     let now = Date.now();
     
-    // NAPRAWA: Sprawdzamy stan budynków w każdej klatce na podstawie czasu systemowego
     buildings.forEach(b => {
       if (b.buildEndTime > 0) {
         if (now >= b.buildEndTime) {
-          // Budowa zakończona
+          // Budowa zakończona - natychmiastowa aktualizacja i zapis
           b.buildEndTime = 0; 
           b.buildText.setText(''); 
           b.container.setAlpha(1); 
@@ -90,7 +99,6 @@ class BaseScene extends Phaser.Scene {
           saveGame(); 
           if (currentlySelectedBuilding === b) openBuildingPanel(b);
         } else {
-          // Budowa trwa - aktualizacja licznika
           b.buildText.setText('🔨 ' + Math.ceil((b.buildEndTime - now) / 1000) + 's');
         }
       }
@@ -112,7 +120,6 @@ class BaseScene extends Phaser.Scene {
     if (gridX === this.lastGridX && gridY === this.lastGridY) return;
     if (gridX < 0 || gridY < 0 || gridX >= GRID || gridY >= GRID) return;
     
-    // Sprawdzamy kolizję - blokujemy jeśli cokolwiek tam stoi (nawet w budowie)
     if (buildings.some(b => b.gridX === gridX && b.gridY === gridY)) return;
     
     const def = BUILDINGS[selectedBuildingType];
@@ -146,9 +153,10 @@ class BaseScene extends Phaser.Scene {
     container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
     container.label = label; container.hpBar = hpBar; container.buildText = buildText;
+    
     container.buildEndTime = isNew ? Date.now() + (def.buildTime * level * 1000) : buildEndTime;
     
-    if (container.buildEndTime > Date.now()) { 
+    if (container.buildEndTime > 0) { 
       container.setAlpha(0.5); 
       label.setAlpha(0.5); 
       let remain = Math.ceil((container.buildEndTime - Date.now()) / 1000);
@@ -167,6 +175,7 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
+// ... Reszta klas BattleScene i DefenseScene zostaje bez zmian (są długie, ale ich nie ruszamy) ...
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
