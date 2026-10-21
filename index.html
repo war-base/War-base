@@ -114,6 +114,14 @@
     @keyframes bounce-in { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     .chest-rewards { font-size: 20px; color: #ffd700; margin: 15px 0; }
     
+    /* STYLE DLA RANKINGU */
+    .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
+    .ranking-row.player-highlight { background: rgba(255, 215, 0, 0.15); border: 1px solid #ffd700; border-radius: 5px; margin-bottom: 5px; }
+    .rank-place { font-weight: bold; color: #c9a06c; width: 40px; text-align: left; }
+    .rank-name { flex: 1; text-align: left; padding-left: 10px; color: #fff; }
+    .rank-level { font-size: 12px; color: #aaa; }
+    .rank-trophies { font-weight: bold; color: #ff3333; text-align: right; }
+
     #reset-btn { position: absolute; top: max(50px, env(safe-area-inset-top)); right: 65px; background: rgba(139, 0, 0, 0.7); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 999; }
   </style>
 </head>
@@ -197,16 +205,26 @@
   
   <div id="message">Za mało surowców!</div>
 
-  <!-- MODALE -->
+  <!-- MENU GŁÓWNE (Dodano Ranking) -->
   <div id="main-menu-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Menu Główne</h2>
       <button class="menu-btn-item" onclick="openProfile()"><span class="menu-icon">👤</span> Profil Gracza</button>
+      <button class="menu-btn-item" onclick="openRanking()"><span class="menu-icon">🏆</span> Ranking</button>
       <button class="menu-btn-item" onclick="openQuests()"><span class="menu-icon">📜</span> Zadania</button>
       <button class="menu-btn-item" onclick="openSettings()"><span class="menu-icon">⚙️</span> Ustawienia</button>
       <button class="menu-btn-item" onclick="openHelp()"><span class="menu-icon">❓</span> Pomoc</button>
       <button class="menu-btn-item" onclick="openDailyReward()"><span class="menu-icon">🎁</span> Codzienna Nagroda</button>
       <button class="close-modal" onclick="closeMainMenu()">Zamknij Menu</button>
+    </div>
+  </div>
+
+  <!-- OKNO RANKINGU -->
+  <div id="ranking-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Ranking Świata</h2>
+      <div id="ranking-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 15px;"></div>
+      <button class="close-modal" onclick="closeRanking()">Zamknij</button>
     </div>
   </div>
 
@@ -270,9 +288,10 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="config.js?v=62"></script>
-  <script src="ui.js?v=62"></script>
-  <script src="scenes.js?v=62"></script>
-  <script src="main.js?v=62"></script>
+  <script src="config.js?v=68"></script>
+  <script src="ranking.js?v=68"></script> <!-- NOWY PLIK -->
+  <script src="ui.js?v=68"></script>
+  <script src="scenes.js?v=68"></script>
+  <script src="main.js?v=68"></script>
 </body>
 </html>
