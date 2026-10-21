@@ -6,11 +6,93 @@ let elixir = 1000;
 let trophies = 0;
 let xp = 0;
 let level = 1;
-let soundEnabled = true; // NOWE: Flaga dźwięku
+let soundEnabled = true; 
 
 let army = { barbarian: 5, archer: 3, giant: 1, hero: 0 }; 
 let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
 let selectedBattleTroopType = 'barbarian';
+
+// --- NOWY SYSTEM ZADAŃ ---
+let quests = [
+  { id: 'q1', title: 'Pierwsze kroki', desc: 'Zbuduj Kopalnię.', target: 1, current: 0, reward: { gold: 200, elixir: 0, xp: 20 }, claimed: false, type: 'build_mine' },
+  { id: 'q2', title: 'Mobilizacja', desc: 'Zrekrutuj 3 nowych jednostek.', target: 3, current: 0, reward: { gold: 0, elixir: 150, xp: 30 }, claimed: false, type: 'train_troop' },
+  { id: 'q3', title: 'Rozbudowa', desc: 'Ulepsz Warownię na Poziom 2.', target: 1, current: 0, reward: { gold: 500, elixir: 300, xp: 100 }, claimed: false, type: 'upgrade_townhall' },
+  { id: 'q4', title: 'Niszczyciel', desc: 'Zniszcz 10 budynków wroga.', target: 10, current: 0, reward: { gold: 400, elixir: 0, xp: 50 }, claimed: false, type: 'destroy_buildings' },
+  { id: 'q5', title: 'Dowódca', desc: 'Zbuduj Ołtarz Krwi.', target: 1, current: 0, reward: { gold: 1000, elixir: 0, xp: 150 }, claimed: false, type: 'build_altar' }
+];
+
+function updateQuest(type, amount = 1) {
+  let questUpdated = false;
+  quests.forEach(q => {
+    if (q.type === type && q.current < q.target && !q.claimed) {
+      q.current += amount;
+      if (q.current > q.target) q.current = q.target;
+      questUpdated = true;
+    }
+  });
+  if (questUpdated) {
+    saveGame();
+    // Odświeżenie UI jeśli okno jest otwarte
+    if (document.getElementById('quests-overlay').style.display === 'flex') {
+      renderQuests();
+    }
+  }
+}
+
+function openQuests() {
+  renderQuests();
+  document.getElementById('quests-overlay').style.display = 'flex';
+}
+
+function closeQuests() {
+  document.getElementById('quests-overlay').style.display = 'none';
+}
+
+function renderQuests() {
+  let listEl = document.getElementById('quest-list');
+  listEl.innerHTML = '';
+
+  quests.forEach(q => {
+    let isComplete = q.current >= q.target;
+    let btnText = q.claimed ? 'Odebrano' : (isComplete ? 'Odbierz' : 'W toku');
+    let btnClass = q.claimed ? 'quest-btn claimed' : (isComplete ? 'quest-btn ready' : 'quest-btn');
+    
+    // Sprawdzanie czy nagroda jest do odebrania
+    let action = isComplete && !q.claimed ? `onclick="claimQuest('${q.id}')"` : '';
+
+    let rewardStr = [];
+    if(q.reward.gold > 0) rewardStr.push(`💰 ${q.reward.gold}`);
+    if(q.reward.elixir > 0) rewardStr.push(`🔮 ${q.reward.elixir}`);
+    if(q.reward.xp > 0) rewardStr.push(`🌟 ${q.reward.xp} XP`);
+
+    listEl.innerHTML += `
+      <div class="quest-item" style="${q.claimed ? 'opacity:0.5;' : ''}">
+        <div class="quest-info">
+          <div class="quest-title">${q.title}</div>
+          <div class="quest-progress">${q.desc} (${q.current}/${q.target})</div>
+          <div class="quest-progress" style="color:#c9a06c; margin-top:3px;">Nagroda: ${rewardStr.join(', ')}</div>
+        </div>
+        <button class="${btnClass}" ${action}>${btnText}</button>
+      </div>
+    `;
+  });
+}
+
+function claimQuest(id) {
+  let q = quests.find(x => x.id === id);
+  if (q && q.current >= q.target && !q.claimed) {
+    q.claimed = true;
+    gold += q.reward.gold;
+    elixir += q.reward.elixir;
+    addXP(q.reward.xp);
+    playSound('coin');
+    updateUI();
+    saveGame();
+    renderQuests();
+    showMessage('Odebrano nagrodę!');
+  }
+}
+// ------------------------
 
 const BUILDINGS = {
   townhall: { name: 'Warownia', short: 'W', cost: { gold: 1000, elixir: 0 }, color: 0x555555, roofColor: 0x333333, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
@@ -41,7 +123,7 @@ let messageTimeout = null;
 let audioCtx = null;
 
 function playSound(type) {
-  if (!soundEnabled) return; // Sprawdzenie, czy dźwięk jest włączony
+  if (!soundEnabled) return; 
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -152,7 +234,6 @@ function checkHeroAvailability() {
   }
 }
 
-// --- NOWE FUNKCJE USTAWIENIA ---
 function openSettings() {
   document.getElementById('settings-overlay').style.display = 'flex';
   updateSoundButton();
@@ -224,8 +305,8 @@ function openBuildingPanel(building) {
     document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
     
     const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
-    const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
-    document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${upgradeCostElixir} 🔮)`;
+    const costElixir = Math.floor(def.cost.elixir * building.level * 1.5);
+    document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${costElixir} 🔮)`;
     
     const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
     const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
@@ -280,6 +361,7 @@ function trainTroop(type) {
   if (elixir < cost) { showMessage('Za mało Many!'); return; }
 
   elixir -= cost; army[type]++;
+  updateQuest('train_troop', 1); // ZADANIE: Rekrutacja
   playSound('build'); updateUI(); saveGame();
 }
 
@@ -307,6 +389,10 @@ function upgradeBuilding() {
   currentlySelectedBuilding.level++;
   playSound('build');
   
+  if (currentlySelectedBuilding.type === 'townhall' && currentlySelectedBuilding.level === 2) {
+    updateQuest('upgrade_townhall', 1); // ZADANIE: Ulepszenie Ratusza
+  }
+
   currentlySelectedBuilding.buildEndTime = Date.now() + (def.buildTime * currentlySelectedBuilding.level * 1000);
   currentlySelectedBuilding.container.setAlpha(0.5);
   currentlySelectedBuilding.label.setAlpha(0.5);
@@ -328,8 +414,9 @@ function sellBuilding() {
 
 function saveGame() {
   const data = { 
-    version: 27, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    version: 28, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
     trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled,
+    quests: quests, // ZAPISYWANIE ZADAŃ
     buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
   };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
@@ -340,7 +427,7 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 27 && typeof data.gold === 'number') {
+      if (data.version === 28 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
         army = data.army || { barbarian: 5, archer: 3, giant: 1, hero: 0 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
@@ -348,6 +435,7 @@ function loadGame() {
         xp = data.xp || 0;
         level = data.level || 1;
         soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true;
+        if(data.quests) quests = data.quests; // WCZYTYWANIE ZADAŃ
         return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
     } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -375,6 +463,7 @@ function startAttack() {
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
   document.getElementById('settings-btn').style.display = 'none';
+  document.getElementById('quests-btn').style.display = 'none';
   document.getElementById('reset-btn').style.display = 'none';
   document.getElementById('battle-ui').style.display = 'block';
   document.getElementById('timer-display').innerText = '3:00';
@@ -386,7 +475,6 @@ function startAttack() {
   game.scene.start('BattleScene');
 }
 
-// --- NOWA FUNKCJA ENDBATTLE (Wyświetla ładny ekran zamiast alertu) ---
 function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings = 0, totalBuildings = 1) {
   if (isEndingBattle) return; 
   isEndingBattle = true;
@@ -395,7 +483,6 @@ function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings
   let destroyPercent = Math.floor((destroyedBuildings / totalBuildings) * 100);
   if (destroyPercent > 100) destroyPercent = 100;
 
-  // Obliczanie gwiazdek na podstawie % zniszczeń
   let stars = 0;
   if (destroyPercent >= 50) stars = 1;
   if (destroyPercent >= 75) stars = 2;
@@ -403,6 +490,9 @@ function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings
 
   let xpGained = destroyedBuildings * 25;
   let trophiesGained = 0;
+
+  // Aktualizacja zadań niszczenia
+  updateQuest('destroy_buildings', destroyedBuildings);
 
   if (won) {
     gold += 500 + lootGold; elixir += 200 + lootElixir; 
@@ -419,7 +509,6 @@ function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings
   addXP(xpGained);
   updateUI(); saveGame();
   
-  // Pokaż ekran wyników
   document.getElementById('result-title').innerText = won ? "Zwycięstwo!" : "Odwrót";
   document.getElementById('result-title').style.color = won ? '#ffd700' : '#ff6666';
   
@@ -438,9 +527,8 @@ function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings
   document.getElementById('battle-result-overlay').style.display = 'flex';
 }
 
-// Funkcja wywoływana przez przycisk na ekranie wyników
 function closeBattleResult() {
-  window.location.reload(); // Przeładowanie, żeby wrócić do bazy
+  window.location.reload();
 }
 
 function startDefense() {
@@ -451,6 +539,7 @@ function startDefense() {
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
   document.getElementById('settings-btn').style.display = 'none';
+  document.getElementById('quests-btn').style.display = 'none';
   document.getElementById('reset-btn').style.display = 'none';
   document.getElementById('defense-ui').style.display = 'block';
   document.getElementById('defense-status').innerText = '🛡️ Obrona (Moździerz: Gotowy)';
@@ -462,7 +551,7 @@ function endDefense(won) {
   if (defenseScene) {
     const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 27, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, buildings: [] };
+    if (!data) data = { version: 28, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, quests: quests, buildings: [] };
     data.buildings = survivingBuildings;
     
     let trophiesChange = 0;
@@ -480,7 +569,6 @@ function endDefense(won) {
     
     localStorage.setItem('warBaseSave', JSON.stringify(data));
     
-    // Wyświetlamy na ekranie wyników obronę (reuse modal)
     document.getElementById('result-title').innerText = won ? "Baza Obroniona!" : "Splądrowano!";
     document.getElementById('result-title').style.color = won ? '#ffd700' : '#ff6666';
     
@@ -588,6 +676,11 @@ class BaseScene extends Phaser.Scene {
 
     gold -= def.cost.gold; elixir -= def.cost.elixir;
     addXP(10); 
+    
+    // ZADANIA: Budowa
+    if (selectedBuildingType === 'mine') updateQuest('build_mine', 1);
+    if (selectedBuildingType === 'altar') updateQuest('build_altar', 1);
+
     playSound('build'); this.createBuilding(x, y, selectedBuildingType, true, 1);
     this.lastGridX = x; this.lastGridY = y;
     updateUI(); saveGame();
@@ -636,7 +729,7 @@ class BattleScene extends Phaser.Scene {
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0;
     this.destroyedCount = 0; 
-    this.totalEnemyBuildings = 0; // Do obliczania gwiazdek
+    this.totalEnemyBuildings = 0; 
     
     this.battleTime = 180; 
     this.time.addEvent({
