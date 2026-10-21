@@ -3,57 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Twierdza - Dark Fantasy</title>
+  <title>Twierdza - Izometryczna</title>
   <style>
-    html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
-    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
+    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #1a1a1a; }
 
-    /* UPROSZCZONY GÓRNY PASEK */
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.85); color: white; 
+      background: linear-gradient(to bottom, rgba(20,20,20,0.95), rgba(0,0,0,0.8)); color: white; 
       padding: max(8px, env(safe-area-inset-top)) 10px 8px 10px; 
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
       font-weight: bold; font-size: 14px; z-index: 10; pointer-events: none; gap: 5px;
-      border-bottom: 2px solid #5c4305;
+      border-bottom: 2px solid #8b6508;
     }
-    .stat-box { background: rgba(30, 30, 30, 0.9); padding: 4px 8px; border-radius: 5px; border: 1px solid #5c4305; display: flex; align-items: center; gap: 5px; }
+    .stat-box { background: rgba(0, 0, 0, 0.7); padding: 4px 8px; border-radius: 4px; border: 1px solid #8b6508; display: flex; align-items: center; gap: 5px; box-shadow: inset 0 0 5px rgba(255,215,0,0.2); }
     .res-gold { color: #ffd700; }
     .res-elixir { color: #ba55d3; }
     .trophies { color: #ff3333; }
     .player-level { color: #88ff88; }
 
-    /* PRZYCISK MENU */
     #menu-btn {
       position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
-      background: rgba(50, 50, 50, 0.9); color: white; border: 2px solid #5c4305;
+      background: rgba(30, 30, 30, 0.9); color: white; border: 2px solid #8b6508;
       width: 45px; height: 45px; border-radius: 8px; font-size: 24px; z-index: 15;
       display: flex; justify-content: center; align-items: center; cursor: pointer;
       pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
     }
-    #menu-btn:active { background: #222; }
+    #menu-btn:active { background: #111; }
 
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.9); padding: 10px; display: flex; gap: 10px;
-      border-top: 2px solid #5c4305; z-index: 10; overflow-x: auto; white-space: nowrap;
+      background: linear-gradient(to top, rgba(20,20,20,0.95), rgba(0,0,0,0.8)); padding: 10px; display: flex; gap: 10px;
+      border-top: 2px solid #8b6508; z-index: 10; overflow-x: auto; white-space: nowrap;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .build-btn {
       min-width: 80px; padding: 10px 5px; border: none; border-radius: 4px;
-      background: #2a2a2a; color: #ddd; font-weight: bold; font-size: 12px;
+      background: #222; color: #ddd; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: auto;
-      border: 1px solid #444;
+      border: 1px solid #555;
     }
-    .build-btn.selected { background: #4a3b2a; border: 2px solid #c9a06c; color: #fff; box-shadow: 0 0 10px #c9a06c; }
-    .build-btn:active { background: #555; }
+    .build-btn.selected { background: #4a3b2a; border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 10px #8b6508; }
+    .build-btn:active { background: #444; }
     .btn-sub { font-size: 10px; font-weight: normal; color: #aaa; }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ba55d3; }
 
     #home-btn {
       position: absolute; bottom: 230px; right: 20px;
-      background: #333; color: white; border: 2px solid #5c4305;
+      background: #222; color: white; border: 2px solid #8b6508;
       padding: 12px 15px; border-radius: 8px;
       font-size: 20px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
@@ -62,21 +60,21 @@
 
     #attack-btn {
       position: absolute; bottom: 90px; right: 20px;
-      background: #8b0000; color: white; border: 2px solid #ff4444;
+      background: #5c0000; color: white; border: 2px solid #ff4444;
       padding: 15px 25px; border-radius: 8px;
       font-size: 18px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
-    #attack-btn:active { background: #5c0000; transform: scale(0.95); }
+    #attack-btn:active { background: #3a0000; transform: scale(0.95); }
 
     #defend-btn {
       position: absolute; bottom: 160px; right: 20px;
-      background: #2f4f4f; color: white; border: 2px solid #5f9ea0;
+      background: #1a2b2b; color: white; border: 2px solid #5f9ea0;
       padding: 15px 25px; border-radius: 8px;
       font-size: 18px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
-    #defend-btn:active { background: #1a2b2b; transform: scale(0.95); }
+    #defend-btn:active { background: #0f1a1a; transform: scale(0.95); }
 
     #battle-ui, #defense-ui {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box;
@@ -96,7 +94,7 @@
     #troop-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(10, 10, 10, 0.95); padding: 10px; display: flex; justify-content: space-around; gap: 5px;
-      z-index: 21; pointer-events: auto; border-top: 2px solid #5c4305;
+      z-index: 21; pointer-events: auto; border-top: 2px solid #8b6508;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .troop-btn {
@@ -104,7 +102,7 @@
       background: #1a1a1a; color: #ccc; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px;
     }
-    .troop-btn.selected { border: 2px solid #c9a06c; background: #332a1c; color: #fff; }
+    .troop-btn.selected { border: 2px solid #ffd700; background: #332a1c; color: #fff; }
     .troop-btn span { font-size: 12px; color: #aaa; }
     .troop-btn.hero-btn { border-color: #ba55d3; background: #1a0f1f; }
     .troop-btn.hero-btn.selected { border-color: #ffd700; background: #332040; }
@@ -113,7 +111,7 @@
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(15,15,15,0.98); color: white; padding: 20px; border-radius: 8px;
-      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #5c4305;
+      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #8b6508;
       max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9);
     }
     #building-panel h3 { margin: 0 0 10px 0; color: #c9a06c; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
@@ -138,7 +136,6 @@
       white-space: nowrap; border: 1px solid #ff8888; text-transform: uppercase;
     }
 
-    /* --- GŁÓWNE MODALE --- */
     .modal-overlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.85); z-index: 1000;
@@ -146,13 +143,12 @@
       pointer-events: auto; backdrop-filter: blur(3px);
     }
     .modal-content {
-      background: #1a1a1a; border: 2px solid #5c4305; border-radius: 10px;
+      background: #1a1a1a; border: 2px solid #8b6508; border-radius: 10px;
       padding: 20px; min-width: 320px; max-width: 90vw; text-align: center; color: white;
       box-shadow: 0 0 40px rgba(0,0,0,0.9); max-height: 85vh; overflow-y: auto;
     }
     .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
     
-    /* MENU GŁÓWNE */
     #main-menu-overlay .modal-content { border-color: #ba55d3; min-width: 250px; }
     #main-menu-overlay h2 { color: #ba55d3; }
     .menu-btn-item {
@@ -164,7 +160,6 @@
     .menu-btn-item:active { background: #444; border-color: #ba55d3; }
     .menu-icon { font-size: 24px; }
 
-    /* PROFIL GRACZA */
     #profile-overlay .modal-content { border-color: #ffd700; }
     .profile-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
     .avatar { width: 60px; height: 60px; background: #5c4305; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; border: 2px solid #ffd700; }
@@ -173,16 +168,12 @@
     .stat-value { font-size: 24px; color: #88ff88; font-weight: bold; }
     .stat-label { font-size: 12px; color: #aaa; text-transform: uppercase; }
 
-    /* POMOC */
     #help-overlay .modal-content { border-color: #5f9ea0; }
     #help-overlay h2 { color: #5f9ea0; }
     .help-text { text-align: left; font-size: 14px; line-height: 1.5; margin-bottom: 15px; }
     .help-text b { color: #c9a06c; }
 
-    .quest-item {
-      background: #2a2a2a; border: 1px solid #444; border-radius: 8px;
-      padding: 10px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center;
-    }
+    .quest-item { background: #2a2a2a; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
     .quest-info { flex: 1; padding-right: 10px; }
     .quest-title { font-size: 16px; font-weight: bold; color: #ddd; margin-bottom: 5px; }
     .quest-progress { font-size: 12px; color: #aaa; }
@@ -190,21 +181,16 @@
     .quest-btn.ready { background: #4a5c38; color: white; cursor: pointer; box-shadow: 0 0 10px #88ff88; }
     .quest-btn.claimed { background: #111; color: #555; }
 
-    .shop-item {
-      background: #2a2a2a; border: 1px solid #5c4305; border-radius: 8px;
-      padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
-    }
+    .shop-item { background: #2a2a2a; border: 1px solid #8b6508; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
     .shop-icon { font-size: 32px; margin-right: 10px; }
     .shop-info { flex: 1; text-align: left; }
     .shop-title { font-weight: bold; font-size: 16px; color: #ddd; }
     .shop-price { font-size: 14px; color: #ffd700; margin-top: 3px; }
     .shop-buy-btn { padding: 10px 15px; border-radius: 4px; border: none; font-weight: bold; background: #ba55d3; color: white; cursor: pointer; font-size: 14px; }
-    .shop-buy-btn:active { background: #8a2be2; }
 
     .modal-content button.close-modal { margin-top: 15px; padding: 12px 20px; font-weight: bold; font-size: 16px; border-radius: 5px; border: none; cursor: pointer; width: 100%; background: #4a5c38; color: white; text-transform: uppercase; }
     .modal-content button.close-modal:active { background: #2e3b22; }
     .modal-content .btn-danger { background: #8b0000; }
-    .modal-content .btn-danger:active { background: #5c0000; }
 
     #battle-result-overlay .modal-content { border-color: #ffd700; }
     .stars-container { font-size: 50px; margin: 10px 0; letter-spacing: 5px; }
@@ -212,9 +198,6 @@
     .star.earned { color: #ffd700; text-shadow: 0 0 15px #ffd700; }
     .loot-summary { background: #2a2a2a; padding: 15px; border-radius: 8px; margin: 15px 0; }
     .loot-item { font-size: 20px; margin: 5px 0; }
-
-    #settings-overlay .modal-content { border-color: #5f9ea0; }
-    #settings-overlay h2 { color: #5f9ea0; }
 
     #chest-overlay .modal-content { border-color: #ba55d3; }
     .chest-big-icon { font-size: 80px; margin: 20px 0; animation: bounce-in 0.5s; }
@@ -262,21 +245,11 @@
       <button onclick="endBattle(false)">Odwrót</button>
     </div>
     <div id="troop-menu">
-      <button class="troop-btn selected" id="btn-troop-barbarian" onclick="selectBattleTroop('barbarian')">
-        ⚔️ Wojownik<br><span id="ui-barbarian">0</span>
-      </button>
-      <button class="troop-btn" id="btn-troop-archer" onclick="selectBattleTroop('archer')">
-        🏹 Łucznik<br><span id="ui-archer">0</span>
-      </button>
-      <button class="troop-btn" id="btn-troop-giant" onclick="selectBattleTroop('giant')">
-        🗿 Golem<br><span id="ui-giant">0</span>
-      </button>
-      <button class="troop-btn" id="btn-troop-wallbreaker" onclick="selectBattleTroop('wallbreaker')">
-        🧨 Saper<br><span id="ui-wallbreaker">0</span>
-      </button>
-      <button class="troop-btn hero-btn disabled" id="btn-troop-hero" onclick="selectBattleTroop('hero')">
-        🩸 Watażka<br><span id="ui-hero">0</span>
-      </button>
+      <button class="troop-btn selected" id="btn-troop-barbarian" onclick="selectBattleTroop('barbarian')">⚔️ Wojownik<br><span id="ui-barbarian">0</span></button>
+      <button class="troop-btn" id="btn-troop-archer" onclick="selectBattleTroop('archer')">🏹 Łucznik<br><span id="ui-archer">0</span></button>
+      <button class="troop-btn" id="btn-troop-giant" onclick="selectBattleTroop('giant')">🗿 Golem<br><span id="ui-giant">0</span></button>
+      <button class="troop-btn" id="btn-troop-wallbreaker" onclick="selectBattleTroop('wallbreaker')">🧨 Saper<br><span id="ui-wallbreaker">0</span></button>
+      <button class="troop-btn hero-btn disabled" id="btn-troop-hero" onclick="selectBattleTroop('hero')">🩸 Watażka<br><span id="ui-hero">0</span></button>
     </div>
   </div>
 
@@ -314,7 +287,7 @@
   
   <div id="message">Za mało surowców!</div>
 
-  <!-- MENU GŁÓWNE -->
+  <!-- EKRANY MODALNE -->
   <div id="main-menu-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Menu Główne</h2>
@@ -328,7 +301,6 @@
     </div>
   </div>
 
-  <!-- EKRAN PROFILU -->
   <div id="profile-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Profil Gracza</h2>
@@ -340,66 +312,35 @@
         </div>
       </div>
       <div class="profile-stats">
-        <div class="stat-card">
-          <div class="stat-value" id="profile-trophies">0</div>
-          <div class="stat-label">Czaszki 💀</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="profile-wins">0</div>
-          <div class="stat-label">Wygrane ⚔️</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="profile-losses">0</div>
-          <div class="stat-label">Przegrane 🛡️</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-value" id="profile-destroyed">0</div>
-          <div class="stat-label">Zniszczone 🏚️</div>
-        </div>
+        <div class="stat-card"><div class="stat-value" id="profile-trophies">0</div><div class="stat-label">Czaszki 💀</div></div>
+        <div class="stat-card"><div class="stat-value" id="profile-wins">0</div><div class="stat-label">Wygrane ⚔️</div></div>
+        <div class="stat-card"><div class="stat-value" id="profile-losses">0</div><div class="stat-label">Przegrane 🛡️</div></div>
+        <div class="stat-card"><div class="stat-value" id="profile-destroyed">0</div><div class="stat-label">Zniszczone 🏚️</div></div>
       </div>
       <button class="close-modal" onclick="closeProfile()">Zamknij Profil</button>
     </div>
   </div>
 
-  <!-- EKRAN POMOCY -->
   <div id="help-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Jak grać?</h2>
       <div class="help-text">
-        <p>Witaj w <b>Twierdzy</b>! Twoim celem jest zbudowanie potężnej bazy i zbieranie Czaszek (💀) w bitwach PvP.</p>
-        <p><b>Budowanie:</b> Wybierz budynek z dolnego menu i postaw go na zielonej siatce. Ulepszaj Warownię, aby odblokować kolejne poziomy ulepszeń.</p>
-        <p><b>Atak:</b> Wejdź w Atak. Wybierz jednostkę (np. Wojownika) i klikaj na planszy wroga, aby ją zrzucić. Uważaj na Wieże!</p>
-        <p><b>Saper (🧨):</b> Biegnie prosto do murów wroga i wysadza je.</p>
-        <p><b>Obrona:</b> Kliknij Broń, aby odeprzeć atak wroga. Klikaj na ekranie, aby zrzucać pociski z moździerza.</p>
+        <p>Witaj w <b>Twierdzy</b>! Twoim celem jest zbudowanie potężnej bazy i zbieranie Czaszek (💀).</p>
+        <p><b>Budowanie:</b> Wybierz budynek z dolnego menu i postaw go na siatce. Ulepszaj Warownię, aby odblokować kolejne poziomy.</p>
+        <p><b>Atak:</b> Wejdź w Atak. Wybierz jednostkę i klikaj na planszy wroga, aby ją zrzucić.</p>
+        <p><b>Obrona:</b> Kliknij Broń, aby odeprzeć atak. Klikaj na ekranie, aby zrzucać pociski z moździerza.</p>
       </div>
       <button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button>
     </div>
   </div>
 
-  <!-- SKLEP -->
   <div id="shop-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Sklep</h2>
-      <div class="shop-item">
-        <div class="shop-icon">💰</div>
-        <div class="shop-info"><div class="shop-title">1000 Złota</div><div class="shop-price">Koszt: 500 Many</div></div>
-        <button class="shop-buy-btn" onclick="buyGoldWithMana()">Kup</button>
-      </div>
-      <div class="shop-item">
-        <div class="shop-icon">🔮</div>
-        <div class="shop-info"><div class="shop-title">500 Many</div><div class="shop-price">Koszt: 1000 Złota</div></div>
-        <button class="shop-buy-btn" onclick="buyManaWithGold()">Kup</button>
-      </div>
-      <div class="shop-item">
-        <div class="shop-icon">📦</div>
-        <div class="shop-info"><div class="shop-title">Drewniana Skrzynia</div><div class="shop-price">Koszt: 500 Złota</div></div>
-        <button class="shop-buy-btn" onclick="buyChest(500, 'wood')">Kup</button>
-      </div>
-      <div class="shop-item">
-        <div class="shop-icon">🎁</div>
-        <div class="shop-info"><div class="shop-title">Srebrna Skrzynia</div><div class="shop-price">Koszt: 2000 Złota</div></div>
-        <button class="shop-buy-btn" onclick="buyChest(2000, 'silver')">Kup</button>
-      </div>
+      <div class="shop-item"><div class="shop-icon">💰</div><div class="shop-info"><div class="shop-title">1000 Złota</div><div class="shop-price">Koszt: 500 Many</div></div><button class="shop-buy-btn" onclick="buyGoldWithMana()">Kup</button></div>
+      <div class="shop-item"><div class="shop-icon">🔮</div><div class="shop-info"><div class="shop-title">500 Many</div><div class="shop-price">Koszt: 1000 Złota</div></div><button class="shop-buy-btn" onclick="buyManaWithGold()">Kup</button></div>
+      <div class="shop-item"><div class="shop-icon">📦</div><div class="shop-info"><div class="shop-title">Drewniana Skrzynia</div><div class="shop-price">Koszt: 500 Złota</div></div><button class="shop-buy-btn" onclick="buyChest(500, 'wood')">Kup</button></div>
+      <div class="shop-item"><div class="shop-icon">🎁</div><div class="shop-info"><div class="shop-title">Srebrna Skrzynia</div><div class="shop-price">Koszt: 2000 Złota</div></div><button class="shop-buy-btn" onclick="buyChest(2000, 'silver')">Kup</button></div>
       <button class="close-modal" onclick="closeShop()">Zamknij</button>
     </div>
   </div>
@@ -451,10 +392,9 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  
-  <script src="config.js?v=32"></script>
-  <script src="ui.js?v=32"></script>
-  <script src="scenes.js?v=32"></script>
-  <script src="main.js?v=32"></script>
+  <script src="config.js?v=33"></script>
+  <script src="ui.js?v=33"></script>
+  <script src="scenes.js?v=33"></script>
+  <script src="main.js?v=33"></script>
 </body>
 </html>
