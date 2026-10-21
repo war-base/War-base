@@ -1,4 +1,3 @@
-// --- MATEMATYKA IZOMETRYCZNA ---
 function gridToScreen(gridX, gridY) {
     let screenX = (gridX - gridY) * (TILE_W / 2);
     let screenY = (gridX + gridY) * (TILE_H / 2);
@@ -16,40 +15,26 @@ function drawIsoBuilding(scene, gridX, gridY, def, alpha = 1) {
     let container = scene.add.container(pos.x, pos.y);
 
     // Rysowanie cienia
-    let shadow = scene.add.ellipse(0, TILE_H / 2, TILE_W, TILE_H, 0x000000, 0.4 * alpha);
+    let shadow = scene.add.ellipse(0, TILE_H / 4, TILE_W, TILE_H, 0x000000, 0.4 * alpha);
 
-    // Rysowanie bryły (Góra, Lewa ściana, Prawa ściana)
-    let height = def.size === 2 ? 40 : 20; // Warownia jest wyższa
-    let w = TILE_W - 6;
-    let h = TILE_H - 6;
+    // Wymiary bazowe
+    let w = TILE_W - 8;
+    let h = TILE_H - 8;
+    let height = def.size === 2 ? 40 : 25; // Warownia jest wyższa
 
-    // Ściana lewa (ciemniejsza)
-    let leftWall = scene.add.polygon(0, 0, [
-        -w/2, 0, 
-        0, h/2, 
-        0, h/2 - height, 
-        -w/2, -height
-    ], def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+    // Podstawa (podłoga budynku)
+    let base = scene.add.ellipse(0, 0, w, h, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
 
-    // Ściana prawa (jaśniejsza)
-    let rightWall = scene.add.polygon(0, 0, [
-        0, h/2, 
-        w/2, 0, 
-        w/2, -height, 
-        0, h/2 - height
-    ], def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+    // Ściana (prostokąt w pionie, żeby dać efekt bryły)
+    let wall = scene.add.rectangle(0, -height/2, w, height, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
 
-    // Dach (Góra)
-    let roof = scene.add.polygon(0, 0, [
-        0, -h/2 - height, 
-        w/2, -height, 
-        0, h/2 - height, 
-        -w/2, -height
-    ], def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+    // Dach (elipsa na górze)
+    let roof = scene.add.ellipse(0, -height, w, h, def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
 
-    let detail = scene.add.text(0, -height - 5, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
+    // Litera na dachu
+    let detail = scene.add.text(0, -height, def.short, { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
 
-    container.add([shadow, leftWall, rightWall, roof, detail]);
+    container.add([shadow, base, wall, roof, detail]);
     return container;
 }
 
@@ -59,22 +44,17 @@ class BaseScene extends Phaser.Scene {
     baseSceneInstance = this; 
     let cam = this.cameras.main;
     
-    // Rysowanie siatki izometrycznej
+    // Rysowanie siatki
     let graphics = this.add.graphics();
     graphics.lineStyle(1, 0x3e4a35, 0.5);
     for (let i = 0; i <= GRID; i++) {
-        let p1 = gridToScreen(i, 0);
-        let p2 = gridToScreen(i, GRID);
+        let p1 = gridToScreen(i, 0); let p2 = gridToScreen(i, GRID);
         graphics.lineBetween(p1.x, p1.y, p2.x, p2.y);
-
-        let p3 = gridToScreen(0, i);
-        let p4 = gridToScreen(GRID, i);
+        let p3 = gridToScreen(0, i); let p4 = gridToScreen(GRID, i);
         graphics.lineBetween(p3.x, p3.y, p4.x, p4.y);
     }
 
-    window.preview = this.add.rectangle(0, 0, TILE_W, TILE_H, 0xffffff, 0.5).setVisible(false).setDepth(10);
-    // Obrócenie podglądu w romb
-    window.preview.setScale(1, 0.5);
+    window.preview = this.add.ellipse(0, 0, TILE_W, TILE_H, 0xffffff, 0.5).setVisible(false).setDepth(10);
 
     this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
@@ -162,10 +142,10 @@ class BaseScene extends Phaser.Scene {
     const container = drawIsoBuilding(this, gridX, gridY, def, 1);
     
     let screenPos = gridToScreen(gridX, gridY);
-    const label = this.add.text(screenPos.x, screenPos.y + 15, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
-    const buildText = this.add.text(screenPos.x, screenPos.y - 40, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
-    const hpBarBg = this.add.rectangle(screenPos.x, screenPos.y - 25, 30, 4, 0x000000);
-    const hpBar = this.add.rectangle(screenPos.x - 15, screenPos.y - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    const label = this.add.text(screenPos.x, screenPos.y + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
+    const buildText = this.add.text(screenPos.x, screenPos.y - 50, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
+    const hpBarBg = this.add.rectangle(screenPos.x, screenPos.y - 35, 30, 4, 0x000000);
+    const hpBar = this.add.rectangle(screenPos.x - 15, screenPos.y - 35, 30, 4, 0x00ff00).setOrigin(0, 0.5);
     
     container.setSize(TILE_W, TILE_H).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
@@ -199,7 +179,6 @@ class BattleScene extends Phaser.Scene {
 
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
     
-    // Generowanie bazy wroga na siatce izometrycznej (środek siatki to GRID/2)
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
     this.createEnemyBuilding(centerX, centerY, 400, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
 
@@ -236,8 +215,8 @@ class BattleScene extends Phaser.Scene {
     let container = drawIsoBuilding(this, gridX, gridY, def, 1); 
     let pos = gridToScreen(gridX, gridY);
     
-    let hpBarBg = this.add.rectangle(pos.x, pos.y - 20, 30, 4, 0x000000);
-    let hpBar = this.add.rectangle(pos.x - 15, pos.y - 20, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    let hpBarBg = this.add.rectangle(pos.x, pos.y - 30, 30, 4, 0x000000);
+    let hpBar = this.add.rectangle(pos.x - 15, pos.y - 30, 30, 4, 0x00ff00).setOrigin(0, 0.5);
     
     this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: pos.x, y: pos.y, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
   }
@@ -246,7 +225,6 @@ class BattleScene extends Phaser.Scene {
     const def = getTroopStats(type); let bgColor = '#4a5c38'; 
     if (type === 'hero') bgColor = '#8b0000'; 
     if (type === 'wallbreaker') bgColor = '#ff8c00'; 
-    
     let size = (type === 'hero') ? '32px' : '20px';
     const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?8:4), y: (type==='hero'?8:4)} }).setOrigin(0.5);
     const hpBar = this.add.rectangle(x - 12, y - (type==='hero'?30:24), (type==='hero'?40:24), 6, 0x00ff00).setOrigin(0, 0.5);
@@ -357,7 +335,6 @@ class DefenseScene extends Phaser.Scene {
   create() {
     let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a');
     
-    // Rysowanie siatki izometrycznej
     let graphics = this.add.graphics();
     graphics.lineStyle(1, 0x3e4a35, 0.5);
     for (let i = 0; i <= GRID; i++) {
@@ -372,8 +349,8 @@ class DefenseScene extends Phaser.Scene {
       const def = BUILDINGS[b.type]; let container = drawIsoBuilding(this, b.gridX, b.gridY, def, 1);
       let pos = gridToScreen(b.gridX, b.gridY);
       
-      const hpBarBg = this.add.rectangle(pos.x, pos.y - 20, 30, 4, 0x000000);
-      const hpBar = this.add.rectangle(pos.x - 15, pos.y - 20, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+      const hpBarBg = this.add.rectangle(pos.x, pos.y - 30, 30, 4, 0x000000);
+      const hpBar = this.add.rectangle(pos.x - 15, pos.y - 30, 30, 4, 0x00ff00).setOrigin(0, 0.5);
       this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: pos.x, y: pos.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime });
     });
     
