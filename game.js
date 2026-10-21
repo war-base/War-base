@@ -2,22 +2,25 @@ const TILE = 64;
 const GRID = 25; 
 
 let gold = 3000; 
-let elixir = 1000; // Mana
+let elixir = 1000; 
+let trophies = 0;
+let xp = 0;
+let level = 1;
+let soundEnabled = true; // NOWE: Flaga dźwięku
 
 let army = { barbarian: 5, archer: 3, giant: 1, hero: 0 }; 
 let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
 let selectedBattleTroopType = 'barbarian';
 
-// MROCZNE, ŚREDNIOWIECZNE NAZWY I KOLORY
 const BUILDINGS = {
-  townhall: { name: 'Warownia', short: 'W', cost: { gold: 1000, elixir: 0 }, color: 0x555555, stroke: 0x333333, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
-  mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0x8b6508, stroke: 0x5c4305, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
-  barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x5c2e2e, stroke: 0x3b1a1a, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
-  camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x4a5c38, stroke: 0x2e3b22, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30 },
-  lab: { name: 'Wieża Magów', short: 'M', cost: { gold: 0, elixir: 500 }, color: 0x483d8b, stroke: 0x2e2757, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40 },
-  altar: { name: 'Ołtarz Krwi', short: '🩸', cost: { gold: 2000, elixir: 0 }, color: 0x2a1a30, stroke: 0x550000, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50 },
-  wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x696969, stroke: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
-  tower: { name: 'Wieża Straż.', short: 'WS', cost: { gold: 300, elixir: 0 }, color: 0x36454f, stroke: 0x1a2025, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
+  townhall: { name: 'Warownia', short: 'W', cost: { gold: 1000, elixir: 0 }, color: 0x555555, roofColor: 0x333333, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
+  mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0x8b6508, roofColor: 0x5c4305, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
+  barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x5c2e2e, roofColor: 0x3b1a1a, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
+  camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x4a5c38, roofColor: 0x2e3b22, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30 },
+  lab: { name: 'Wieża Magów', short: 'M', cost: { gold: 0, elixir: 500 }, color: 0x483d8b, roofColor: 0x2e2757, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40 },
+  altar: { name: 'Ołtarz Krwi', short: '🩸', cost: { gold: 2000, elixir: 0 }, color: 0x2a1a30, roofColor: 0x550000, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50 },
+  wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x696969, roofColor: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
+  tower: { name: 'Wieża Straż.', short: 'WS', cost: { gold: 300, elixir: 0 }, color: 0x36454f, roofColor: 0x1a2025, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
 };
 
 const BASE_TROOPS = {
@@ -38,6 +41,7 @@ let messageTimeout = null;
 let audioCtx = null;
 
 function playSound(type) {
+  if (!soundEnabled) return; // Sprawdzenie, czy dźwięk jest włączony
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
@@ -98,6 +102,9 @@ function getCurrentArmySize() { return army.barbarian + army.archer + army.giant
 function updateUI() {
   document.getElementById('ui-gold').innerText = Math.floor(gold);
   document.getElementById('ui-elixir').innerText = Math.floor(elixir);
+  document.getElementById('ui-trophies').innerText = trophies;
+  document.getElementById('ui-level').innerText = level;
+
   const btns = document.querySelectorAll('.build-btn');
   if (btns.length >= 8) {
     btns.forEach(btn => btn.classList.remove('selected'));
@@ -120,6 +127,16 @@ function updateUI() {
   }
 }
 
+function addXP(amount) {
+  xp += amount;
+  let xpNeeded = level * 500;
+  if (xp >= xpNeeded) {
+    xp -= xpNeeded;
+    level++;
+    showMessage(`Awans na Rangę ${level}!`);
+  }
+}
+
 function checkHeroAvailability() {
   const hasAltar = buildings.some(b => b.type === 'altar');
   const heroBtn = document.getElementById('btn-troop-hero');
@@ -132,6 +149,30 @@ function checkHeroAvailability() {
     heroBtn.classList.add('disabled');
     document.getElementById('ui-hero').innerText = hasAltar ? "Ranny" : "Brak Ołtarza";
     if (selectedBattleTroopType === 'hero') selectBattleTroop('barbarian');
+  }
+}
+
+// --- NOWE FUNKCJE USTAWIENIA ---
+function openSettings() {
+  document.getElementById('settings-overlay').style.display = 'flex';
+  updateSoundButton();
+}
+
+function closeSettings() {
+  document.getElementById('settings-overlay').style.display = 'none';
+}
+
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  updateSoundButton();
+  saveGame();
+}
+
+function updateSoundButton() {
+  const btn = document.getElementById('sound-toggle-btn');
+  if (btn) {
+    btn.innerText = soundEnabled ? '🔊 Dźwięk: Włączony' : '🔇 Dźwięk: Wyłączony';
+    btn.style.background = soundEnabled ? '#4a5c38' : '#555';
   }
 }
 
@@ -267,10 +308,11 @@ function upgradeBuilding() {
   playSound('build');
   
   currentlySelectedBuilding.buildEndTime = Date.now() + (def.buildTime * currentlySelectedBuilding.level * 1000);
-  currentlySelectedBuilding.rect.setAlpha(0.5); currentlySelectedBuilding.icon.setAlpha(0.5);
+  currentlySelectedBuilding.container.setAlpha(0.5);
   currentlySelectedBuilding.label.setAlpha(0.5);
   currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
   
+  addXP(50); 
   updateUI(); saveGame(); openBuildingPanel(currentlySelectedBuilding); 
 }
 
@@ -279,14 +321,15 @@ function sellBuilding() {
   const def = BUILDINGS[currentlySelectedBuilding.type];
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
-  currentlySelectedBuilding.destroy();
+  currentlySelectedBuilding.container.destroy();
   buildings = buildings.filter(b => b !== currentlySelectedBuilding);
   updateUI(); saveGame(); closeBuildingPanel();
 }
 
 function saveGame() {
   const data = { 
-    version: 24, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    version: 27, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled,
     buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
   };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
@@ -297,10 +340,14 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 24 && typeof data.gold === 'number') {
+      if (data.version === 27 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
         army = data.army || { barbarian: 5, archer: 3, giant: 1, hero: 0 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
+        trophies = data.trophies || 0;
+        xp = data.xp || 0;
+        level = data.level || 1;
+        soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true;
         return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
     } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -327,6 +374,8 @@ function startAttack() {
   document.getElementById('attack-btn').style.display = 'none';
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
+  document.getElementById('settings-btn').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'none';
   document.getElementById('battle-ui').style.display = 'block';
   document.getElementById('timer-display').innerText = '3:00';
   
@@ -337,19 +386,61 @@ function startAttack() {
   game.scene.start('BattleScene');
 }
 
-function endBattle(won = false, lootGold = 0, lootElixir = 0) {
+// --- NOWA FUNKCJA ENDBATTLE (Wyświetla ładny ekran zamiast alertu) ---
+function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings = 0, totalBuildings = 1) {
   if (isEndingBattle) return; 
   isEndingBattle = true;
   army = { barbarian: 0, archer: 0, giant: 0, hero: 0 }; 
   
-  if (won) { gold += 500 + lootGold; elixir += 200 + lootElixir; playSound('coin'); } 
-  else { gold += lootGold; elixir += lootElixir; }
+  let destroyPercent = Math.floor((destroyedBuildings / totalBuildings) * 100);
+  if (destroyPercent > 100) destroyPercent = 100;
+
+  // Obliczanie gwiazdek na podstawie % zniszczeń
+  let stars = 0;
+  if (destroyPercent >= 50) stars = 1;
+  if (destroyPercent >= 75) stars = 2;
+  if (destroyPercent >= 100 || (won && destroyPercent === 100)) stars = 3;
+
+  let xpGained = destroyedBuildings * 25;
+  let trophiesGained = 0;
+
+  if (won) {
+    gold += 500 + lootGold; elixir += 200 + lootElixir; 
+    trophiesGained = 5;
+    trophies += trophiesGained;
+    xpGained += 100; 
+    playSound('coin'); 
+  } else {
+    gold += lootGold; elixir += lootElixir;
+    trophiesGained = -2;
+    trophies = Math.max(0, trophies - 2); 
+  }
   
+  addXP(xpGained);
   updateUI(); saveGame();
-  if (won) alert(`Zwycięstwo!\nZdobyto: ${500 + lootGold} 💰 i ${200 + lootElixir} 🔮\n\nKliknij OK, aby wrócić do twierdzy.`);
-  else alert(`Odwrót.\nUratowano: ${lootGold} 💰 i ${lootElixir} 🔮\n\nKliknij OK, aby wrócić do twierdzy.`);
   
-  window.location.reload();
+  // Pokaż ekran wyników
+  document.getElementById('result-title').innerText = won ? "Zwycięstwo!" : "Odwrót";
+  document.getElementById('result-title').style.color = won ? '#ffd700' : '#ff6666';
+  
+  for(let i = 1; i <= 3; i++) {
+    let starEl = document.getElementById('star' + i);
+    if (i <= stars) starEl.classList.add('earned');
+    else starEl.classList.remove('earned');
+  }
+  
+  document.getElementById('result-destroyed').innerText = `Zniszczono: ${destroyPercent}% bazy`;
+  document.getElementById('result-gold').innerText = (won ? 500 + lootGold : lootGold);
+  document.getElementById('result-elixir').innerText = (won ? 200 + lootElixir : lootElixir);
+  document.getElementById('result-trophies').innerText = (trophiesGained > 0 ? '+' : '') + trophiesGained;
+  document.getElementById('result-xp').innerText = xpGained;
+  
+  document.getElementById('battle-result-overlay').style.display = 'flex';
+}
+
+// Funkcja wywoływana przez przycisk na ekranie wyników
+function closeBattleResult() {
+  window.location.reload(); // Przeładowanie, żeby wrócić do bazy
 }
 
 function startDefense() {
@@ -359,6 +450,8 @@ function startDefense() {
   document.getElementById('attack-btn').style.display = 'none';
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
+  document.getElementById('settings-btn').style.display = 'none';
+  document.getElementById('reset-btn').style.display = 'none';
   document.getElementById('defense-ui').style.display = 'block';
   document.getElementById('defense-status').innerText = '🛡️ Obrona (Moździerz: Gotowy)';
   playSound('build'); game.scene.start('DefenseScene');
@@ -369,14 +462,58 @@ function endDefense(won) {
   if (defenseScene) {
     const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 24, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
+    if (!data) data = { version: 27, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, buildings: [] };
     data.buildings = survivingBuildings;
-    if (won) { data.gold += 300; data.elixir += 150; playSound('coin'); }
+    
+    let trophiesChange = 0;
+    if (won) { 
+      data.gold += 300; data.elixir += 150; 
+      data.trophies += 2;
+      trophiesChange = 2;
+      data.xp += 150;
+      if(data.xp >= data.level * 500) { data.xp -= data.level * 500; data.level++; }
+      playSound('coin'); 
+    } else {
+      data.trophies = Math.max(0, data.trophies - 3);
+      trophiesChange = -3;
+    }
+    
     localStorage.setItem('warBaseSave', JSON.stringify(data));
+    
+    // Wyświetlamy na ekranie wyników obronę (reuse modal)
+    document.getElementById('result-title').innerText = won ? "Baza Obroniona!" : "Splądrowano!";
+    document.getElementById('result-title').style.color = won ? '#ffd700' : '#ff6666';
+    
+    for(let i = 1; i <= 3; i++) document.getElementById('star' + i).classList.remove('earned');
+    document.getElementById('result-destroyed').innerText = won ? "Wróg odparty!" : "Wrogowie zniszczyli część bazy.";
+    document.getElementById('result-gold').innerText = won ? "300" : "0";
+    document.getElementById('result-elixir').innerText = won ? "150" : "0";
+    document.getElementById('result-trophies').innerText = (trophiesChange > 0 ? '+' : '') + trophiesChange;
+    document.getElementById('result-xp').innerText = won ? "150" : "0";
+    
+    document.getElementById('battle-result-overlay').style.display = 'flex';
   }
-  if (won) alert("Twierdza obroniona!\nZdobyto 300 💰 i 150 🔮\n\nKliknij OK.");
-  else alert("Wróg splądrował Twoją twierdzę!\n\nKliknij OK.");
-  window.location.reload();
+}
+
+function drawBuildingTexture(scene, x, y, def, alpha = 1) {
+  let container = scene.add.container(x, y);
+  
+  let shadow = scene.add.ellipse(0, TILE/2 - 5, TILE - 10, 15, 0x000000, 0.4 * alpha);
+  let base = scene.add.rectangle(0, 5, TILE - 12, TILE - 16, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+  let roof = scene.add.rectangle(0, -12, TILE - 8, TILE/2, def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+  let detail = scene.add.text(0, -12, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
+
+  if (def.name !== 'Mur') {
+    let window1 = scene.add.rectangle(-10, 5, 6, 10, 0x111111).setAlpha(alpha);
+    let window2 = scene.add.rectangle(10, 5, 6, 10, 0x111111).setAlpha(alpha);
+    container.add([shadow, base, roof, window1, window2, detail]);
+  } else {
+    let brick1 = scene.add.rectangle(0, 5, TILE - 12, 4, 0x000000).setAlpha(0.3 * alpha);
+    let brick2 = scene.add.rectangle(0, 15, TILE - 12, 4, 0x000000).setAlpha(0.3 * alpha);
+    container.add([shadow, base, roof, brick1, brick2, detail]);
+  }
+  
+  return container;
 }
 
 class BaseScene extends Phaser.Scene {
@@ -384,9 +521,14 @@ class BaseScene extends Phaser.Scene {
   create() {
     baseSceneInstance = this; 
     let cam = this.cameras.main;
-    // Ciemniejsze, mszyste tło
     let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1);
     grid.setOrigin(0, 0);
+
+    for(let i=0; i<150; i++) {
+        let rx = Phaser.Math.Between(0, TILE*GRID);
+        let ry = Phaser.Math.Between(0, TILE*GRID);
+        this.add.circle(rx, ry, Phaser.Math.Between(2, 5), 0x1a2415, 0.5);
+    }
     
     window.preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
     this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
@@ -394,6 +536,7 @@ class BaseScene extends Phaser.Scene {
     buildings = []; 
     try { loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1, b.hp || null, b.buildEndTime || 0)); } catch (e) {}
     updateUI();
+    updateSoundButton();
 
     this.lastGridX = -1; this.lastGridY = -1;
     this.input.on('pointerdown', (p) => { this.lastGridX = -1; this.lastGridY = -1; if (selectedBuildingType === 'wall') this.tryPlaceBuilding(p); });
@@ -415,7 +558,7 @@ class BaseScene extends Phaser.Scene {
     buildings.forEach(b => {
       if (b.buildEndTime > now) { b.buildText.setText('🔨 ' + Math.ceil((b.buildEndTime - now) / 1000) + 's'); } 
       else if (b.buildEndTime > 0) {
-        b.buildEndTime = 0; b.buildText.setText(''); b.rect.setAlpha(1); b.icon.setAlpha(1); b.label.setAlpha(1);
+        b.buildEndTime = 0; b.buildText.setText(''); b.container.setAlpha(1); b.label.setAlpha(1);
         saveGame(); if (currentlySelectedBuilding === b) openBuildingPanel(b);
       }
     });
@@ -444,6 +587,7 @@ class BaseScene extends Phaser.Scene {
     if (elixir < def.cost.elixir) { showMessage('Za mało Many!'); return; }
 
     gold -= def.cost.gold; elixir -= def.cost.elixir;
+    addXP(10); 
     playSound('build'); this.createBuilding(x, y, selectedBuildingType, true, 1);
     this.lastGridX = x; this.lastGridY = y;
     updateUI(); saveGame();
@@ -451,27 +595,35 @@ class BaseScene extends Phaser.Scene {
 
   createBuilding(x, y, type, isNew, level, hp = null, buildEndTime = 0) {
     const def = BUILDINGS[type];
-    const container = this.add.container(x, y);
-    const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
-    const icon = this.add.text(0, -5, def.short, { fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-    const label = this.add.text(0, 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-    const buildText = this.add.text(0, -35, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
-    const hpBarBg = this.add.rectangle(0, -TILE/2 + 6, TILE - 8, 8, 0x000000);
-    const hpBar = this.add.rectangle(-(TILE - 8)/2, -TILE/2 + 6, TILE - 8, 8, 0x00ff00).setOrigin(0, 0.5);
+    const container = drawBuildingTexture(this, x, y, def, 1);
     
-    container.add([rect, icon, label, hpBarBg, hpBar, buildText]);
+    const label = this.add.text(x, y + 28, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
+    const buildText = this.add.text(x, y - 35, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
+    const hpBarBg = this.add.rectangle(x, y - TILE/2 + 5, TILE - 8, 6, 0x000000);
+    const hpBar = this.add.rectangle(x - (TILE - 8)/2, y - TILE/2 + 5, TILE - 8, 6, 0x00ff00).setOrigin(0, 0.5);
+    
+    container.add([label, buildText, hpBarBg, hpBar]);
     container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
-    container.type = type; container.gridX = x; container.gridY = y; container.level = level;
-    container.label = label; container.hpBar = hpBar; container.rect = rect; container.icon = icon; container.buildText = buildText;
+    
+    container.type = type; 
+    container.gridX = x; 
+    container.gridY = y; 
+    container.level = level;
+    container.label = label; 
+    container.hpBar = hpBar; 
+    container.buildText = buildText;
     container.buildEndTime = isNew ? Date.now() + (def.buildTime * level * 1000) : buildEndTime;
     
-    if (container.buildEndTime > Date.now()) { rect.setAlpha(0.5); icon.setAlpha(0.5); label.setAlpha(0.5); }
-    container.hp = hp !== null ? hp : def.hp * level; container.maxHp = def.hp * level; container.hpBar.scaleX = container.hp / container.maxHp;
+    if (container.buildEndTime > Date.now()) { container.setAlpha(0.5); label.setAlpha(0.5); }
+    container.hp = hp !== null ? hp : def.hp * level; 
+    container.maxHp = def.hp * level; 
+    container.hpBar.scaleX = container.hp / container.maxHp;
 
     container.on('pointerdown', (pointer, localX, localY, event) => {
       if (event) event.stopPropagation(); if (selectedBuildingType) return; openBuildingPanel(container);
     });
-    buildings.push(container); if (isNew && window.preview) window.preview.setVisible(false);
+    buildings.push(container); 
+    if (isNew && window.preview) window.preview.setVisible(false);
   }
 }
 
@@ -479,10 +631,12 @@ class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
     let cam = this.cameras.main;
-    cam.setBackgroundColor('#1a1a1a'); // Ciemne, spalone pole bitwy
+    cam.setBackgroundColor('#1a1a1a'); 
     cam.setScroll(0, 0); cam.setZoom(1);
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0;
+    this.destroyedCount = 0; 
+    this.totalEnemyBuildings = 0; // Do obliczania gwiazdek
     
     this.battleTime = 180; 
     this.time.addEvent({
@@ -494,7 +648,7 @@ class BattleScene extends Phaser.Scene {
         document.getElementById('timer-display').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
         if (this.battleTime <= 0) {
           this.battleEnded = true;
-          setTimeout(() => endBattle(false, this.lootGold, this.lootElixir), 1000); 
+          setTimeout(() => endBattle(false, this.lootGold, this.lootElixir, this.destroyedCount, this.totalEnemyBuildings), 1000); 
         }
       }
     });
@@ -502,7 +656,8 @@ class BattleScene extends Phaser.Scene {
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
     const cx = window.innerWidth / 2; const cy = window.innerHeight / 2;
 
-    this.createEnemyBuilding(cx, cy, 400, 0x555555, 'Warownia', 'W', false, 200, 100); 
+    this.createEnemyBuilding(cx, cy, 400, 'townhall', 'W', false, 200, 100); 
+    this.totalEnemyBuildings++;
 
     let numBuildings = Phaser.Math.Between(6, 9);
     for(let i = 0; i < numBuildings; i++) {
@@ -518,10 +673,11 @@ class BattleScene extends Phaser.Scene {
         
         if (valid) {
             let typeRnd = Phaser.Math.Between(1, 10);
-            if (typeRnd <= 3) this.createEnemyBuilding(ex, ey, 150, 0x36454f, 'Wieża', 'WS', true, 0, 0);
-            else if (typeRnd <= 6) this.createEnemyBuilding(ex, ey, 100, 0x8b6508, 'Kopalnia', 'K', false, 300, 0);
-            else if (typeRnd <= 8) this.createEnemyBuilding(ex, ey, 150, 0x5c2e2e, 'Koszary', 'Ko', false, 0, 200);
-            else this.createEnemyBuilding(ex, ey, 250, 0x696969, 'Mur', 'M', false, 0, 0);
+            if (typeRnd <= 3) this.createEnemyBuilding(ex, ey, 150, 'tower', 'WS', true, 0, 0);
+            else if (typeRnd <= 6) this.createEnemyBuilding(ex, ey, 100, 'mine', 'K', false, 300, 0);
+            else if (typeRnd <= 8) this.createEnemyBuilding(ex, ey, 150, 'barracks', 'Ko', false, 0, 200);
+            else this.createEnemyBuilding(ex, ey, 250, 'wall', 'M', false, 0, 0);
+            this.totalEnemyBuildings++;
         }
     }
 
@@ -537,14 +693,15 @@ class BattleScene extends Phaser.Scene {
     });
   }
 
-  createEnemyBuilding(x, y, hp, color, name, short, isDefense, lootG, lootE) {
-    const size = 60;
-    const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
-    this.add.text(x, y - 5, short, {fontSize: '20px', color: '#fff', fontStyle: 'bold'}).setOrigin(0.5);
-    this.add.text(x, y + 20, name, {fontSize: '11px', color: '#fff'}).setOrigin(0.5);
-    this.add.rectangle(x, y - 40, size, 8, 0x000000);
-    const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
-    this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE });
+  createEnemyBuilding(x, y, hp, type, short, isDefense, lootG, lootE) {
+    const def = BUILDINGS[type];
+    let container = drawBuildingTexture(this, x, y, def, 1); 
+    
+    let nameText = this.add.text(x, y + 28, def.name, {fontSize: '10px', color: '#fff', backgroundColor: '#00000088', padding:{x:2,y:2}}).setOrigin(0.5);
+    let hpBarBg = this.add.rectangle(x, y - 30, 40, 6, 0x000000);
+    let hpBar = this.add.rectangle(x - 20, y - 30, 40, 6, 0x00ff00).setOrigin(0, 0.5);
+    
+    this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE });
   }
 
   spawnTroop(x, y, type) {
@@ -614,6 +771,7 @@ class BattleScene extends Phaser.Scene {
           
           if (troop.target.hp <= 0) {
             troop.target.alive = false; this.explode(troop.target.x, troop.target.y, 0xffaa00); playSound('boom');
+            this.destroyedCount++; 
             troop.target.sprite.destroy(); troop.target.hpBar.destroy(); 
             if (troop.target.lootG > 0 || troop.target.lootE > 0) {
               this.lootGold += troop.target.lootG; this.lootElixir += troop.target.lootE;
@@ -627,9 +785,9 @@ class BattleScene extends Phaser.Scene {
     }
 
     if (this.enemyBuildings.filter(b => b.alive).length === 0) {
-      this.battleEnded = true; setTimeout(() => endBattle(true, this.lootGold, this.lootElixir), 1000);
+      this.battleEnded = true; setTimeout(() => endBattle(true, this.lootGold, this.lootElixir, this.destroyedCount, this.totalEnemyBuildings), 1000);
     } else if (army.barbarian + army.archer + army.giant + army.hero === 0 && this.troops.length === 0 && !this.battleEnded) {
-      this.battleEnded = true; setTimeout(() => endBattle(false, this.lootGold, this.lootElixir), 1000);
+      this.battleEnded = true; setTimeout(() => endBattle(false, this.lootGold, this.lootElixir, this.destroyedCount, this.totalEnemyBuildings), 1000);
     }
   }
 
@@ -654,18 +812,24 @@ class DefenseScene extends Phaser.Scene {
     cam.setBackgroundColor('#2b3625');
     let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1);
     grid.setOrigin(0, 0);
+
+    for(let i=0; i<100; i++) {
+        let rx = Phaser.Math.Between(0, TILE*GRID);
+        let ry = Phaser.Math.Between(0, TILE*GRID);
+        this.add.circle(rx, ry, Phaser.Math.Between(2, 4), 0x1a2415, 0.5);
+    }
+
     this.playerBuildings = [];
     const saved = loadGame(); 
     saved.forEach(b => {
       const def = BUILDINGS[b.type];
-      const container = this.add.container(b.x, b.y);
-      const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
-      const icon = this.add.text(0, -5, def.short, { fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-      const label = this.add.text(0, 20, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff' }).setOrigin(0.5);
-      const hpBarBg = this.add.rectangle(0, -TILE/2 + 6, TILE - 8, 8, 0x000000);
-      const hpBar = this.add.rectangle(-(TILE - 8)/2, -TILE/2 + 6, TILE - 8, 8, 0x00ff00).setOrigin(0, 0.5);
-      container.add([rect, icon, label, hpBarBg, hpBar]);
-      this.playerBuildings.push({ sprite: container, rect: rect, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime });
+      let container = drawBuildingTexture(this, b.x, b.y, def, 1);
+      
+      const label = this.add.text(b.x, b.y + 28, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
+      const hpBarBg = this.add.rectangle(b.x, b.y - TILE/2 + 5, TILE - 8, 6, 0x000000);
+      const hpBar = this.add.rectangle(b.x - (TILE - 8)/2, b.y - TILE/2 + 5, TILE - 8, 6, 0x00ff00).setOrigin(0, 0.5);
+      
+      this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime });
     });
     
     const townhall = this.playerBuildings.find(b => b.type === 'townhall');
