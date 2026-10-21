@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v14</title>
+  <title>War Base v15</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -217,6 +217,9 @@
     let currentlySelectedBuilding = null;
     let baseSceneInstance = null; 
     let isEndingBattle = false;
+    
+    // Zmienne do zapobiegania spamowaniu komunikatem o złocie
+    let lastGoldWarningTime = 0; 
 
     let audioCtx = null;
     function playSound(type) {
@@ -397,7 +400,6 @@
       if (!currentlySelectedBuilding) return;
       const def = BUILDINGS[currentlySelectedBuilding.type];
       
-      // WYMAGANIA RATUSZA
       const townhall = buildings.find(b => b.type === 'townhall');
       if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
         showMessage('Ulepsz najpierw Ratusz na wyższy poziom!');
@@ -438,7 +440,7 @@
 
     function saveGame() {
       const data = { 
-        version: 14, 
+        version: 15, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -454,7 +456,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 14 && typeof data.gold === 'number') {
+          if (data.version === 15 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             army = data.army || { barbarian: 5, archer: 3, giant: 1 };
@@ -538,7 +540,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 14, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 15, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -579,7 +581,6 @@
         }
         updateUI();
 
-        // --- ZMIENIONA LOGIKA STEROWANIA (RYSOWANIE MURÓW) ---
         this.lastGridX = -1;
         this.lastGridY = -1;
 
@@ -601,12 +602,10 @@
               window.preview.setPosition(this.snap(p.worldX), this.snap(p.worldY)).setVisible(true);
             }
             
-            // Rysowanie murów przez przeciąganie
             if (selectedBuildingType === 'wall' && p.isDown) {
               this.tryPlaceBuilding(p);
             }
           } else if (p.isDown) {
-            // Przesuwanie kamery (tylko gdy nic nie budujemy)
             cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
             cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
           }
@@ -614,7 +613,6 @@
 
         this.input.on('pointerup', (p) => {
           if (selectedBuildingType && selectedBuildingType !== 'wall') {
-            // Stawianie normalnego budynku po puszczeniu palca
             this.tryPlaceBuilding(p);
           }
           if (window.preview) window.preview.setVisible(false);
@@ -668,11 +666,11 @@
         if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
         if (buildings.some(b => b.gridX === x && b.gridY === y)) return;
         
+        // NOWA LOGIKA: Zablokowanie i komunikat (z cooldownem)
         if (gold < def.cost.gold) { 
-          if (selectedBuildingType !== 'wall') showMessage('Za mało złota!'); 
-          else {
-             selectedBuildingType = null;
-             updateUI();
+          if (Date.now() > lastGoldWarningTime) {
+            showMessage('Za mało złota!');
+            lastGoldWarningTime = Date.now() + 1500; // Komunikat max raz na 1.5s
           }
           return; 
         }
