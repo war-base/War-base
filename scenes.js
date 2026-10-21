@@ -9,6 +9,7 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
 class BaseScene extends Phaser.Scene {
   constructor() { super('BaseScene'); }
   create() {
+    generateRivals(); // GENEROWANIE RYWALI DO RANKINGU
     baseSceneInstance = this; 
     let cam = this.cameras.main;
     cam.setBackgroundColor('#2b3625');
@@ -97,8 +98,6 @@ class BaseScene extends Phaser.Scene {
     let screenY = gridY * TILE + TILE/2;
     
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
-    
-    // KLUCZOWA POPRAWKA: Przypisujemy typ do kontenera
     container.type = type; 
     
     const label = this.add.text(screenX, screenY + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5).setDepth(150);
