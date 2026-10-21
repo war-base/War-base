@@ -3,79 +3,102 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Twierdza - Izometryczna</title>
+  <title>Twierdza - Dark Fantasy</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
-    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #1a1a1a; }
+    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background: url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?q=80&w=1000&auto=format&fit=crop') no-repeat center center; background-size: cover; }
 
+    /* GÓRNY PASEK */
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: linear-gradient(to bottom, rgba(20,20,20,0.95), rgba(0,0,0,0.8)); color: white; 
+      background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(0,0,0,0.6)); 
       padding: max(8px, env(safe-area-inset-top)) 10px 8px 10px; 
       display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
       font-weight: bold; font-size: 14px; z-index: 10; pointer-events: none; gap: 5px;
-      border-bottom: 2px solid #8b6508;
+      border-bottom: 1px solid #555;
     }
-    .stat-box { background: rgba(0, 0, 0, 0.7); padding: 4px 8px; border-radius: 4px; border: 1px solid #8b6508; display: flex; align-items: center; gap: 5px; box-shadow: inset 0 0 5px rgba(255,215,0,0.2); }
+    
+    .res-container { display: flex; gap: 5px; pointer-events: auto; }
+    
+    .res-box { 
+      background: linear-gradient(to bottom, #333, #111); 
+      padding: 4px 8px; border-radius: 15px; border: 1px solid #8b6508; 
+      display: flex; align-items: center; gap: 5px; box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
+    }
+    .res-box .plus-btn { 
+      background: #8b6508; color: white; border: none; border-radius: 50%; 
+      width: 16px; height: 16px; font-size: 12px; display: flex; justify-content: center; align-items: center; margin-left: 5px;
+    }
+
     .res-gold { color: #ffd700; }
     .res-elixir { color: #ba55d3; }
+    
+    .stat-box { 
+      background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 15px; 
+      border: 1px solid #555; display: flex; align-items: center; gap: 5px; 
+    }
     .trophies { color: #ff3333; }
     .player-level { color: #88ff88; }
 
+    /* BOCZNE MENU */
     #menu-btn {
       position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
-      background: rgba(30, 30, 30, 0.9); color: white; border: 2px solid #8b6508;
-      width: 45px; height: 45px; border-radius: 8px; font-size: 24px; z-index: 15;
+      background: #222; color: white; border: 2px solid #8b6508;
+      width: 45px; height: 45px; border-radius: 50%; font-size: 24px; z-index: 15;
       display: flex; justify-content: center; align-items: center; cursor: pointer;
-      pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
+      pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.8);
     }
     #menu-btn:active { background: #111; }
 
+    /* DOLNE MENU BUDOWANIA */
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: linear-gradient(to top, rgba(20,20,20,0.95), rgba(0,0,0,0.8)); padding: 10px; display: flex; gap: 10px;
-      border-top: 2px solid #8b6508; z-index: 10; overflow-x: auto; white-space: nowrap;
-      padding-bottom: max(10px, env(safe-area-inset-bottom));
+      background: linear-gradient(to top, rgba(10,10,10,0.95), rgba(0,0,0,0.6)); 
+      padding: 8px; display: flex; gap: 8px;
+      border-top: 1px solid #555; z-index: 10; overflow-x: auto; white-space: nowrap;
+      padding-bottom: max(8px, env(safe-area-inset-bottom));
     }
     .build-btn {
-      min-width: 80px; padding: 10px 5px; border: none; border-radius: 4px;
-      background: #222; color: #ddd; font-weight: bold; font-size: 12px;
+      min-width: 75px; padding: 10px 5px; border: none; border-radius: 8px;
+      background: linear-gradient(to bottom, #2a2a2a, #111); color: #ddd; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: auto;
-      border: 1px solid #555;
+      border: 1px solid #555; box-shadow: inset 0 0 5px rgba(0,0,0,0.8);
     }
-    .build-btn.selected { background: #4a3b2a; border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 10px #8b6508; }
+    .build-btn.selected { background: linear-gradient(to bottom, #4a3b2a, #222); border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 10px #8b6508; }
     .build-btn:active { background: #444; }
     .btn-sub { font-size: 10px; font-weight: normal; color: #aaa; }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ba55d3; }
 
+    /* PRZYCISKI AKCJI */
     #home-btn {
       position: absolute; bottom: 230px; right: 20px;
       background: #222; color: white; border: 2px solid #8b6508;
-      padding: 12px 15px; border-radius: 8px;
+      padding: 12px 15px; border-radius: 50%;
       font-size: 20px; font-weight: bold; z-index: 15;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8); cursor: pointer;
     }
     #home-btn:active { background: #111; }
 
     #attack-btn {
+      position: absolute; bottom: 90px; left: 20px;
+      background: linear-gradient(to bottom, #8b0000, #4a0000); color: white; border: 2px solid #ff4444;
+      padding: 15px 25px; border-radius: 8px;
+      font-size: 20px; font-weight: bold; z-index: 15;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; text-transform: uppercase;
+    }
+    #attack-btn:active { transform: scale(0.95); }
+
+    #shop-btn {
       position: absolute; bottom: 90px; right: 20px;
-      background: #5c0000; color: white; border: 2px solid #ff4444;
+      background: linear-gradient(to bottom, #2a2a2a, #111); color: #ffd700; border: 2px solid #8b6508;
       padding: 15px 25px; border-radius: 8px;
-      font-size: 18px; font-weight: bold; z-index: 15;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
+      font-size: 20px; font-weight: bold; z-index: 15;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; text-transform: uppercase;
     }
-    #attack-btn:active { background: #3a0000; transform: scale(0.95); }
+    #shop-btn:active { transform: scale(0.95); }
 
-    #defend-btn {
-      position: absolute; bottom: 160px; right: 20px;
-      background: #1a2b2b; color: white; border: 2px solid #5f9ea0;
-      padding: 15px 25px; border-radius: 8px;
-      font-size: 18px; font-weight: bold; z-index: 15;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
-    }
-    #defend-btn:active { background: #0f1a1a; transform: scale(0.95); }
-
+    /* INTERFEJS BITWY */
     #battle-ui, #defense-ui {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box;
       z-index: 20; pointer-events: none; display: none;
@@ -108,9 +131,10 @@
     .troop-btn.hero-btn.selected { border-color: #ffd700; background: #332040; }
     .troop-btn.hero-btn.disabled { opacity: 0.4; pointer-events: none; }
 
+    /* PANEL BUDYNKU */
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(15,15,15,0.98); color: white; padding: 20px; border-radius: 8px;
+      background: linear-gradient(to bottom, #1a1a1a, #050505); color: white; padding: 20px; border-radius: 8px;
       display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #8b6508;
       max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9);
     }
@@ -136,6 +160,7 @@
       white-space: nowrap; border: 1px solid #ff8888; text-transform: uppercase;
     }
 
+    /* MODALE */
     .modal-overlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.85); z-index: 1000;
@@ -143,35 +168,27 @@
       pointer-events: auto; backdrop-filter: blur(3px);
     }
     .modal-content {
-      background: #1a1a1a; border: 2px solid #8b6508; border-radius: 10px;
+      background: linear-gradient(to bottom, #1a1a1a, #050505); border: 2px solid #8b6508; border-radius: 10px;
       padding: 20px; min-width: 320px; max-width: 90vw; text-align: center; color: white;
       box-shadow: 0 0 40px rgba(0,0,0,0.9); max-height: 85vh; overflow-y: auto;
     }
     .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
     
-    #main-menu-overlay .modal-content { border-color: #ba55d3; min-width: 250px; }
-    #main-menu-overlay h2 { color: #ba55d3; }
     .menu-btn-item {
       display: flex; align-items: center; justify-content: flex-start; gap: 15px;
       width: 100%; padding: 12px 15px; margin-bottom: 10px;
       background: #2a2a2a; border: 1px solid #444; border-radius: 8px;
       color: white; font-size: 18px; font-weight: bold; cursor: pointer; text-align: left;
     }
-    .menu-btn-item:active { background: #444; border-color: #ba55d3; }
+    .menu-btn-item:active { background: #444; border-color: #8b6508; }
     .menu-icon { font-size: 24px; }
 
-    #profile-overlay .modal-content { border-color: #ffd700; }
     .profile-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
     .avatar { width: 60px; height: 60px; background: #5c4305; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; border: 2px solid #ffd700; }
     .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
     .stat-card { background: #2a2a2a; padding: 10px; border-radius: 8px; border: 1px solid #444; }
     .stat-value { font-size: 24px; color: #88ff88; font-weight: bold; }
     .stat-label { font-size: 12px; color: #aaa; text-transform: uppercase; }
-
-    #help-overlay .modal-content { border-color: #5f9ea0; }
-    #help-overlay h2 { color: #5f9ea0; }
-    .help-text { text-align: left; font-size: 14px; line-height: 1.5; margin-bottom: 15px; }
-    .help-text b { color: #c9a06c; }
 
     .quest-item { background: #2a2a2a; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
     .quest-info { flex: 1; padding-right: 10px; }
@@ -215,10 +232,14 @@
   <div id="game"></div>
 
   <div id="top-bar">
-    <div class="stat-box player-level">🩸 Ranga: <span id="ui-level">1</span></div>
-    <div class="stat-box trophies">💀 <span id="ui-trophies">0</span></div>
-    <div class="stat-box res-gold">💰 <span id="ui-gold">3000</span></div>
-    <div class="stat-box res-elixir">🔮 <span id="ui-elixir">1000</span></div>
+    <div class="res-container">
+      <div class="res-box res-gold">💰 <span id="ui-gold">3000</span> <div class="plus-btn">+</div></div>
+      <div class="res-box res-elixir">🔮 <span id="ui-elixir">1000</span> <div class="plus-btn">+</div></div>
+    </div>
+    <div style="display:flex; gap:5px;">
+      <div class="stat-box player-level">🩸 <span id="ui-level">1</span></div>
+      <div class="stat-box trophies">💀 <span id="ui-trophies">0</span></div>
+    </div>
   </div>
   
   <button id="menu-btn" onclick="openMainMenu()">☰</button>
@@ -237,7 +258,7 @@
 
   <button id="home-btn" onclick="centerCamera()">🏠</button>
   <button id="attack-btn" onclick="startAttack()">⚔️ Atakuj</button>
-  <button id="defend-btn" onclick="startDefense()">🛡️ Broń</button>
+  <button id="shop-btn" onclick="openShop()">🛒 Sklep</button>
 
   <div id="battle-ui">
     <div id="battle-top-bar">
@@ -292,7 +313,6 @@
     <div class="modal-content">
       <h2>Menu Główne</h2>
       <button class="menu-btn-item" onclick="openProfile()"><span class="menu-icon">👤</span> Profil Gracza</button>
-      <button class="menu-btn-item" onclick="openShop()"><span class="menu-icon">🛒</span> Sklep</button>
       <button class="menu-btn-item" onclick="openQuests()"><span class="menu-icon">📜</span> Zadania</button>
       <button class="menu-btn-item" onclick="openSettings()"><span class="menu-icon">⚙️</span> Ustawienia</button>
       <button class="menu-btn-item" onclick="openHelp()"><span class="menu-icon">❓</span> Pomoc</button>
@@ -326,9 +346,8 @@
       <h2>Jak grać?</h2>
       <div class="help-text">
         <p>Witaj w <b>Twierdzy</b>! Twoim celem jest zbudowanie potężnej bazy i zbieranie Czaszek (💀).</p>
-        <p><b>Budowanie:</b> Wybierz budynek z dolnego menu i postaw go na siatce. Ulepszaj Warownię, aby odblokować kolejne poziomy.</p>
+        <p><b>Budowanie:</b> Wybierz budynek z dolnego menu i postaw go na siatce.</p>
         <p><b>Atak:</b> Wejdź w Atak. Wybierz jednostkę i klikaj na planszy wroga, aby ją zrzucić.</p>
-        <p><b>Obrona:</b> Kliknij Broń, aby odeprzeć atak. Klikaj na ekranie, aby zrzucać pociski z moździerza.</p>
       </div>
       <button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button>
     </div>
@@ -387,14 +406,4 @@
       <p>Głośność dźwięków:</p>
       <button id="sound-toggle-btn" onclick="toggleSound()">🔊 Dźwięk: Włączony</button>
       <button class="btn-danger" onclick="resetGame()">Zresetuj grę</button>
-      <button class="close-modal" onclick="closeSettings()">Zamknij</button>
-    </div>
-  </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="config.js?v=33"></script>
-  <script src="ui.js?v=33"></script>
-  <script src="scenes.js?v=33"></script>
-  <script src="main.js?v=33"></script>
-</body>
-</html>
+      <button class="close-modal" onclick="closeSettings()">Zamkn
