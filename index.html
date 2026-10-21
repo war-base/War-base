@@ -22,15 +22,17 @@
     .trophies { color: #ff3333; }
     .player-level { color: #88ff88; }
 
-    /* Ikona Ustawień */
-    #settings-btn {
-      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
+    /* Ikony Ustawień i Zadań */
+    #settings-btn, #quests-btn {
+      position: absolute; top: max(50px, env(safe-area-inset-top));
       background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #5c4305;
       width: 35px; height: 35px; border-radius: 50%; font-size: 18px; z-index: 15;
       display: flex; justify-content: center; align-items: center; cursor: pointer;
       pointer-events: auto;
     }
-    #settings-btn:active { background: #222; }
+    #settings-btn { right: 10px; }
+    #quests-btn { right: 55px; border-color: #ffd700; color: #ffd700; }
+    #settings-btn:active, #quests-btn:active { background: #222; }
 
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
@@ -137,7 +139,7 @@
       white-space: nowrap; border: 1px solid #ff8888; text-transform: uppercase;
     }
 
-    /* --- NOWE EKRANY NAKŁADKI (MODALE) --- */
+    /* --- EKRANY NAKŁADKI (MODALE) --- */
     .modal-overlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.85); z-index: 1000;
@@ -146,17 +148,32 @@
     }
     .modal-content {
       background: #1a1a1a; border: 2px solid #5c4305; border-radius: 10px;
-      padding: 30px; min-width: 300px; text-align: center; color: white;
-      box-shadow: 0 0 40px rgba(0,0,0,0.9);
+      padding: 20px; min-width: 320px; max-width: 90vw; text-align: center; color: white;
+      box-shadow: 0 0 40px rgba(0,0,0,0.9); max-height: 85vh; overflow-y: auto;
     }
-    .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 28px; letter-spacing: 2px; }
-    .modal-content p { font-size: 18px; margin: 5px 0; }
-    .modal-content button { 
+    .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
+    
+    /* Lista Zadań */
+    .quest-item {
+      background: #2a2a2a; border: 1px solid #444; border-radius: 8px;
+      padding: 10px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center;
+    }
+    .quest-info { flex: 1; padding-right: 10px; }
+    .quest-title { font-size: 16px; font-weight: bold; color: #ddd; margin-bottom: 5px; }
+    .quest-progress { font-size: 12px; color: #aaa; }
+    .quest-btn { 
+      padding: 8px 12px; border-radius: 4px; border: none; font-weight: bold; 
+      background: #444; color: #888; cursor: not-allowed; font-size: 12px; white-space: nowrap;
+    }
+    .quest-btn.ready { background: #4a5c38; color: white; cursor: pointer; box-shadow: 0 0 10px #88ff88; }
+    .quest-btn.claimed { background: #111; color: #555; }
+
+    .modal-content button.close-modal { 
       margin-top: 15px; padding: 12px 20px; font-weight: bold; font-size: 16px; 
       border-radius: 5px; border: none; cursor: pointer; width: 100%;
       background: #4a5c38; color: white; text-transform: uppercase;
     }
-    .modal-content button:active { background: #2e3b22; }
+    .modal-content button.close-modal:active { background: #2e3b22; }
     .modal-content .btn-danger { background: #8b0000; }
     .modal-content .btn-danger:active { background: #5c0000; }
 
@@ -173,7 +190,7 @@
     #settings-overlay h2 { color: #5f9ea0; }
     
     #reset-btn {
-      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 55px;
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 100px;
       background: rgba(139, 0, 0, 0.7); color: white; border: none;
       padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 999;
     }
@@ -189,6 +206,7 @@
     <div class="stat-box res-elixir">🔮 <span id="ui-elixir">1000</span></div>
   </div>
   
+  <button id="quests-btn" onclick="openQuests()">📜</button>
   <button id="settings-btn" onclick="openSettings()">⚙️</button>
   <button id="reset-btn" onclick="resetGame()">RESET</button>
 
@@ -261,6 +279,17 @@
   
   <div id="message">Za mało surowców!</div>
 
+  <!-- EKRAN ZADAŃ -->
+  <div id="quests-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Zadania</h2>
+      <div id="quest-list">
+        <!-- Lista zadań generowana przez JS -->
+      </div>
+      <button class="close-modal" onclick="closeQuests()">Zamknij</button>
+    </div>
+  </div>
+
   <!-- EKRAN WYNIKÓW BITWY -->
   <div id="battle-result-overlay" class="modal-overlay">
     <div class="modal-content">
@@ -277,7 +306,7 @@
         <div class="loot-item" style="color:#ff3333">💀 +<span id="result-trophies">0</span></div>
         <div class="loot-item" style="color:#88ff88">🌟 +<span id="result-xp">0</span> XP</div>
       </div>
-      <button onclick="closeBattleResult()">Wróć do twierdzy</button>
+      <button class="close-modal" onclick="closeBattleResult()">Wróć do twierdzy</button>
     </div>
   </div>
 
@@ -288,11 +317,11 @@
       <p>Głośność dźwięków:</p>
       <button id="sound-toggle-btn" onclick="toggleSound()">🔊 Dźwięk: Włączony</button>
       <button class="btn-danger" onclick="resetGame()">Zresetuj grę</button>
-      <button onclick="closeSettings()">Zamknij</button>
+      <button class="close-modal" onclick="closeSettings()">Zamknij</button>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="game.js?v=27"></script>
+  <script src="game.js?v=28"></script>
 </body>
 </html>
