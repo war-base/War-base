@@ -20,6 +20,7 @@ function updateUI() {
   if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
   if(document.getElementById('ui-archer')) document.getElementById('ui-archer').innerText = army.archer;
   if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
+  if(document.getElementById('ui-wallbreaker')) document.getElementById('ui-wallbreaker').innerText = army.wallbreaker;
   
   if(document.getElementById('bp-army-capacity')) {
     document.getElementById('bp-army-capacity').innerText = `${getCurrentArmySize()} / ${getMaxArmy()}`;
@@ -58,7 +59,25 @@ function checkHeroAvailability() {
   }
 }
 
-function openSettings() { document.getElementById('settings-overlay').style.display = 'flex'; updateSoundButton(); }
+// --- MENU GŁÓWNE I PROFIL ---
+function openMainMenu() { document.getElementById('main-menu-overlay').style.display = 'flex'; }
+function closeMainMenu() { document.getElementById('main-menu-overlay').style.display = 'none'; }
+
+function openProfile() {
+  closeMainMenu();
+  document.getElementById('profile-level').innerText = level;
+  document.getElementById('profile-trophies').innerText = trophies;
+  document.getElementById('profile-wins').innerText = wins;
+  document.getElementById('profile-losses').innerText = losses;
+  document.getElementById('profile-destroyed').innerText = destroyedTotal;
+  document.getElementById('profile-overlay').style.display = 'flex';
+}
+function closeProfile() { document.getElementById('profile-overlay').style.display = 'none'; }
+
+function openHelp() { closeMainMenu(); document.getElementById('help-overlay').style.display = 'flex'; }
+function closeHelp() { document.getElementById('help-overlay').style.display = 'none'; }
+
+function openSettings() { closeMainMenu(); document.getElementById('settings-overlay').style.display = 'flex'; updateSoundButton(); }
 function closeSettings() { document.getElementById('settings-overlay').style.display = 'none'; }
 function toggleSound() { soundEnabled = !soundEnabled; updateSoundButton(); saveGame(); }
 function updateSoundButton() {
@@ -75,6 +94,7 @@ function resetGame() {
   }
 }
 
+// --- PANEL BUDYNKU ---
 function openBuildingPanel(building) {
   currentlySelectedBuilding = building;
   const def = BUILDINGS[building.type];
@@ -156,7 +176,10 @@ function trainTroop(type) {
   const cost = BASE_TROOPS[type].cost;
   if (elixir < cost) { showMessage('Za mało Many!'); return; }
   elixir -= cost; army[type]++;
-  updateQuest('train_troop', 1);
+  
+  if (type === 'wallbreaker') updateQuest('train_wallbreaker', 1);
+  else updateQuest('train_troop', 1);
+  
   playSound('build'); updateUI(); saveGame();
 }
 
@@ -200,7 +223,7 @@ function sellBuilding() {
   updateUI(); saveGame(); closeBuildingPanel();
 }
 
-// QUESTS
+// --- QUESTS ---
 function updateQuest(type, amount = 1) {
   let questUpdated = false;
   quests.forEach(q => {
@@ -215,7 +238,7 @@ function updateQuest(type, amount = 1) {
     if (document.getElementById('quests-overlay').style.display === 'flex') renderQuests();
   }
 }
-function openQuests() { renderQuests(); document.getElementById('quests-overlay').style.display = 'flex'; }
+function openQuests() { closeMainMenu(); renderQuests(); document.getElementById('quests-overlay').style.display = 'flex'; }
 function closeQuests() { document.getElementById('quests-overlay').style.display = 'none'; }
 function renderQuests() {
   let listEl = document.getElementById('quest-list');
@@ -255,8 +278,8 @@ function claimQuest(id) {
   }
 }
 
-// SHOP & CHEST
-function openShop() { document.getElementById('shop-overlay').style.display = 'flex'; }
+// --- SKLEP I SKRZYNIE ---
+function openShop() { closeMainMenu(); document.getElementById('shop-overlay').style.display = 'flex'; }
 function closeShop() { document.getElementById('shop-overlay').style.display = 'none'; }
 function buyGoldWithMana() {
   if (elixir >= 500) {
@@ -294,8 +317,9 @@ function closeChest() {
   updateUI(); saveGame(); document.getElementById('chest-overlay').style.display = 'none'; showMessage('Odebrano łup ze skrzyni!');
 }
 
-// DAILY REWARD
+// --- CODZIENNA NAGRODA ---
 function openDailyReward() {
+  closeMainMenu();
   let now = Date.now(); let timePassed = now - lastDailyReward; let cooldown = 24 * 60 * 60 * 1000;
   if (timePassed >= cooldown) {
     let rewardGold = 1000; let rewardElixir = 500;
