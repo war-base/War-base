@@ -3,8 +3,22 @@ const ALLIANCE_NAMES = ["Cienie Nocy", "Żelazna Krucjata", "Synowie Ognia", "Za
 let playerAlliance = null; // Tutaj zapiszemy nazwę sojuszu gracza
 
 function openAllianceMenu() {
-    closeMainMenu();
+    // Bezpieczne zamykanie menu głównego (jeśli istnieje)
+    let mainMenu = document.getElementById('main-menu-overlay');
+    if (mainMenu) mainMenu.style.display = 'none'; 
+    
+    if (typeof closeMainMenu === "function") {
+        closeMainMenu();
+    }
+
     let content = document.getElementById('alliance-content');
+    let overlay = document.getElementById('alliance-overlay');
+
+    // Upewniamy się, że elementy istnieją
+    if (!content || !overlay) {
+        console.error("Błąd: Brak elementów #alliance-content lub #alliance-overlay w HTML!");
+        return;
+    }
     
     if (playerAlliance) {
         // Jeśli gracz jest w sojuszu
@@ -24,7 +38,7 @@ function openAllianceMenu() {
             <button class="close-modal" onclick="closeAlliance()">Zamknij</button>
         `;
     }
-    document.getElementById('alliance-overlay').style.display = 'flex';
+    overlay.style.display = 'flex'; // Pokazujemy okno
 }
 
 function closeAlliance() {
@@ -33,24 +47,29 @@ function closeAlliance() {
 
 function joinAlliance(name) {
     playerAlliance = name;
-    saveGame(); // Zapisujemy stan
+    if (typeof saveGame === "function") saveGame(); // Zapisujemy stan, jeśli funkcja istnieje
     openAllianceMenu(); // Odświeżamy okno
 }
 
 function leaveAlliance() {
     playerAlliance = null;
-    saveGame();
+    if (typeof saveGame === "function") saveGame();
     openAllianceMenu();
 }
 
 function createAlliance() {
-    if (gold < 1000) { alert("Za mało złota!"); return; }
+    // Sprawdzamy, czy zmienna gold istnieje
+    if (typeof gold === "undefined" || gold < 1000) { 
+        alert("Za mało złota!"); 
+        return; 
+    }
+    
     let name = prompt("Podaj nazwę swojego sojuszu (max 15 znaków):");
     if (name && name.trim().length > 0) {
         gold -= 1000;
         playerAlliance = name.trim().substring(0, 15);
-        updateUI();
-        saveGame();
+        if (typeof updateUI === "function") updateUI();
+        if (typeof saveGame === "function") saveGame();
         openAllianceMenu();
     }
 }
