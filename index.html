@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v11</title>
+  <title>War Base v12</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -110,7 +110,6 @@
       text-align: center;
     }
 
-    /* Przycisk resetowania (awaryjny) */
     #reset-btn {
       position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
       background: rgba(200, 0, 0, 0.7); color: white; border: none;
@@ -249,13 +248,6 @@
       updateUI();
     }
 
-    function showMessage(text) {
-      const msg = document.getElementById('message');
-      msg.innerText = text;
-      msg.style.display = 'block';
-      setTimeout(() => { msg.style.display = 'none'; }, 2500);
-    }
-
     function centerCamera() {
       if (!baseSceneInstance) return;
       let target = buildings.find(b => b.type === 'townhall');
@@ -317,10 +309,10 @@
 
     function trainTroop(type) {
       const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
-      if (!barracks) { showMessage('Brak gotowych Koszar!'); return; }
+      if (!barracks) { alert('Brak gotowych Koszar!'); return; }
       
       const cost = TROOPS[type].cost;
-      if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
+      if (elixir < cost) { alert('Za mało eliksiru!'); return; }
 
       elixir -= cost;
       army[type]++;
@@ -338,8 +330,8 @@
       const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
       const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
       
-      if (gold < costGold) { showMessage('Za mało złota!'); return; }
-      if (elixir < costElixir) { showMessage('Za mało eliksiru!'); return; }
+      if (gold < costGold) { alert('Za mało złota!'); return; }
+      if (elixir < costElixir) { alert('Za mało eliksiru!'); return; }
       
       gold -= costGold; elixir -= costElixir;
       currentlySelectedBuilding.level++;
@@ -368,7 +360,7 @@
 
     function saveGame() {
       const data = { 
-        version: 11, 
+        version: 12, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -384,11 +376,11 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 11 && typeof data.gold === 'number') {
+          if (data.version === 12 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             army = data.army || { barbarian: 5, archer: 3, giant: 1 };
-            return data.buildings || []; // ZABEZPIECZENIE: Zawsze zwraca tablicę
+            return data.buildings || []; 
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
       }
@@ -403,7 +395,7 @@
 
     function startAttack() {
       closeBuildingPanel();
-      if (army.barbarian + army.archer + army.giant <= 0) { showMessage('Nie masz wojska!'); return; }
+      if (army.barbarian + army.archer + army.giant <= 0) { alert('Nie masz wojska!'); return; }
       
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('home-btn').style.display = 'none';
@@ -414,35 +406,33 @@
       
       selectBattleTroop('barbarian'); 
       updateUI();
-      isEndingBattle = false; // Reset flagi przy nowej bitwie
+      isEndingBattle = false; 
       game.scene.start('BattleScene');
     }
 
     function endBattle(won = false, lootGold = 0, lootElixir = 0) {
-      if (isEndingBattle) return; // ZABEZPIECZENIE PRZED PODWÓJNYM WYWOŁANIEM
+      if (isEndingBattle) return; 
       isEndingBattle = true;
 
       army = { barbarian: 0, archer: 0, giant: 0 }; 
       
-      document.getElementById('build-menu').style.display = 'flex';
-      document.getElementById('home-btn').style.display = 'block';
-      document.getElementById('attack-btn').style.display = 'block';
-      document.getElementById('defend-btn').style.display = 'block';
-      document.getElementById('top-bar').style.display = 'flex';
-      document.getElementById('battle-ui').style.display = 'none';
-      
       if (won) {
         gold += 500 + lootGold; 
         elixir += 200 + lootElixir; 
-        updateUI(); saveGame();
-        showMessage(`Zwycięstwo!\nZdobyto łup: ${500 + lootGold} 🪙 i ${200 + lootElixir} 💧`);
       } else {
         gold += lootGold; elixir += lootElixir;
-        updateUI(); saveGame();
-        showMessage(`Wycofano wojska.\nUratowany łup: ${lootGold} 🪙 i ${lootElixir} 💧`);
+      }
+      updateUI(); saveGame();
+      
+      // Zamiast próbować wracać do sceny (co powoduje błędy na Androidzie),
+      // pokazujemy alert i przeładowujemy stronę. To gwarantuje stabilność.
+      if (won) {
+        alert(`Zwycięstwo!\nZdobyto łup: ${500 + lootGold} 🪙 i ${200 + lootElixir} 💧\n\nKliknij OK, aby wrócić do bazy.`);
+      } else {
+        alert(`Wycofano wojska.\nUratowany łup: ${lootGold} 🪙 i ${lootElixir} 💧\n\nKliknij OK, aby wrócić do bazy.`);
       }
       
-      game.scene.start('BaseScene');
+      window.location.reload();
     }
 
     function startDefense() {
@@ -462,13 +452,6 @@
     }
 
     function endDefense(won) {
-      document.getElementById('build-menu').style.display = 'flex';
-      document.getElementById('home-btn').style.display = 'block';
-      document.getElementById('attack-btn').style.display = 'block';
-      document.getElementById('defend-btn').style.display = 'block';
-      document.getElementById('top-bar').style.display = 'flex';
-      document.getElementById('defense-ui').style.display = 'none';
-      
       const defenseScene = game.scene.getScene('DefenseScene');
       if (defenseScene) {
         const survivingBuildings = defenseScene.playerBuildings
@@ -476,20 +459,24 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 11, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 12, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
           data.gold += 300;
           data.elixir += 150;
-          showMessage("Obrona udana!\nZdobyto 300 🪙 i 150 💧");
-        } else {
-          showMessage("Twoja baza została zniszczona!");
         }
         
         localStorage.setItem('warBaseSave', JSON.stringify(data));
       }
-      game.scene.start('BaseScene');
+      
+      if (won) {
+        alert("Obrona udana!\nZdobyto 300 🪙 i 150 💧\n\nKliknij OK, aby wrócić do bazy.");
+      } else {
+        alert("Twoja baza została zniszczona!\n\nKliknij OK, aby wrócić do bazy.");
+      }
+      
+      window.location.reload();
     }
 
     class BaseScene extends Phaser.Scene {
@@ -574,8 +561,8 @@
         const y = this.snap(p.worldY);
         if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
         if (buildings.some(b => b.gridX === x && b.gridY === y)) return;
-        if (gold < def.cost.gold) { showMessage('Za mało złota!'); return; }
-        if (elixir < def.cost.elixir) { showMessage('Za mało eliksiru!'); return; }
+        if (gold < def.cost.gold) { alert('Za mało złota!'); return; }
+        if (elixir < def.cost.elixir) { alert('Za mało eliksiru!'); return; }
 
         gold -= def.cost.gold; elixir -= def.cost.elixir;
         this.createBuilding(x, y, selectedBuildingType, true, 1);
@@ -655,7 +642,7 @@
             army[selectedBattleTroopType]--;
             updateUI();
           } else {
-            showMessage("Brak tej jednostki!");
+            alert("Brak tej jednostki!");
           }
         });
       }
@@ -978,11 +965,14 @@
     }
 
     const config = {
-      type: Phaser.AUTO, // ZMIENIONO NA AUTO (WebGL), CO NAPRAWIA BŁĘDY GRAFICZNE
+      type: Phaser.CANVAS, 
       parent: 'game',
       width: window.innerWidth,
       height: window.innerHeight,
       backgroundColor: '#2d4a3e',
+      render: {
+        clearBeforeRender: false // Zapobiega gubieniu tekstur przy zmianie scen
+      },
       scene: [BaseScene, BattleScene, DefenseScene]
     };
     const game = new Phaser.Game(config);
