@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v15</title>
+  <title>War Base v16</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -103,11 +103,25 @@
     .train-btn { background: #1e90ff; color: white; margin-top: 5px; }
     .train-btn:active { background: #104e8b; }
 
+    /* POPRAWIONY KOMUNIKAT (TOAST) */
     #message {
-      position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(200, 0, 0, 0.9); color: white; padding: 10px 20px;
-      border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 40;
-      text-align: center; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+      position: absolute; 
+      top: 12%; 
+      left: 50%; 
+      transform: translateX(-50%);
+      background: rgba(220, 20, 20, 0.95); 
+      color: white; 
+      padding: 12px 24px;
+      border-radius: 30px; 
+      font-weight: bold; 
+      display: none; 
+      pointer-events: none; 
+      z-index: 9999;
+      text-align: center; 
+      font-size: 16px; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+      white-space: nowrap;
+      border: 2px solid #ff8888;
     }
 
     #reset-btn {
@@ -218,8 +232,8 @@
     let baseSceneInstance = null; 
     let isEndingBattle = false;
     
-    // Zmienne do zapobiegania spamowaniu komunikatem o złocie
     let lastGoldWarningTime = 0; 
+    let messageTimeout = null;
 
     let audioCtx = null;
     function playSound(type) {
@@ -262,6 +276,17 @@
           osc.start(); osc.stop(audioCtx.currentTime + 0.2);
         }
       } catch(e) { console.log("Audio error:", e); }
+    }
+
+    // NOWA FUNKCJA SHOWMESSAGE (Zapobiega migotaniu)
+    function showMessage(text) {
+      const msg = document.getElementById('message');
+      if(!msg) return;
+      msg.innerText = text;
+      msg.style.display = 'block';
+      
+      if (messageTimeout) clearTimeout(messageTimeout);
+      messageTimeout = setTimeout(() => { msg.style.display = 'none'; }, 2500);
     }
 
     function getMaxArmy() {
@@ -440,7 +465,7 @@
 
     function saveGame() {
       const data = { 
-        version: 15, 
+        version: 16, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -456,7 +481,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 15 && typeof data.gold === 'number') {
+          if (data.version === 16 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             army = data.army || { barbarian: 5, archer: 3, giant: 1 };
@@ -540,7 +565,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 15, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 16, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -666,11 +691,10 @@
         if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
         if (buildings.some(b => b.gridX === x && b.gridY === y)) return;
         
-        // NOWA LOGIKA: Zablokowanie i komunikat (z cooldownem)
         if (gold < def.cost.gold) { 
           if (Date.now() > lastGoldWarningTime) {
             showMessage('Za mało złota!');
-            lastGoldWarningTime = Date.now() + 1500; // Komunikat max raz na 1.5s
+            lastGoldWarningTime = Date.now() + 1500; 
           }
           return; 
         }
@@ -743,11 +767,41 @@
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
+        // --- LOSOWA GENERACJA BAZY WROGA ---
+        // Zawsze jest Ratusz na środku
         this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', '🏰', false, 200, 100); 
-        this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true, 0, 0);
-        this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true, 0, 0); 
-        this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false, 300, 0); 
-        this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false, 300, 0); 
+
+        // Dodajemy 6-9 losowych budynków wokół
+        let numBuildings = Phaser.Math.Between(6, 9);
+        for(let i = 0; i < numBuildings; i++) {
+            let ex, ey, valid, attempts = 0;
+            do {
+                // Losowa pozycja w promieniu od 120 do 220 px od środka
+                let angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+                let dist = Phaser.Math.Between(120, 220);
+                ex = cx + Math.cos(angle) * dist;
+                ey = cy + Math.sin(angle) * dist;
+                
+                valid = true;
+                for (let b of this.enemyBuildings) {
+                    if (Phaser.Math.Distance.Between(ex, ey, b.x, b.y) < 80) { valid = false; break; }
+                }
+                attempts++;
+            } while(!valid && attempts < 20);
+            
+            if (valid) {
+                let typeRnd = Phaser.Math.Between(1, 10);
+                if (typeRnd <= 3) {
+                    this.createEnemyBuilding(ex, ey, 150, 0x555555, 'Wieża', '🏹', true, 0, 0);
+                } else if (typeRnd <= 6) {
+                    this.createEnemyBuilding(ex, ey, 100, 0xffd700, 'Kopalnia', '⛏️', false, 300, 0);
+                } else if (typeRnd <= 8) {
+                    this.createEnemyBuilding(ex, ey, 150, 0x8b0000, 'Koszary', '⚔️', false, 0, 200);
+                } else {
+                    this.createEnemyBuilding(ex, ey, 250, 0x808080, 'Mur', '🧱', false, 0, 0);
+                }
+            }
+        }
 
         this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
 
