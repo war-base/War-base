@@ -113,8 +113,7 @@
     .chest-big-icon { font-size: 80px; margin: 20px 0; animation: bounce-in 0.5s; }
     @keyframes bounce-in { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
     .chest-rewards { font-size: 20px; color: #ffd700; margin: 15px 0; }
-    
-    /* STYLE DLA RANKINGU */
+
     .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
     .ranking-row.player-highlight { background: rgba(255, 215, 0, 0.15); border: 1px solid #ffd700; border-radius: 5px; margin-bottom: 5px; }
     .rank-place { font-weight: bold; color: #c9a06c; width: 40px; text-align: left; }
@@ -205,12 +204,13 @@
   
   <div id="message">Za mało surowców!</div>
 
-  <!-- MENU GŁÓWNE (Dodano Ranking) -->
+  <!-- MENU GŁÓWNE (Dodano Sojusze) -->
   <div id="main-menu-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Menu Główne</h2>
       <button class="menu-btn-item" onclick="openProfile()"><span class="menu-icon">👤</span> Profil Gracza</button>
       <button class="menu-btn-item" onclick="openRanking()"><span class="menu-icon">🏆</span> Ranking</button>
+      <button class="menu-btn-item" onclick="openAllianceMenu()"><span class="menu-icon">🛡️</span> Sojusz</button>
       <button class="menu-btn-item" onclick="openQuests()"><span class="menu-icon">📜</span> Zadania</button>
       <button class="menu-btn-item" onclick="openSettings()"><span class="menu-icon">⚙️</span> Ustawienia</button>
       <button class="menu-btn-item" onclick="openHelp()"><span class="menu-icon">❓</span> Pomoc</button>
@@ -219,7 +219,15 @@
     </div>
   </div>
 
-  <!-- OKNO RANKINGU -->
+  <!-- OKNO SOJUSZU -->
+  <div id="alliance-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Sojusz</h2>
+      <div id="alliance-content"></div>
+    </div>
+  </div>
+
+  <!-- RANKING -->
   <div id="ranking-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Ranking Świata</h2>
@@ -288,10 +296,11 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="config.js?v=68"></script>
-  <script src="ranking.js?v=68"></script> <!-- NOWY PLIK -->
-  <script src="ui.js?v=68"></script>
-  <script src="scenes.js?v=68"></script>
-  <script src="main.js?v=68"></script>
+  <script src="config.js?v=69"></script>
+  <script src="ranking.js?v=69"></script>
+  <script src="alliance.js?v=69"></script>
+  <script src="ui.js?v=69"></script>
+  <script src="scenes.js?v=69"></script>
+  <script src="main.js?v=69"></script>
 </body>
 </html>
