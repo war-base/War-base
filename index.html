@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base</title>
+  <title>War Base v6</title> <!-- Zmieniono tytuł, aby wymusić odświeżenie -->
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -11,7 +11,6 @@
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); color: white; 
-      /* POPRAWKA: Margines na wcięcie w telefonie (notch) */
       padding: max(12px, env(safe-area-inset-top)) 12px 12px 12px; 
       display: flex; justify-content: space-around; font-weight: bold; font-size: 16px; z-index: 10; pointer-events: none;
     }
@@ -285,7 +284,7 @@
 
     function saveGame() {
       const data = { 
-        version: 5, 
+        version: 6, // Zwiększono wersję zapisu
         gold: gold, 
         elixir: elixir, 
         currentArmy: currentArmy, 
@@ -299,7 +298,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 5 && typeof data.gold === 'number') {
+          if (data.version === 6 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             currentArmy = data.currentArmy || 0;
@@ -369,7 +368,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 5, gold: 1000, elixir: 1000, currentArmy: 20, buildings: [] };
+        if (!data) data = { version: 6, gold: 1000, elixir: 1000, currentArmy: 20, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -417,16 +416,22 @@
           }
         });
 
-        // Znajdź Ratusz, aby na nim wyśrodkować kamerę (jeśli istnieje)
+        // Niezawodne wyśrodkowanie kamery na Ratuszu (lub środku mapy)
         const townhall = buildings.find(b => b.type === 'townhall');
+        let centerX = TILE * GRID / 2;
+        let centerY = TILE * GRID / 2;
+        
         if (townhall) {
-          cam.centerOn(townhall.x, townhall.y);
-        } else {
-          cam.centerOn(TILE * GRID / 2, TILE * GRID / 2);
+          centerX = townhall.x;
+          centerY = townhall.y;
         }
         
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.setZoom(0.7); 
+        
+        // RĘCZNE USTAWIENIE POZYCJI (scrollX/Y) zamiast centerOn
+        cam.scrollX = centerX - cam.width / 2 / cam.zoom;
+        cam.scrollY = centerY - cam.height / 2 / cam.zoom;
       }
 
       update(time, delta) {
@@ -555,7 +560,7 @@
             if (nearestTroop) {
               const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000);
               laser.setOrigin(0, 0);
-              laser.setLineWidth(4); // Grubszy laser
+              laser.setLineWidth(4); 
               setTimeout(() => laser.destroy(), 150); 
               nearestTroop.hp -= 25;
             }
@@ -643,7 +648,6 @@
           });
         });
         
-        // Znajdź Ratusz i wyśrodkuj na nim kamerę
         const townhall = this.playerBuildings.find(b => b.type === 'townhall');
         let centerX = TILE * GRID / 2;
         let centerY = TILE * GRID / 2;
@@ -653,8 +657,11 @@
         }
         
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
-        cam.centerOn(centerX, centerY);
         cam.setZoom(0.8);
+        
+        // RĘCZNE WYŚRODKOWANIE
+        cam.scrollX = centerX - cam.width / 2 / cam.zoom;
+        cam.scrollY = centerY - cam.height / 2 / cam.zoom;
         
         this.centerBase = { x: centerX, y: centerY };
 
@@ -674,7 +681,7 @@
                 if (target) {
                   const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff);
                   laser.setOrigin(0, 0);
-                  laser.setLineWidth(5); // Grubszy laser
+                  laser.setLineWidth(5); 
                   setTimeout(() => laser.destroy(), 150); 
                   target.hp -= 30; 
                 }
@@ -725,7 +732,6 @@
         this.waveCount++;
         const numEnemies = 2 + this.waveCount * 2; 
         
-        // Wrogowie pojawiają się wokół bazy, a nie na końcach mapy
         for (let i = 0; i < numEnemies; i++) {
           const angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
           const distance = Phaser.Math.Between(400, 600); 
