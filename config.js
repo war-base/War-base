@@ -1,6 +1,6 @@
-const TILE_W = 64; // Szerokość kafelka
-const TILE_H = 32; // Wysokość kafelka (połowa szerokości dla efektu izometrii)
-const GRID = 20;   // Zmniejszamy siatkę do 20x20, bo izometria zajmuje więcej miejsca
+const TILE_W = 64; 
+const TILE_H = 32; 
+const GRID = 20;   
 
 let gold = 3000; 
 let elixir = 1000; 
@@ -62,17 +62,10 @@ function getTroopStats(type) {
   let lvl = troopLevels[type] || 1;
   let multiplier = 1 + (lvl - 1) * 0.3;
   if (type === 'hero' || type === 'wallbreaker') multiplier = 1; 
-  return {
-    name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
-    hp: Math.floor(base.hp * multiplier), damage: Math.floor(base.damage * multiplier)
-  };
+  return { name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target, hp: Math.floor(base.hp * multiplier), damage: Math.floor(base.damage * multiplier) };
 }
 
-function getMaxArmy() {
-  let max = 10; 
-  buildings.forEach(b => { if (b.type === 'camp') max += 10 * b.level; });
-  return max;
-}
+function getMaxArmy() { let max = 10; buildings.forEach(b => { if (b.type === 'camp') max += 10 * b.level; }); return max; }
 function getCurrentArmySize() { return army.barbarian + army.archer + army.giant + army.wallbreaker; }
 
 function playSound(type) {
@@ -82,38 +75,15 @@ function playSound(type) {
     if (audioCtx.state === 'suspended') audioCtx.resume();
     const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
-    if (type === 'build') {
-      osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    } else if (type === 'shoot') {
-      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1);
-      gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.1);
-    } else if (type === 'boom') {
-      osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.3);
-      gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.3);
-    } else if (type === 'coin') {
-      osc.type = 'sine'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime);
-      osc.frequency.setValueAtTime(1600, audioCtx.currentTime + 0.05);
-      gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
-      osc.start(); osc.stop(audioCtx.currentTime + 0.2);
-    }
+    if (type === 'build') { osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+    else if (type === 'shoot') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(800, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(300, audioCtx.currentTime + 0.1); gain.gain.setValueAtTime(0.05, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1); osc.start(); osc.stop(audioCtx.currentTime + 0.1); } 
+    else if (type === 'boom') { osc.type = 'sawtooth'; osc.frequency.setValueAtTime(100, audioCtx.currentTime); osc.frequency.exponentialRampToValueAtTime(20, audioCtx.currentTime + 0.3); gain.gain.setValueAtTime(0.2, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3); osc.start(); osc.stop(audioCtx.currentTime + 0.3); } 
+    else if (type === 'coin') { osc.type = 'sine'; osc.frequency.setValueAtTime(1200, audioCtx.currentTime); osc.frequency.setValueAtTime(1600, audioCtx.currentTime + 0.05); gain.gain.setValueAtTime(0.1, audioCtx.currentTime); gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2); osc.start(); osc.stop(audioCtx.currentTime + 0.2); }
   } catch(e) {}
 }
 
 function saveGame() {
-  const data = { 
-    version: 33, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
-    trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward,
-    wins: wins, losses: losses, destroyedTotal: destroyedTotal,
-    quests: quests, 
-    buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
-  };
+  const data = { version: 34, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels, trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward, wins: wins, losses: losses, destroyedTotal: destroyedTotal, quests: quests, buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
 }
 
@@ -122,16 +92,8 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 33 && typeof data.gold === 'number') {
-        gold = data.gold; elixir = data.elixir; 
-        army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 };
-        troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
-        trophies = data.trophies || 0; xp = data.xp || 0; level = data.level || 1;
-        soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true;
-        lastDailyReward = data.lastDailyReward || 0;
-        wins = data.wins || 0; losses = data.losses || 0; destroyedTotal = data.destroyedTotal || 0;
-        if(data.quests) quests = data.quests;
-        return data.buildings || []; 
+      if (data.version === 34 && typeof data.gold === 'number') {
+        gold = data.gold; elixir = data.elixir; army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 }; troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 }; trophies = data.trophies || 0; xp = data.xp || 0; level = data.level || 1; soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true; lastDailyReward = data.lastDailyReward || 0; wins = data.wins || 0; losses = data.losses || 0; destroyedTotal = data.destroyedTotal || 0; if(data.quests) quests = data.quests; return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
     } catch (e) { localStorage.removeItem('warBaseSave'); }
   }
