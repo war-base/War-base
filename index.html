@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v13</title>
+  <title>War Base v14</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -104,10 +104,10 @@
     .train-btn:active { background: #104e8b; }
 
     #message {
-      position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
+      position: absolute; top: 15%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(200, 0, 0, 0.9); color: white; padding: 10px 20px;
       border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 40;
-      text-align: center;
+      text-align: center; font-size: 18px; box-shadow: 0 4px 10px rgba(0,0,0,0.5);
     }
 
     #reset-btn {
@@ -196,7 +196,6 @@
     let army = { barbarian: 5, archer: 3, giant: 1 }; 
     let selectedBattleTroopType = 'barbarian';
     
-    // --- DODANO OBOZY WOJSKOWE I ICH LIMITY ---
     const BUILDINGS = {
       townhall: { name: 'Ratusz', emoji: '🏰', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
       mine: { name: 'Kopalnia', emoji: '⛏️', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
@@ -219,7 +218,6 @@
     let baseSceneInstance = null; 
     let isEndingBattle = false;
 
-    // --- SYNTEZATOR DŹWIĘKU (Bez plików zewnętrznych) ---
     let audioCtx = null;
     function playSound(type) {
       try {
@@ -263,9 +261,8 @@
       } catch(e) { console.log("Audio error:", e); }
     }
 
-    // --- FUNKCJE LIMITU ARMII ---
     function getMaxArmy() {
-      let max = 10; // Bazowy limit
+      let max = 10; 
       buildings.forEach(b => {
         if (b.type === 'camp') max += 10 * b.level;
       });
@@ -364,7 +361,7 @@
 
         if (building.type === 'barracks') {
           document.getElementById('bp-train-section').style.display = 'block';
-          updateUI(); // Aktualizacja limitu armii w panelu
+          updateUI(); 
         } else {
           document.getElementById('bp-train-section').style.display = 'none';
         }
@@ -375,15 +372,15 @@
 
     function trainTroop(type) {
       const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
-      if (!barracks) { alert('Brak gotowych Koszar!'); return; }
+      if (!barracks) { showMessage('Brak gotowych Koszar!'); return; }
       
       if (getCurrentArmySize() >= getMaxArmy()) {
-        alert('Osiągnięto limit armii! Zbuduj lub ulepsz Obozy Wojskowe.');
+        showMessage('Osiągnięto limit armii! Zbuduj Obozy.');
         return;
       }
       
       const cost = TROOPS[type].cost;
-      if (elixir < cost) { alert('Za mało eliksiru!'); return; }
+      if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
 
       elixir -= cost;
       army[type]++;
@@ -399,11 +396,19 @@
     function upgradeBuilding() {
       if (!currentlySelectedBuilding) return;
       const def = BUILDINGS[currentlySelectedBuilding.type];
+      
+      // WYMAGANIA RATUSZA
+      const townhall = buildings.find(b => b.type === 'townhall');
+      if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
+        showMessage('Ulepsz najpierw Ratusz na wyższy poziom!');
+        return;
+      }
+      
       const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
       const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
       
-      if (gold < costGold) { alert('Za mało złota!'); return; }
-      if (elixir < costElixir) { alert('Za mało eliksiru!'); return; }
+      if (gold < costGold) { showMessage('Za mało złota!'); return; }
+      if (elixir < costElixir) { showMessage('Za mało eliksiru!'); return; }
       
       gold -= costGold; elixir -= costElixir;
       currentlySelectedBuilding.level++;
@@ -433,7 +438,7 @@
 
     function saveGame() {
       const data = { 
-        version: 13, 
+        version: 14, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -449,7 +454,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 13 && typeof data.gold === 'number') {
+          if (data.version === 14 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             army = data.army || { barbarian: 5, archer: 3, giant: 1 };
@@ -468,7 +473,7 @@
 
     function startAttack() {
       closeBuildingPanel();
-      if (getCurrentArmySize() <= 0) { alert('Nie masz wojska!'); return; }
+      if (getCurrentArmySize() <= 0) { showMessage('Nie masz wojska!'); return; }
       
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('home-btn').style.display = 'none';
@@ -533,7 +538,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 13, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 14, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -574,22 +579,45 @@
         }
         updateUI();
 
+        // --- ZMIENIONA LOGIKA STEROWANIA (RYSOWANIE MURÓW) ---
+        this.lastGridX = -1;
+        this.lastGridY = -1;
+
+        this.input.on('pointerdown', (p) => {
+          this.lastGridX = -1; 
+          this.lastGridY = -1;
+          
+          if (selectedBuildingType) {
+            if (selectedBuildingType === 'wall') {
+              this.tryPlaceBuilding(p);
+            }
+          }
+        });
+
         this.input.on('pointermove', (p) => {
-          if (p.isDown) {
+          if (selectedBuildingType) {
+            if (window.preview) {
+              window.preview.setFillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
+              window.preview.setPosition(this.snap(p.worldX), this.snap(p.worldY)).setVisible(true);
+            }
+            
+            // Rysowanie murów przez przeciąganie
+            if (selectedBuildingType === 'wall' && p.isDown) {
+              this.tryPlaceBuilding(p);
+            }
+          } else if (p.isDown) {
+            // Przesuwanie kamery (tylko gdy nic nie budujemy)
             cam.scrollX -= (p.x - p.prevPosition.x) / cam.zoom;
             cam.scrollY -= (p.y - p.prevPosition.y) / cam.zoom;
           }
         });
+
         this.input.on('pointerup', (p) => {
-          const dist = Phaser.Math.Distance.Between(p.downX, p.downY, p.upX, p.upY);
-          if (dist < 15 && selectedBuildingType) this.tryPlaceBuilding(p);
-          if (window.preview) window.preview.setVisible(false);
-        });
-        this.input.on('pointerdown', (p) => {
-          if (selectedBuildingType) {
-            window.preview.setFillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
-            window.preview.setPosition(this.snap(p.worldX), this.snap(p.worldY)).setVisible(true);
+          if (selectedBuildingType && selectedBuildingType !== 'wall') {
+            // Stawianie normalnego budynku po puszczeniu palca
+            this.tryPlaceBuilding(p);
           }
+          if (window.preview) window.preview.setVisible(false);
         });
 
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
@@ -634,14 +662,29 @@
         const def = BUILDINGS[selectedBuildingType];
         const x = this.snap(p.worldX);
         const y = this.snap(p.worldY);
+        
+        if (x === this.lastGridX && y === this.lastGridY) return;
+        
         if (x < TILE / 2 || y < TILE / 2 || x > (GRID - 0.5) * TILE || y > (GRID - 0.5) * TILE) return;
         if (buildings.some(b => b.gridX === x && b.gridY === y)) return;
-        if (gold < def.cost.gold) { alert('Za mało złota!'); return; }
-        if (elixir < def.cost.elixir) { alert('Za mało eliksiru!'); return; }
+        
+        if (gold < def.cost.gold) { 
+          if (selectedBuildingType !== 'wall') showMessage('Za mało złota!'); 
+          else {
+             selectedBuildingType = null;
+             updateUI();
+          }
+          return; 
+        }
+        if (elixir < def.cost.elixir) { showMessage('Za mało eliksiru!'); return; }
 
         gold -= def.cost.gold; elixir -= def.cost.elixir;
         playSound('build');
         this.createBuilding(x, y, selectedBuildingType, true, 1);
+        
+        this.lastGridX = x; 
+        this.lastGridY = y;
+        
         updateUI(); saveGame();
       }
 
@@ -719,7 +762,7 @@
             updateUI();
             playSound('shoot');
           } else {
-            alert("Brak tej jednostki!");
+            showMessage("Brak tej jednostki!");
           }
         });
       }
