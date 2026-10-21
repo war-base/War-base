@@ -8,6 +8,7 @@ let xp = 0;
 let level = 1;
 let soundEnabled = true; 
 let lastDailyReward = 0; 
+let playerAlliance = null; // NOWA ZMIENNA
 
 let wins = 0, losses = 0, destroyedTotal = 0;
 
@@ -82,7 +83,7 @@ function playSound(type) {
 }
 
 function saveGame() {
-  const data = { version: 66, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels, trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward, wins: wins, losses: losses, destroyedTotal: destroyedTotal, quests: quests, buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp })) };
+  const data = { version: 69, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels, trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward, playerAlliance: playerAlliance, wins: wins, losses: losses, destroyedTotal: destroyedTotal, quests: quests, buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp })) };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
 }
 
@@ -91,8 +92,8 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 66 && typeof data.gold === 'number') {
-        gold = data.gold; elixir = data.elixir; army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 }; troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 }; trophies = data.trophies || 0; xp = data.xp || 0; level = data.level || 1; soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true; lastDailyReward = data.lastDailyReward || 0; wins = data.wins || 0; losses = data.losses || 0; destroyedTotal = data.destroyedTotal || 0; if(data.quests) quests = data.quests; return data.buildings || []; 
+      if (data.version === 69 && typeof data.gold === 'number') {
+        gold = data.gold; elixir = data.elixir; army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 }; troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 }; trophies = data.trophies || 0; xp = data.xp || 0; level = data.level || 1; soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true; lastDailyReward = data.lastDailyReward || 0; playerAlliance = data.playerAlliance || null; wins = data.wins || 0; losses = data.losses || 0; destroyedTotal = data.destroyedTotal || 0; if(data.quests) quests = data.quests; return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
     } catch (e) { localStorage.removeItem('warBaseSave'); }
   }
