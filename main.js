@@ -104,7 +104,7 @@ function endDefense(won) {
   if (defenseScene) {
     const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 62, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, wallbreaker: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, lastDailyReward: 0, wins: 0, losses: 0, destroyedTotal: 0, quests: quests, buildings: [] };
+    if (!data) data = { version: 67, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, wallbreaker: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, lastDailyReward: 0, wins: 0, losses: 0, destroyedTotal: 0, quests: quests, buildings: [] };
     data.buildings = survivingBuildings;
     
     let trophiesChange = 0;
