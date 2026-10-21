@@ -1,15 +1,15 @@
-const TILE = 64; 
-const GRID = 25; 
+var TILE = 64; 
+var GRID = 25; 
 
-let gold = 1000;
-let elixir = 1000;
+var gold = 1000;
+var elixir = 1000;
 
-let army = { barbarian: 5, archer: 3, giant: 1 }; 
-let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
-let selectedBattleTroopType = 'barbarian';
+var army = { barbarian: 5, archer: 3, giant: 1 }; 
+var troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
+var selectedBattleTroopType = 'barbarian';
 
-// Zamiast emoji, używamy literowych kodów dla grafiki w grze (zapobiega czerwonym krzyżykom)
-const BUILDINGS = {
+// Zamiast emoji, używamy literowych kodów (short) do rysowania w Phaserze
+var BUILDINGS = {
   townhall: { name: 'Ratusz', short: 'R', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
   mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
   barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
@@ -19,38 +19,27 @@ const BUILDINGS = {
   tower: { name: 'Wieża', short: 'W', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
 };
 
-const BASE_TROOPS = {
+var BASE_TROOPS = {
   barbarian: { name: 'Barbarzyńca', short: 'B', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
   archer: { name: 'Łucznik', short: 'Ł', hp: 40, damage: 10, speed: 130, range: 180, cost: 75, target: 'any' },
   giant: { name: 'Gigant', short: 'G', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' }
 };
 
-let selectedBuildingType = null;
-let buildings = [];
-let currentlySelectedBuilding = null;
-let baseSceneInstance = null; 
-let lastGoldWarningTime = 0; 
-let messageTimeout = null;
-let isEndingBattle = false;
+var selectedBuildingType = null;
+var buildings = [];
+var prodTimer = 0;
+var currentlySelectedBuilding = null;
+var baseSceneInstance = null; 
+var isEndingBattle = false;
+var lastGoldWarningTime = 0; 
+var messageTimeout = null;
 
-function getTroopStats(type) {
-  const base = BASE_TROOPS[type];
-  const lvl = troopLevels[type];
-  const multiplier = 1 + (lvl - 1) * 0.3;
-  return {
-    name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
-    hp: Math.floor(base.hp * multiplier),
-    damage: Math.floor(base.damage * multiplier)
-  };
-}
-
-// --- DŹWIĘK ---
-let audioCtx = null;
+var audioCtx = null;
 function playSound(type) {
   try {
     if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator(); const gain = audioCtx.createGain();
+    var osc = audioCtx.createOscillator(); var gain = audioCtx.createGain();
     osc.connect(gain); gain.connect(audioCtx.destination);
     if (type === 'build') {
       osc.type = 'square'; osc.frequency.setValueAtTime(150, audioCtx.currentTime);
@@ -76,18 +65,28 @@ function playSound(type) {
   } catch(e) {}
 }
 
-// --- INTERFEJS ---
+function getTroopStats(type) {
+  var base = BASE_TROOPS[type];
+  var lvl = troopLevels[type];
+  var multiplier = 1 + (lvl - 1) * 0.3;
+  return {
+    name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
+    hp: Math.floor(base.hp * multiplier),
+    damage: Math.floor(base.damage * multiplier)
+  };
+}
+
 function showMessage(text) {
-  const msg = document.getElementById('message');
+  var msg = document.getElementById('message');
   if(!msg) return;
   msg.innerText = text; msg.style.display = 'block';
   if (messageTimeout) clearTimeout(messageTimeout);
-  messageTimeout = setTimeout(() => { msg.style.display = 'none'; }, 2500);
+  messageTimeout = setTimeout(function() { msg.style.display = 'none'; }, 2500);
 }
 
 function getMaxArmy() {
-  let max = 10; 
-  buildings.forEach(b => { if (b.type === 'camp') max += 10 * b.level; });
+  var max = 10; 
+  buildings.forEach(function(b) { if (b.type === 'camp') max += 10 * b.level; });
   return max;
 }
 function getCurrentArmySize() { return army.barbarian + army.archer + army.giant; }
@@ -95,9 +94,9 @@ function getCurrentArmySize() { return army.barbarian + army.archer + army.giant
 function updateUI() {
   document.getElementById('ui-gold').innerText = Math.floor(gold);
   document.getElementById('ui-elixir').innerText = Math.floor(elixir);
-  const btns = document.querySelectorAll('.build-btn');
+  var btns = document.querySelectorAll('.build-btn');
   if (btns.length >= 7) {
-    btns.forEach(btn => btn.classList.remove('selected'));
+    btns.forEach(function(btn) { btn.classList.remove('selected'); });
     if (selectedBuildingType === 'townhall') btns[0].classList.add('selected');
     if (selectedBuildingType === 'mine') btns[1].classList.add('selected');
     if (selectedBuildingType === 'barracks') btns[2].classList.add('selected');
@@ -112,7 +111,7 @@ function updateUI() {
   if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
   
   if(document.getElementById('bp-army-capacity')) {
-    document.getElementById('bp-army-capacity').innerText = `${getCurrentArmySize()} / ${getMaxArmy()}`;
+    document.getElementById('bp-army-capacity').innerText = getCurrentArmySize() + " / " + getMaxArmy();
   }
 }
 
@@ -130,24 +129,24 @@ function selectBuilding(type) {
 
 function centerCamera() {
   if (!baseSceneInstance) return;
-  let target = buildings.find(b => b.type === 'townhall') || buildings[0];
-  let cx = target ? target.x : (TILE * GRID) / 2;
-  let cy = target ? target.y : (TILE * GRID) / 2;
+  var target = buildings.find(function(b){ return b.type === 'townhall'; }) || buildings[0];
+  var cx = target ? target.x : (TILE * GRID) / 2;
+  var cy = target ? target.y : (TILE * GRID) / 2;
   baseSceneInstance.cameras.main.pan(cx, cy, 300, 'Sine.easeInOut');
 }
 
 function openBuildingPanel(building) {
   currentlySelectedBuilding = building;
-  const def = BUILDINGS[building.type];
+  var def = BUILDINGS[building.type];
   
   document.getElementById('bp-name').innerText = def.name;
   document.getElementById('bp-level').innerText = building.level;
   
-  const now = Date.now();
-  const isBuilding = building.buildEndTime > now;
+  var now = Date.now();
+  var isBuilding = building.buildEndTime > now;
 
   if (isBuilding) {
-    const remain = Math.ceil((building.buildEndTime - now) / 1000);
+    var remain = Math.ceil((building.buildEndTime - now) / 1000);
     document.getElementById('bp-status-text').innerHTML = `🔨 W budowie: <span style="color:#ffaa00">${remain}s</span>`;
     document.getElementById('bp-upgrade').style.display = 'none';
     document.getElementById('bp-sell').style.display = 'none';
@@ -156,19 +155,19 @@ function openBuildingPanel(building) {
   } else {
     document.getElementById('bp-status-text').innerHTML = `Produkcja: <span id="bp-prod">0</span>`;
     
-    const prodGold = (def.prod.gold || 0) * building.level;
-    const prodElixir = (def.prod.elixir || 0) * building.level;
-    let prodStr = [];
+    var prodGold = (def.prod.gold || 0) * building.level;
+    var prodElixir = (def.prod.elixir || 0) * building.level;
+    var prodStr = [];
     if (prodGold > 0) prodStr.push(prodGold + ' 🪙');
     if (prodElixir > 0) prodStr.push(prodElixir + ' 💧');
     document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
     
-    const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
-    const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
+    var upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
+    var upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
     document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧)`;
     
-    const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
-    const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
+    var sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
+    var sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
     document.getElementById('bp-sell').innerText = `Sprzedaj (+${sellValueGold} 🪙, +${sellValueElixir} 💧)`;
     
     document.getElementById('bp-upgrade').style.display = 'block';
@@ -192,17 +191,18 @@ function openBuildingPanel(building) {
 }
 
 function updateLabUI() {
-  ['barbarian', 'archer', 'giant'].forEach(type => {
-    const lvl = troopLevels[type];
-    const cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5); 
-    const btn = document.getElementById('lab-up-' + type);
+  ['barbarian', 'archer', 'giant'].forEach(function(type) {
+    var lvl = troopLevels[type];
+    var cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5); 
+    var btn = document.getElementById('lab-up-' + type);
     if(btn) btn.innerText = `Ulepsz ${BASE_TROOPS[type].name} na L${lvl+1} (${cost} 💧)`;
   });
 }
 
 function upgradeTroop(type) {
-  const lvl = troopLevels[type];
-  const cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5);
+  var lvl = troopLevels[type];
+  var cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5);
+  
   if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
   
   elixir -= cost; troopLevels[type]++;
@@ -211,11 +211,11 @@ function upgradeTroop(type) {
 }
 
 function trainTroop(type) {
-  const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
+  var barracks = buildings.find(function(b){ return b.type === 'barracks' && b.buildEndTime <= Date.now(); });
   if (!barracks) { showMessage('Brak gotowych Koszar!'); return; }
   if (getCurrentArmySize() >= getMaxArmy()) { showMessage('Osiągnięto limit armii!'); return; }
   
-  const cost = BASE_TROOPS[type].cost;
+  var cost = BASE_TROOPS[type].cost;
   if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
 
   elixir -= cost; army[type]++;
@@ -229,15 +229,15 @@ function closeBuildingPanel() {
 
 function upgradeBuilding() {
   if (!currentlySelectedBuilding) return;
-  const def = BUILDINGS[currentlySelectedBuilding.type];
-  const townhall = buildings.find(b => b.type === 'townhall');
+  var def = BUILDINGS[currentlySelectedBuilding.type];
+  var townhall = buildings.find(function(b){ return b.type === 'townhall'; });
   
   if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
     showMessage('Ulepsz najpierw Ratusz!'); return;
   }
   
-  const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
-  const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
+  var costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
+  var costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
   
   if (gold < costGold) { showMessage('Za mało złota!'); return; }
   if (elixir < costElixir) { showMessage('Za mało eliksiru!'); return; }
@@ -256,28 +256,28 @@ function upgradeBuilding() {
 
 function sellBuilding() {
   if (!currentlySelectedBuilding) return;
-  const def = BUILDINGS[currentlySelectedBuilding.type];
+  var def = BUILDINGS[currentlySelectedBuilding.type];
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
   currentlySelectedBuilding.destroy();
-  buildings = buildings.filter(b => b !== currentlySelectedBuilding);
+  buildings = buildings.filter(function(b){ return b !== currentlySelectedBuilding; });
   updateUI(); saveGame(); closeBuildingPanel();
 }
 
 function saveGame() {
-  const data = { 
-    version: 18, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
-    buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
+  var data = { 
+    version: 20, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    buildings: buildings.map(function(b){ return { x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }; }) 
   };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
 }
 
 function loadGame() {
-  const saved = localStorage.getItem('warBaseSave');
+  var saved = localStorage.getItem('warBaseSave');
   if (saved) {
     try {
-      const data = JSON.parse(saved);
-      if (data.version === 18 && typeof data.gold === 'number') {
+      var data = JSON.parse(saved);
+      if (data.version === 20 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
         army = data.army || { barbarian: 5, archer: 3, giant: 1 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
@@ -290,7 +290,7 @@ function loadGame() {
 
 function selectBattleTroop(type) {
   selectedBattleTroopType = type;
-  document.querySelectorAll('.troop-btn').forEach(btn => btn.classList.remove('selected'));
+  document.querySelectorAll('.troop-btn').forEach(function(btn){ btn.classList.remove('selected'); });
   document.getElementById('btn-troop-' + type).classList.add('selected');
 }
 
@@ -311,7 +311,7 @@ function startAttack() {
   game.scene.start('BattleScene');
 }
 
-function endBattle(won = false, lootGold = 0, lootElixir = 0) {
+function endBattle(won, lootGold, lootElixir) {
   if (isEndingBattle) return; 
   isEndingBattle = true;
   army = { barbarian: 0, archer: 0, giant: 0 }; 
@@ -339,11 +339,11 @@ function startDefense() {
 }
 
 function endDefense(won) {
-  const defenseScene = game.scene.getScene('DefenseScene');
+  var defenseScene = game.scene.getScene('DefenseScene');
   if (defenseScene) {
-    const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
-    let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 18, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
+    var survivingBuildings = defenseScene.playerBuildings.filter(function(b){ return b.alive; }).map(function(b){ return { x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }; });
+    var data = JSON.parse(localStorage.getItem('warBaseSave'));
+    if (!data) data = { version: 20, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
     data.buildings = survivingBuildings;
     if (won) { data.gold += 300; data.elixir += 150; playSound('coin'); }
     localStorage.setItem('warBaseSave', JSON.stringify(data));
