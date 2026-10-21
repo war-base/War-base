@@ -40,7 +40,6 @@ class BaseScene extends Phaser.Scene {
     try { 
       loadGame().forEach(b => {
         let finalBuildTime = b.buildEndTime;
-        // KRYTYCZNA POPRAWKA: Jeśli budowa miała się skończyć podczas gdy gra była wyłączona, kończymy ją teraz
         if (finalBuildTime > 0 && Date.now() >= finalBuildTime) {
           finalBuildTime = 0; 
         }
@@ -90,42 +89,16 @@ class BaseScene extends Phaser.Scene {
     cam.setBounds(0, 0, TILE * GRID, TILE * GRID); 
     cam.setZoom(1.0); 
     centerCamera(); 
-
-    // NOWY TIMER: Sprawdzamy stan budynków co 100ms zamiast w każdej klatce
-    this.buildCheckTimer = this.time.addEvent({
-        delay: 100, loop: true, callback: () => {
-            let now = Date.now();
-            let changed = false;
-            buildings.forEach(b => {
-                if (b.buildEndTime > 0 && now >= b.buildEndTime) {
-                    b.buildEndTime = 0; 
-                    b.buildText.setText(''); 
-                    b.container.setAlpha(1); 
-                    b.label.setAlpha(1);
-                    changed = true;
-                    if (currentlySelectedBuilding === b) openBuildingPanel(b);
-                }
-            });
-            if (changed) saveGame(); // Zapisujemy natychmiast, gdy coś się skończy
-        }
-    });
   }
 
   update(time, delta) {
     if (this.fpsText) this.fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
     
-    // Aktualizacja tekstu liczników (żeby widzieć, jak leci w dół)
-    let now = Date.now();
-    buildings.forEach(b => {
-      if (b.buildEndTime > 0) {
-        b.buildText.setText('🔨 ' + Math.ceil((b.buildEndTime - now) / 1000) + 's');
-      }
-    });
-    
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let aG = 0, aE = 0;
-      buildings.forEach(b => { if (b.buildEndTime === 0) { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; } });
+      // Sprawdzamy czy budynek jest ukończony (brak timera)
+      buildings.forEach(b => { if (!b.buildTimer) { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; } });
       if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
       prodTimer = 0;
     }
@@ -171,14 +144,37 @@ class BaseScene extends Phaser.Scene {
     container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
     container.label = label; container.hpBar = hpBar; container.buildText = buildText;
+    container.buildTimer = null; // Nowy system timerów
     
-    container.buildEndTime = isNew ? Date.now() + (def.buildTime * level * 1000) : buildEndTime;
-    
-    if (container.buildEndTime > 0) { 
+    // Jeśli to nowy budynek, ustawiamy czas budowy
+    if (isNew) {
+      let buildTimeMs = def.buildTime * level * 1000;
       container.setAlpha(0.5); 
-      label.setAlpha(0.5); 
-      let remain = Math.ceil((container.buildEndTime - Date.now()) / 1000);
+      label.setAlpha(0.5);
+      
+      let remain = Math.ceil(buildTimeMs / 1000);
       buildText.setText('🔨 ' + remain + 's');
+
+      // Używamy Phaserowego zegara zamiast systemowego
+      container.buildTimer = this.time.addEvent({
+        delay: 1000, 
+        repeat: remain - 1,
+        callback: () => {
+          remain--;
+          if (remain > 0) {
+            buildText.setText('🔨 ' + remain + 's');
+          } else {
+            // KONIEC BUDOWY
+            buildText.setText('');
+            container.setAlpha(1);
+            label.setAlpha(1);
+            container.buildTimer = null;
+            saveGame();
+            if (currentlySelectedBuilding === container) openBuildingPanel(container);
+            showMessage('Budowa ukończona!');
+          }
+        }
+      });
     }
     
     container.hp = hp !== null ? hp : def.hp * level; 
