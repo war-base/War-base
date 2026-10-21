@@ -7,8 +7,8 @@ function selectBuilding(type) {
 function centerCamera() {
   if (!baseSceneInstance) return;
   let target = buildings.find(b => b.type === 'townhall') || buildings[0];
-  let cx = target ? gridToScreen(target.gridX, target.gridY).x : 0;
-  let cy = target ? gridToScreen(target.gridX, target.gridY).y : 0;
+  let cx = target ? target.x : (TILE * GRID) / 2;
+  let cy = target ? target.y : (TILE * GRID) / 2;
   baseSceneInstance.cameras.main.pan(cx, cy, 300, 'Sine.easeInOut');
 }
 
@@ -104,7 +104,7 @@ function endDefense(won) {
   if (defenseScene) {
     const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 35, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, wallbreaker: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, lastDailyReward: 0, wins: 0, losses: 0, destroyedTotal: 0, quests: quests, buildings: [] };
+    if (!data) data = { version: 36, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, wallbreaker: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, lastDailyReward: 0, wins: 0, losses: 0, destroyedTotal: 0, quests: quests, buildings: [] };
     data.buildings = survivingBuildings;
     
     let trophiesChange = 0;
@@ -133,7 +133,7 @@ const config = {
   parent: 'game',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#1a1a1a',
+  backgroundColor: '#2b3625',
   render: { clearBeforeRender: false },
   scene: [BaseScene, BattleScene, DefenseScene]
 };
