@@ -82,8 +82,7 @@ function playSound(type) {
 }
 
 function saveGame() {
-  // ZMIENIONO WERSJĘ NA 60
-  const data = { version: 60, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels, trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward, wins: wins, losses: losses, destroyedTotal: destroyedTotal, quests: quests, buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp })) };
+  const data = { version: 62, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels, trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward, wins: wins, losses: losses, destroyedTotal: destroyedTotal, quests: quests, buildings: buildings.map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp })) };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
 }
 
@@ -92,8 +91,7 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      // ZMIENIONO WERSJĘ NA 60
-      if (data.version === 60 && typeof data.gold === 'number') {
+      if (data.version === 62 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 }; troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 }; trophies = data.trophies || 0; xp = data.xp || 0; level = data.level || 1; soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true; lastDailyReward = data.lastDailyReward || 0; wins = data.wins || 0; losses = data.losses || 0; destroyedTotal = data.destroyedTotal || 0; if(data.quests) quests = data.quests; return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
     } catch (e) { localStorage.removeItem('warBaseSave'); }
