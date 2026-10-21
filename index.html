@@ -8,6 +8,7 @@
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
 
+    /* UPROSZCZONY GÓRNY PASEK */
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); color: white; 
@@ -22,20 +23,15 @@
     .trophies { color: #ff3333; }
     .player-level { color: #88ff88; }
 
-    #settings-btn, #quests-btn, #shop-btn, #daily-btn {
-      position: absolute; top: max(50px, env(safe-area-inset-top));
-      background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #5c4305;
-      width: 35px; height: 35px; border-radius: 50%; font-size: 18px; z-index: 15;
+    /* PRZYCISK MENU */
+    #menu-btn {
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
+      background: rgba(50, 50, 50, 0.9); color: white; border: 2px solid #5c4305;
+      width: 45px; height: 45px; border-radius: 8px; font-size: 24px; z-index: 15;
       display: flex; justify-content: center; align-items: center; cursor: pointer;
-      pointer-events: auto;
+      pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.6);
     }
-    #settings-btn { right: 10px; }
-    #quests-btn { right: 55px; border-color: #ffd700; color: #ffd700; }
-    #shop-btn { right: 100px; border-color: #ba55d3; color: #ba55d3; }
-    #daily-btn { right: 145px; border-color: #88ff88; color: #88ff88; }
-    #settings-btn:active, #quests-btn:active, #shop-btn:active, #daily-btn:active { background: #222; }
-    #daily-btn.available { animation: pulse-glow 1.5s infinite; }
-    @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(136,255,136,0.7); } 70% { box-shadow: 0 0 0 10px rgba(136,255,136,0); } 100% { box-shadow: 0 0 0 0 rgba(136,255,136,0); } }
+    #menu-btn:active { background: #222; }
 
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
@@ -142,6 +138,7 @@
       white-space: nowrap; border: 1px solid #ff8888; text-transform: uppercase;
     }
 
+    /* --- GŁÓWNE MODALE --- */
     .modal-overlay {
       position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0, 0, 0, 0.85); z-index: 1000;
@@ -155,6 +152,33 @@
     }
     .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
     
+    /* MENU GŁÓWNE */
+    #main-menu-overlay .modal-content { border-color: #ba55d3; min-width: 250px; }
+    #main-menu-overlay h2 { color: #ba55d3; }
+    .menu-btn-item {
+      display: flex; align-items: center; justify-content: flex-start; gap: 15px;
+      width: 100%; padding: 12px 15px; margin-bottom: 10px;
+      background: #2a2a2a; border: 1px solid #444; border-radius: 8px;
+      color: white; font-size: 18px; font-weight: bold; cursor: pointer; text-align: left;
+    }
+    .menu-btn-item:active { background: #444; border-color: #ba55d3; }
+    .menu-icon { font-size: 24px; }
+
+    /* PROFIL GRACZA */
+    #profile-overlay .modal-content { border-color: #ffd700; }
+    .profile-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
+    .avatar { width: 60px; height: 60px; background: #5c4305; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; border: 2px solid #ffd700; }
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: #2a2a2a; padding: 10px; border-radius: 8px; border: 1px solid #444; }
+    .stat-value { font-size: 24px; color: #88ff88; font-weight: bold; }
+    .stat-label { font-size: 12px; color: #aaa; text-transform: uppercase; }
+
+    /* POMOC */
+    #help-overlay .modal-content { border-color: #5f9ea0; }
+    #help-overlay h2 { color: #5f9ea0; }
+    .help-text { text-align: left; font-size: 14px; line-height: 1.5; margin-bottom: 15px; }
+    .help-text b { color: #c9a06c; }
+
     .quest-item {
       background: #2a2a2a; border: 1px solid #444; border-radius: 8px;
       padding: 10px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center;
@@ -198,7 +222,7 @@
     .chest-rewards { font-size: 20px; color: #ffd700; margin: 15px 0; }
     
     #reset-btn {
-      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 190px;
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 65px;
       background: rgba(139, 0, 0, 0.7); color: white; border: none;
       padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 999;
     }
@@ -214,10 +238,7 @@
     <div class="stat-box res-elixir">🔮 <span id="ui-elixir">1000</span></div>
   </div>
   
-  <button id="daily-btn" onclick="openDailyReward()">🎁</button>
-  <button id="shop-btn" onclick="openShop()">🛒</button>
-  <button id="quests-btn" onclick="openQuests()">📜</button>
-  <button id="settings-btn" onclick="openSettings()">⚙️</button>
+  <button id="menu-btn" onclick="openMainMenu()">☰</button>
   <button id="reset-btn" onclick="resetGame()">RESET</button>
 
   <div id="build-menu">
@@ -250,6 +271,9 @@
       <button class="troop-btn" id="btn-troop-giant" onclick="selectBattleTroop('giant')">
         🗿 Golem<br><span id="ui-giant">0</span>
       </button>
+      <button class="troop-btn" id="btn-troop-wallbreaker" onclick="selectBattleTroop('wallbreaker')">
+        🧨 Saper<br><span id="ui-wallbreaker">0</span>
+      </button>
       <button class="troop-btn hero-btn disabled" id="btn-troop-hero" onclick="selectBattleTroop('hero')">
         🩸 Watażka<br><span id="ui-hero">0</span>
       </button>
@@ -273,6 +297,7 @@
       <button class="train-btn" onclick="trainTroop('barbarian')">Szkol Wojownika (50 🔮)</button>
       <button class="train-btn" onclick="trainTroop('archer')">Szkol Łucznika (75 🔮)</button>
       <button class="train-btn" onclick="trainTroop('giant')">Zbuduj Golema (150 🔮)</button>
+      <button class="train-btn" onclick="trainTroop('wallbreaker')">Szkol Sapera (100 🔮)</button>
     </div>
 
     <div id="bp-lab-section">
@@ -289,39 +314,90 @@
   
   <div id="message">Za mało surowców!</div>
 
+  <!-- MENU GŁÓWNE -->
+  <div id="main-menu-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Menu Główne</h2>
+      <button class="menu-btn-item" onclick="openProfile()"><span class="menu-icon">👤</span> Profil Gracza</button>
+      <button class="menu-btn-item" onclick="openShop()"><span class="menu-icon">🛒</span> Sklep</button>
+      <button class="menu-btn-item" onclick="openQuests()"><span class="menu-icon">📜</span> Zadania</button>
+      <button class="menu-btn-item" onclick="openSettings()"><span class="menu-icon">⚙️</span> Ustawienia</button>
+      <button class="menu-btn-item" onclick="openHelp()"><span class="menu-icon">❓</span> Pomoc</button>
+      <button class="menu-btn-item" onclick="openDailyReward()"><span class="menu-icon">🎁</span> Codzienna Nagroda</button>
+      <button class="close-modal" onclick="closeMainMenu()">Zamknij Menu</button>
+    </div>
+  </div>
+
+  <!-- EKRAN PROFILU -->
+  <div id="profile-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Profil Gracza</h2>
+      <div class="profile-header">
+        <div class="avatar">🩸</div>
+        <div style="text-align: left;">
+          <div style="font-size: 20px; font-weight: bold; color: #fff;">Watażka</div>
+          <div style="font-size: 14px; color: #ffd700;">Ranga: <span id="profile-level">1</span></div>
+        </div>
+      </div>
+      <div class="profile-stats">
+        <div class="stat-card">
+          <div class="stat-value" id="profile-trophies">0</div>
+          <div class="stat-label">Czaszki 💀</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="profile-wins">0</div>
+          <div class="stat-label">Wygrane ⚔️</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="profile-losses">0</div>
+          <div class="stat-label">Przegrane 🛡️</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="profile-destroyed">0</div>
+          <div class="stat-label">Zniszczone 🏚️</div>
+        </div>
+      </div>
+      <button class="close-modal" onclick="closeProfile()">Zamknij Profil</button>
+    </div>
+  </div>
+
+  <!-- EKRAN POMOCY -->
+  <div id="help-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Jak grać?</h2>
+      <div class="help-text">
+        <p>Witaj w <b>Twierdzy</b>! Twoim celem jest zbudowanie potężnej bazy i zbieranie Czaszek (💀) w bitwach PvP.</p>
+        <p><b>Budowanie:</b> Wybierz budynek z dolnego menu i postaw go na zielonej siatce. Ulepszaj Warownię, aby odblokować kolejne poziomy ulepszeń.</p>
+        <p><b>Atak:</b> Wejdź w Atak. Wybierz jednostkę (np. Wojownika) i klikaj na planszy wroga, aby ją zrzucić. Uważaj na Wieże!</p>
+        <p><b>Saper (🧨):</b> Biegnie prosto do murów wroga i wysadza je.</p>
+        <p><b>Obrona:</b> Kliknij Broń, aby odeprzeć atak wroga. Klikaj na ekranie, aby zrzucać pociski z moździerza.</p>
+      </div>
+      <button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button>
+    </div>
+  </div>
+
+  <!-- SKLEP -->
   <div id="shop-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Sklep</h2>
       <div class="shop-item">
         <div class="shop-icon">💰</div>
-        <div class="shop-info">
-          <div class="shop-title">1000 Złota</div>
-          <div class="shop-price">Koszt: 500 Many</div>
-        </div>
+        <div class="shop-info"><div class="shop-title">1000 Złota</div><div class="shop-price">Koszt: 500 Many</div></div>
         <button class="shop-buy-btn" onclick="buyGoldWithMana()">Kup</button>
       </div>
       <div class="shop-item">
         <div class="shop-icon">🔮</div>
-        <div class="shop-info">
-          <div class="shop-title">500 Many</div>
-          <div class="shop-price">Koszt: 1000 Złota</div>
-        </div>
+        <div class="shop-info"><div class="shop-title">500 Many</div><div class="shop-price">Koszt: 1000 Złota</div></div>
         <button class="shop-buy-btn" onclick="buyManaWithGold()">Kup</button>
       </div>
       <div class="shop-item">
         <div class="shop-icon">📦</div>
-        <div class="shop-info">
-          <div class="shop-title">Drewniana Skrzynia</div>
-          <div class="shop-price">Koszt: 500 Złota</div>
-        </div>
+        <div class="shop-info"><div class="shop-title">Drewniana Skrzynia</div><div class="shop-price">Koszt: 500 Złota</div></div>
         <button class="shop-buy-btn" onclick="buyChest(500, 'wood')">Kup</button>
       </div>
       <div class="shop-item">
         <div class="shop-icon">🎁</div>
-        <div class="shop-info">
-          <div class="shop-title">Srebrna Skrzynia</div>
-          <div class="shop-price">Koszt: 2000 Złota</div>
-        </div>
+        <div class="shop-info"><div class="shop-title">Srebrna Skrzynia</div><div class="shop-price">Koszt: 2000 Złota</div></div>
         <button class="shop-buy-btn" onclick="buyChest(2000, 'silver')">Kup</button>
       </div>
       <button class="close-modal" onclick="closeShop()">Zamknij</button>
@@ -376,10 +452,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   
-  <!-- KOLEJNOŚĆ MA ZNACZENIE! -->
-  <script src="config.js?v=30"></script>
-  <script src="ui.js?v=30"></script>
-  <script src="scenes.js?v=30"></script>
-  <script src="main.js?v=30"></script>
+  <script src="config.js?v=32"></script>
+  <script src="ui.js?v=32"></script>
+  <script src="scenes.js?v=32"></script>
+  <script src="main.js?v=32"></script>
 </body>
 </html>
