@@ -9,7 +9,12 @@ let level = 1;
 let soundEnabled = true; 
 let lastDailyReward = 0; 
 
-let army = { barbarian: 5, archer: 3, giant: 1, hero: 0 }; 
+// STATYSTYKI GRACZA
+let wins = 0;
+let losses = 0;
+let destroyedTotal = 0;
+
+let army = { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 }; 
 let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
 let selectedBattleTroopType = 'barbarian';
 
@@ -20,7 +25,9 @@ let quests = [
   { id: 'q4', title: 'Niszczyciel', desc: 'Zniszcz 10 budynków wroga.', target: 10, current: 0, reward: { gold: 400, elixir: 0, xp: 50 }, claimed: false, type: 'destroy_buildings' },
   { id: 'q5', title: 'Dowódca', desc: 'Zbuduj Ołtarz Krwi.', target: 1, current: 0, reward: { gold: 1000, elixir: 0, xp: 150 }, claimed: false, type: 'build_altar' },
   { id: 'q6', title: 'Architekt', desc: 'Ulepsz dowolny budynek.', target: 1, current: 0, reward: { gold: 300, elixir: 100, xp: 40 }, claimed: false, type: 'upgrade_any' },
-  { id: 'q7', title: 'Wojownik', desc: 'Wygraj bitwę.', target: 1, current: 0, reward: { gold: 500, elixir: 200, xp: 80 }, claimed: false, type: 'win_battle' }
+  { id: 'q7', title: 'Wojownik', desc: 'Wygraj bitwę.', target: 1, current: 0, reward: { gold: 500, elixir: 200, xp: 80 }, claimed: false, type: 'win_battle' },
+  { id: 'q8', title: 'Saper', desc: 'Wyszkol 3 Saperów.', target: 3, current: 0, reward: { gold: 300, elixir: 200, xp: 50 }, claimed: false, type: 'train_wallbreaker' },
+  { id: 'q9', title: 'Burzyciel', desc: 'Zniszcz 5 Murów wroga.', target: 5, current: 0, reward: { gold: 600, elixir: 0, xp: 80 }, claimed: false, type: 'destroy_walls' }
 ];
 
 const BUILDINGS = {
@@ -38,6 +45,7 @@ const BASE_TROOPS = {
   barbarian: { name: 'Wojownik', short: 'W', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
   archer: { name: 'Łucznik', short: 'Ł', hp: 40, damage: 10, speed: 130, range: 180, cost: 75, target: 'any' },
   giant: { name: 'Golem', short: 'G', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' },
+  wallbreaker: { name: 'Saper', short: 'S', hp: 30, damage: 500, speed: 200, range: 20, cost: 100, target: 'wall' }, 
   hero: { name: 'Watażka', short: '🩸', hp: 1500, damage: 80, speed: 120, range: 50, cost: 0, target: 'any' } 
 };
 
@@ -55,7 +63,7 @@ function getTroopStats(type) {
   const base = BASE_TROOPS[type];
   let lvl = troopLevels[type] || 1;
   let multiplier = 1 + (lvl - 1) * 0.3;
-  if (type === 'hero') multiplier = 1; 
+  if (type === 'hero' || type === 'wallbreaker') multiplier = 1; 
   
   return {
     name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
@@ -69,7 +77,7 @@ function getMaxArmy() {
   buildings.forEach(b => { if (b.type === 'camp') max += 10 * b.level; });
   return max;
 }
-function getCurrentArmySize() { return army.barbarian + army.archer + army.giant; }
+function getCurrentArmySize() { return army.barbarian + army.archer + army.giant + army.wallbreaker; }
 
 function playSound(type) {
   if (!soundEnabled) return; 
@@ -104,8 +112,9 @@ function playSound(type) {
 
 function saveGame() {
   const data = { 
-    version: 30, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    version: 32, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
     trophies: trophies, xp: xp, level: level, soundEnabled: soundEnabled, lastDailyReward: lastDailyReward,
+    wins: wins, losses: losses, destroyedTotal: destroyedTotal,
     quests: quests, 
     buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
   };
@@ -117,15 +126,18 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 30 && typeof data.gold === 'number') {
+      if (data.version === 32 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
-        army = data.army || { barbarian: 5, archer: 3, giant: 1, hero: 0 };
+        army = data.army || { barbarian: 5, archer: 3, giant: 1, wallbreaker: 0, hero: 0 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
         trophies = data.trophies || 0;
         xp = data.xp || 0;
         level = data.level || 1;
         soundEnabled = data.soundEnabled !== undefined ? data.soundEnabled : true;
         lastDailyReward = data.lastDailyReward || 0;
+        wins = data.wins || 0;
+        losses = data.losses || 0;
+        destroyedTotal = data.destroyedTotal || 0;
         if(data.quests) quests = data.quests;
         return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
