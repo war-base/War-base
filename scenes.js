@@ -77,17 +77,29 @@ class BaseScene extends Phaser.Scene {
   update(time, delta) {
     if (this.fpsText) this.fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
     let now = Date.now();
+    
+    // NAPRAWA: Sprawdzamy stan budynków w każdej klatce na podstawie czasu systemowego
     buildings.forEach(b => {
-      if (b.buildEndTime > now) { b.buildText.setText('🔨 ' + Math.ceil((b.buildEndTime - now) / 1000) + 's'); } 
-      else if (b.buildEndTime > 0) {
-        b.buildEndTime = 0; b.buildText.setText(''); b.container.setAlpha(1); b.label.setAlpha(1);
-        saveGame(); if (currentlySelectedBuilding === b) openBuildingPanel(b);
+      if (b.buildEndTime > 0) {
+        if (now >= b.buildEndTime) {
+          // Budowa zakończona
+          b.buildEndTime = 0; 
+          b.buildText.setText(''); 
+          b.container.setAlpha(1); 
+          b.label.setAlpha(1);
+          saveGame(); 
+          if (currentlySelectedBuilding === b) openBuildingPanel(b);
+        } else {
+          // Budowa trwa - aktualizacja licznika
+          b.buildText.setText('🔨 ' + Math.ceil((b.buildEndTime - now) / 1000) + 's');
+        }
       }
     });
+    
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let aG = 0, aE = 0;
-      buildings.forEach(b => { if (b.buildEndTime <= now) { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; } });
+      buildings.forEach(b => { if (b.buildEndTime === 0) { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; } });
       if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
       prodTimer = 0;
     }
@@ -99,6 +111,8 @@ class BaseScene extends Phaser.Scene {
     
     if (gridX === this.lastGridX && gridY === this.lastGridY) return;
     if (gridX < 0 || gridY < 0 || gridX >= GRID || gridY >= GRID) return;
+    
+    // Sprawdzamy kolizję - blokujemy jeśli cokolwiek tam stoi (nawet w budowie)
     if (buildings.some(b => b.gridX === gridX && b.gridY === gridY)) return;
     
     const def = BUILDINGS[selectedBuildingType];
@@ -134,13 +148,22 @@ class BaseScene extends Phaser.Scene {
     container.label = label; container.hpBar = hpBar; container.buildText = buildText;
     container.buildEndTime = isNew ? Date.now() + (def.buildTime * level * 1000) : buildEndTime;
     
-    if (container.buildEndTime > Date.now()) { container.setAlpha(0.5); label.setAlpha(0.5); }
-    container.hp = hp !== null ? hp : def.hp * level; container.maxHp = def.hp * level; container.hpBar.scaleX = container.hp / container.maxHp;
+    if (container.buildEndTime > Date.now()) { 
+      container.setAlpha(0.5); 
+      label.setAlpha(0.5); 
+      let remain = Math.ceil((container.buildEndTime - Date.now()) / 1000);
+      buildText.setText('🔨 ' + remain + 's');
+    }
+    
+    container.hp = hp !== null ? hp : def.hp * level; 
+    container.maxHp = def.hp * level; 
+    container.hpBar.scaleX = container.hp / container.maxHp;
 
     container.on('pointerdown', (pointer, localX, localY, event) => {
       if (event) event.stopPropagation(); if (selectedBuildingType) return; openBuildingPanel(container);
     });
-    buildings.push(container); if (isNew && window.preview) window.preview.setVisible(false);
+    buildings.push(container); 
+    if (isNew && window.preview) window.preview.setVisible(false);
   }
 }
 
