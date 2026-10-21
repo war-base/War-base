@@ -7,8 +7,8 @@ function selectBuilding(type) {
 function centerCamera() {
   if (!baseSceneInstance) return;
   let target = buildings.find(b => b.type === 'townhall') || buildings[0];
-  let cx = target ? target.x : (TILE * GRID) / 2;
-  let cy = target ? target.y : (TILE * GRID) / 2;
+  let cx = target ? gridToScreen(target.gridX, target.gridY).x : 0;
+  let cy = target ? gridToScreen(target.gridX, target.gridY).y : 0;
   baseSceneInstance.cameras.main.pan(cx, cy, 300, 'Sine.easeInOut');
 }
 
@@ -30,10 +30,7 @@ function startAttack() {
   document.getElementById('attack-btn').style.display = 'none';
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
-  document.getElementById('settings-btn').style.display = 'none';
-  document.getElementById('quests-btn').style.display = 'none';
-  document.getElementById('shop-btn').style.display = 'none';
-  document.getElementById('daily-btn').style.display = 'none';
+  document.getElementById('menu-btn').style.display = 'none';
   document.getElementById('reset-btn').style.display = 'none';
   document.getElementById('battle-ui').style.display = 'block';
   document.getElementById('timer-display').innerText = '3:00';
@@ -46,7 +43,7 @@ function startAttack() {
 function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings = 0, totalBuildings = 1) {
   if (isEndingBattle) return; 
   isEndingBattle = true;
-  army = { barbarian: 0, archer: 0, giant: 0, hero: 0 }; 
+  army = { barbarian: 0, archer: 0, giant: 0, wallbreaker: 0, hero: 0 }; 
   
   let destroyPercent = Math.floor((destroyedBuildings / totalBuildings) * 100);
   if (destroyPercent > 100) destroyPercent = 100;
@@ -62,10 +59,13 @@ function endBattle(won = false, lootGold = 0, lootElixir = 0, destroyedBuildings
     gold += 500 + lootGold; elixir += 200 + lootElixir; 
     trophiesGained = 5; trophies += trophiesGained;
     xpGained += 100; updateQuest('win_battle', 1); playSound('coin'); 
+    wins++;
   } else {
     gold += lootGold; elixir += lootElixir;
     trophiesGained = -2; trophies = Math.max(0, trophies - 2); 
+    losses++;
   }
+  destroyedTotal += destroyedBuildings;
   
   addXP(xpGained); updateUI(); saveGame();
   
@@ -92,10 +92,7 @@ function startDefense() {
   document.getElementById('attack-btn').style.display = 'none';
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
-  document.getElementById('settings-btn').style.display = 'none';
-  document.getElementById('quests-btn').style.display = 'none';
-  document.getElementById('shop-btn').style.display = 'none';
-  document.getElementById('daily-btn').style.display = 'none';
+  document.getElementById('menu-btn').style.display = 'none';
   document.getElementById('reset-btn').style.display = 'none';
   document.getElementById('defense-ui').style.display = 'block';
   document.getElementById('defense-status').innerText = '🛡️ Obrona (Moździerz: Gotowy)';
@@ -105,9 +102,9 @@ function startDefense() {
 function endDefense(won) {
   const defenseScene = game.scene.getScene('DefenseScene');
   if (defenseScene) {
-    const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
+    const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ gridX: b.gridX, gridY: b.gridY, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 30, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, lastDailyReward: 0, quests: quests, buildings: [] };
+    if (!data) data = { version: 33, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, wallbreaker: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, trophies: 0, xp: 0, level: 1, soundEnabled: true, lastDailyReward: 0, wins: 0, losses: 0, destroyedTotal: 0, quests: quests, buildings: [] };
     data.buildings = survivingBuildings;
     
     let trophiesChange = 0;
@@ -136,7 +133,7 @@ const config = {
   parent: 'game',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#2b3625',
+  backgroundColor: '#1a1a1a',
   render: { clearBeforeRender: false },
   scene: [BaseScene, BattleScene, DefenseScene]
 };
