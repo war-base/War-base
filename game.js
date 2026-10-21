@@ -1,10 +1,10 @@
 const TILE = 64; 
 const GRID = 25; 
 
-let gold = 1000;
+let gold = 3000; // Zwiększone na start, żeby przetestować Ołtarz
 let elixir = 1000;
 
-let army = { barbarian: 5, archer: 3, giant: 1 }; 
+let army = { barbarian: 5, archer: 3, giant: 1, hero: 0 }; 
 let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
 let selectedBattleTroopType = 'barbarian';
 
@@ -14,6 +14,7 @@ const BUILDINGS = {
   barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
   camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x228b22, stroke: 0x006400, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30 },
   lab: { name: 'Laboratorium', short: 'L', cost: { gold: 0, elixir: 500 }, color: 0x8a2be2, stroke: 0x4b0082, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40 },
+  altar: { name: 'Ołtarz', short: 'B', cost: { gold: 2000, elixir: 0 }, color: 0xff8c00, stroke: 0x8b4500, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50 },
   wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x808080, stroke: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
   tower: { name: 'Wieża', short: 'W', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
 };
@@ -21,7 +22,9 @@ const BUILDINGS = {
 const BASE_TROOPS = {
   barbarian: { name: 'Barbarzyńca', short: 'B', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
   archer: { name: 'Łucznik', short: 'Ł', hp: 40, damage: 10, speed: 130, range: 180, cost: 75, target: 'any' },
-  giant: { name: 'Gigant', short: 'G', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' }
+  giant: { name: 'Gigant', short: 'G', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' },
+  // Potężny Król
+  hero: { name: 'Król', short: '👑', hp: 1500, damage: 80, speed: 120, range: 50, cost: 0, target: 'any' } 
 };
 
 let selectedBuildingType = null;
@@ -66,8 +69,10 @@ function playSound(type) {
 
 function getTroopStats(type) {
   const base = BASE_TROOPS[type];
-  const lvl = troopLevels[type];
-  const multiplier = 1 + (lvl - 1) * 0.3;
+  let lvl = troopLevels[type] || 1;
+  let multiplier = 1 + (lvl - 1) * 0.3;
+  if (type === 'hero') multiplier = 1; // Król nie ma poziomów w laboratorium
+  
   return {
     name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
     hp: Math.floor(base.hp * multiplier),
@@ -88,21 +93,22 @@ function getMaxArmy() {
   buildings.forEach(b => { if (b.type === 'camp') max += 10 * b.level; });
   return max;
 }
-function getCurrentArmySize() { return army.barbarian + army.archer + army.giant; }
+function getCurrentArmySize() { return army.barbarian + army.archer + army.giant; } // Król nie zajmuje miejsca w armii
 
 function updateUI() {
   document.getElementById('ui-gold').innerText = Math.floor(gold);
   document.getElementById('ui-elixir').innerText = Math.floor(elixir);
   const btns = document.querySelectorAll('.build-btn');
-  if (btns.length >= 7) {
+  if (btns.length >= 8) {
     btns.forEach(btn => btn.classList.remove('selected'));
     if (selectedBuildingType === 'townhall') btns[0].classList.add('selected');
     if (selectedBuildingType === 'mine') btns[1].classList.add('selected');
     if (selectedBuildingType === 'barracks') btns[2].classList.add('selected');
     if (selectedBuildingType === 'camp') btns[3].classList.add('selected');
     if (selectedBuildingType === 'lab') btns[4].classList.add('selected');
-    if (selectedBuildingType === 'wall') btns[5].classList.add('selected');
-    if (selectedBuildingType === 'tower') btns[6].classList.add('selected');
+    if (selectedBuildingType === 'altar') btns[5].classList.add('selected');
+    if (selectedBuildingType === 'wall') btns[6].classList.add('selected');
+    if (selectedBuildingType === 'tower') btns[7].classList.add('selected');
   }
   
   if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
@@ -111,6 +117,22 @@ function updateUI() {
   
   if(document.getElementById('bp-army-capacity')) {
     document.getElementById('bp-army-capacity').innerText = `${getCurrentArmySize()} / ${getMaxArmy()}`;
+  }
+}
+
+function checkHeroAvailability() {
+  // Sprawdzamy, czy gracz ma zbudowany Ołtarz
+  const hasAltar = buildings.some(b => b.type === 'altar');
+  const heroBtn = document.getElementById('btn-troop-hero');
+  if (!heroBtn) return;
+
+  if (hasAltar && army.hero > 0) {
+    heroBtn.classList.remove('disabled');
+    document.getElementById('ui-hero').innerText = "Gotowy";
+  } else {
+    heroBtn.classList.add('disabled');
+    document.getElementById('ui-hero').innerText = hasAltar ? "Zużyty" : "Brak Ołtarza";
+    if (selectedBattleTroopType === 'hero') selectBattleTroop('barbarian');
   }
 }
 
@@ -265,7 +287,7 @@ function sellBuilding() {
 
 function saveGame() {
   const data = { 
-    version: 21, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    version: 22, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
     buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
   };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
@@ -276,9 +298,9 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 21 && typeof data.gold === 'number') {
+      if (data.version === 22 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
-        army = data.army || { barbarian: 5, archer: 3, giant: 1 };
+        army = data.army || { barbarian: 5, archer: 3, giant: 1, hero: 0 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
         return data.buildings || []; 
       } else { localStorage.removeItem('warBaseSave'); }
@@ -290,13 +312,18 @@ function loadGame() {
 function selectBattleTroop(type) {
   selectedBattleTroopType = type;
   document.querySelectorAll('.troop-btn').forEach(btn => btn.classList.remove('selected'));
-  document.getElementById('btn-troop-' + type).classList.add('selected');
+  const btn = document.getElementById('btn-troop-' + type);
+  if (btn) btn.classList.add('selected');
 }
 
 function startAttack() {
   closeBuildingPanel();
-  if (getCurrentArmySize() <= 0) { showMessage('Nie masz wojska!'); return; }
+  if (getCurrentArmySize() <= 0 && army.hero <= 0) { showMessage('Nie masz wojska!'); return; }
   
+  // Sprawdzenie Ołtarza - jeśli jest, dodajemy Króla
+  const hasAltar = buildings.some(b => b.type === 'altar');
+  army.hero = (hasAltar) ? 1 : 0;
+
   document.getElementById('build-menu').style.display = 'none';
   document.getElementById('home-btn').style.display = 'none';
   document.getElementById('attack-btn').style.display = 'none';
@@ -306,6 +333,8 @@ function startAttack() {
   document.getElementById('timer-display').innerText = '3:00';
   
   selectBattleTroop('barbarian'); updateUI();
+  checkHeroAvailability();
+  
   isEndingBattle = false; playSound('build');
   game.scene.start('BattleScene');
 }
@@ -313,7 +342,7 @@ function startAttack() {
 function endBattle(won = false, lootGold = 0, lootElixir = 0) {
   if (isEndingBattle) return; 
   isEndingBattle = true;
-  army = { barbarian: 0, archer: 0, giant: 0 }; 
+  army = { barbarian: 0, archer: 0, giant: 0, hero: 0 }; 
   
   if (won) { gold += 500 + lootGold; elixir += 200 + lootElixir; playSound('coin'); } 
   else { gold += lootGold; elixir += lootElixir; }
@@ -342,7 +371,7 @@ function endDefense(won) {
   if (defenseScene) {
     const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 21, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
+    if (!data) data = { version: 22, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
     data.buildings = survivingBuildings;
     if (won) { data.gold += 300; data.elixir += 150; playSound('coin'); }
     localStorage.setItem('warBaseSave', JSON.stringify(data));
@@ -503,6 +532,7 @@ class BattleScene extends Phaser.Scene {
       if (army[selectedBattleTroopType] > 0) {
         this.spawnTroop(pointer.x, pointer.y, selectedBattleTroopType);
         army[selectedBattleTroopType]--; updateUI(); playSound('shoot');
+        if (selectedBattleTroopType === 'hero') checkHeroAvailability();
       } else { showMessage("Brak tej jednostki!"); }
     });
   }
@@ -519,8 +549,12 @@ class BattleScene extends Phaser.Scene {
 
   spawnTroop(x, y, type) {
     const def = getTroopStats(type); 
-    const troopSprite = this.add.text(x, y, def.short, { fontSize: '20px', color: '#fff', fontStyle: 'bold', backgroundColor: '#1e90ff', padding: {x:4, y:4} }).setOrigin(0.5);
-    const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5);
+    let bgColor = '#1e90ff'; // Niebieski dla zwykłych
+    if (type === 'hero') bgColor = '#ff8c00'; // Pomarańczowy/Złoty dla Króla
+    let size = (type === 'hero') ? '32px' : '20px';
+
+    const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?8:4), y: (type==='hero'?8:4)} }).setOrigin(0.5);
+    const hpBar = this.add.rectangle(x - 12, y - (type==='hero'?30:24), (type==='hero'?40:24), 6, 0x00ff00).setOrigin(0, 0.5);
     this.troops.push({ type: type, def: def, sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: def.hp, maxHp: def.hp });
   }
 
@@ -559,7 +593,10 @@ class BattleScene extends Phaser.Scene {
     for (let i = this.troops.length - 1; i >= 0; i--) {
       let troop = this.troops[i];
       if (troop.hp <= 0) { troop.sprite.destroy(); troop.hpBar.destroy(); this.troops.splice(i, 1); continue; }
-      troop.hpBar.width = 24 * (troop.hp / troop.maxHp); troop.hpBar.setPosition(troop.x - 12, troop.y - 24);
+      
+      let barWidth = (troop.type === 'hero') ? 40 : 24;
+      troop.hpBar.width = barWidth * (troop.hp / troop.maxHp); 
+      troop.hpBar.setPosition(troop.x - barWidth/2, troop.y - (troop.type==='hero'?30:24));
 
       if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y, troop.def.target);
       
@@ -574,10 +611,7 @@ class BattleScene extends Phaser.Scene {
           troop.target.hp -= dmg; troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
           
           if (time > this.lastDamageText + 200) { this.showDamageText(troop.target.x + Phaser.Math.Between(-20, 20), troop.target.y, dmg * 5); this.lastDamageText = time; }
-          if (troop.type === 'archer' && Math.random() < 0.1) {
-            const arrow = this.add.line(0, 0, troop.x, troop.y, troop.target.x, troop.target.y, 0xffffff);
-            arrow.setOrigin(0,0); setTimeout(() => arrow.destroy(), 100); playSound('shoot');
-          }
+          
           if (troop.target.hp <= 0) {
             troop.target.alive = false; this.explode(troop.target.x, troop.target.y, 0xffaa00); playSound('boom');
             troop.target.sprite.destroy(); troop.target.hpBar.destroy(); 
@@ -594,7 +628,7 @@ class BattleScene extends Phaser.Scene {
 
     if (this.enemyBuildings.filter(b => b.alive).length === 0) {
       this.battleEnded = true; setTimeout(() => endBattle(true, this.lootGold, this.lootElixir), 1000);
-    } else if (army.barbarian + army.archer + army.giant === 0 && this.troops.length === 0 && !this.battleEnded) {
+    } else if (army.barbarian + army.archer + army.giant + army.hero === 0 && this.troops.length === 0 && !this.battleEnded) {
       this.battleEnded = true; setTimeout(() => endBattle(false, this.lootGold, this.lootElixir), 1000);
     }
   }
