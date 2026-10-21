@@ -1,5 +1,5 @@
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
-  let container = scene.add.container(x, y).setDepth(100); // Wymuszony wysoki priorytet
+  let container = scene.add.container(x, y).setDepth(100); 
   let base = scene.add.rectangle(0, 0, TILE - 10, TILE - 10, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
   let detail = scene.add.text(0, 0, def.short, { fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
   container.add([base, detail]);
@@ -98,7 +98,9 @@ class BaseScene extends Phaser.Scene {
     
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     
-    // Etykieta i pasek życia mają jeszcze wyższy priorytet
+    // KLUCZOWA POPRAWKA: Przypisujemy typ do kontenera
+    container.type = type; 
+    
     const label = this.add.text(screenX, screenY + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5).setDepth(150);
     const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000).setDepth(150);
     const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(150);
