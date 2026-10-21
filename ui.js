@@ -25,6 +25,21 @@ function updateUI() {
   if(document.getElementById('bp-army-capacity')) {
     document.getElementById('bp-army-capacity').innerText = `${getCurrentArmySize()} / ${getMaxArmy()}`;
   }
+
+  // AKTUALIZACJA SOJUSZU W MENU
+  updateAllianceUI();
+}
+
+// Nowa funkcja do wyświetlania statusu sojuszu
+function updateAllianceUI() {
+  let allianceBtn = document.getElementById('alliance-btn');
+  if (allianceBtn) {
+    if (playerAlliance) {
+      allianceBtn.innerHTML = `<span class="menu-icon">🛡️</span> Sojusz: ${playerAlliance}`;
+    } else {
+      allianceBtn.innerHTML = `<span class="menu-icon">🛡️</span> Sojusz (Brak)`;
+    }
+  }
 }
 
 function showMessage(text) {
@@ -59,7 +74,10 @@ function checkHeroAvailability() {
   }
 }
 
-function openMainMenu() { document.getElementById('main-menu-overlay').style.display = 'flex'; }
+function openMainMenu() { 
+  updateAllianceUI(); // Odświeżenie sojuszu przy otwieraniu
+  document.getElementById('main-menu-overlay').style.display = 'flex'; 
+}
 function closeMainMenu() { document.getElementById('main-menu-overlay').style.display = 'none'; }
 
 function openProfile() {
