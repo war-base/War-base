@@ -22,8 +22,8 @@
     .trophies { color: #ff3333; }
     .player-level { color: #88ff88; }
 
-    /* Ikony Ustawień i Zadań */
-    #settings-btn, #quests-btn {
+    /* Ikony Ustawień, Zadań, Sklepu, Nagrody */
+    #settings-btn, #quests-btn, #shop-btn, #daily-btn {
       position: absolute; top: max(50px, env(safe-area-inset-top));
       background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #5c4305;
       width: 35px; height: 35px; border-radius: 50%; font-size: 18px; z-index: 15;
@@ -32,7 +32,13 @@
     }
     #settings-btn { right: 10px; }
     #quests-btn { right: 55px; border-color: #ffd700; color: #ffd700; }
-    #settings-btn:active, #quests-btn:active { background: #222; }
+    #shop-btn { right: 100px; border-color: #ba55d3; color: #ba55d3; }
+    #daily-btn { right: 145px; border-color: #88ff88; color: #88ff88; }
+    
+    #settings-btn:active, #quests-btn:active, #shop-btn:active, #daily-btn:active { background: #222; }
+
+    #daily-btn.available { animation: pulse-glow 1.5s infinite; }
+    @keyframes pulse-glow { 0% { box-shadow: 0 0 0 0 rgba(136,255,136,0.7); } 70% { box-shadow: 0 0 0 10px rgba(136,255,136,0); } 100% { box-shadow: 0 0 0 0 rgba(136,255,136,0); } }
 
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
@@ -168,6 +174,22 @@
     .quest-btn.ready { background: #4a5c38; color: white; cursor: pointer; box-shadow: 0 0 10px #88ff88; }
     .quest-btn.claimed { background: #111; color: #555; }
 
+    /* Sklep */
+    .shop-item {
+      background: #2a2a2a; border: 1px solid #5c4305; border-radius: 8px;
+      padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center;
+    }
+    .shop-icon { font-size: 32px; margin-right: 10px; }
+    .shop-info { flex: 1; text-align: left; }
+    .shop-title { font-weight: bold; font-size: 16px; color: #ddd; }
+    .shop-price { font-size: 14px; color: #ffd700; margin-top: 3px; }
+    .shop-buy-btn { 
+      padding: 10px 15px; border-radius: 4px; border: none; font-weight: bold; 
+      background: #ba55d3; color: white; cursor: pointer; font-size: 14px;
+    }
+    .shop-buy-btn:active { background: #8a2be2; }
+    .shop-buy-btn.disabled { background: #444; color: #888; cursor: not-allowed; }
+
     .modal-content button.close-modal { 
       margin-top: 15px; padding: 12px 20px; font-weight: bold; font-size: 16px; 
       border-radius: 5px; border: none; cursor: pointer; width: 100%;
@@ -188,9 +210,15 @@
     /* Ekran Ustawień */
     #settings-overlay .modal-content { border-color: #5f9ea0; }
     #settings-overlay h2 { color: #5f9ea0; }
+
+    /* Ekran Skrzyni (Nagroda) */
+    #chest-overlay .modal-content { border-color: #ba55d3; }
+    .chest-big-icon { font-size: 80px; margin: 20px 0; animation: bounce-in 0.5s; }
+    @keyframes bounce-in { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
+    .chest-rewards { font-size: 20px; color: #ffd700; margin: 15px 0; }
     
     #reset-btn {
-      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 100px;
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 190px;
       background: rgba(139, 0, 0, 0.7); color: white; border: none;
       padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 999;
     }
@@ -206,6 +234,8 @@
     <div class="stat-box res-elixir">🔮 <span id="ui-elixir">1000</span></div>
   </div>
   
+  <button id="daily-btn" onclick="openDailyReward()">🎁</button>
+  <button id="shop-btn" onclick="openShop()">🛒</button>
   <button id="quests-btn" onclick="openQuests()">📜</button>
   <button id="settings-btn" onclick="openSettings()">⚙️</button>
   <button id="reset-btn" onclick="resetGame()">RESET</button>
@@ -279,13 +309,66 @@
   
   <div id="message">Za mało surowców!</div>
 
+  <!-- EKRAN SKLEPU -->
+  <div id="shop-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Sklep</h2>
+      
+      <div class="shop-item">
+        <div class="shop-icon">💰</div>
+        <div class="shop-info">
+          <div class="shop-title">1000 Złota</div>
+          <div class="shop-price">Koszt: 500 Many</div>
+        </div>
+        <button class="shop-buy-btn" onclick="buyGoldWithMana()">Kup</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="shop-icon">🔮</div>
+        <div class="shop-info">
+          <div class="shop-title">500 Many</div>
+          <div class="shop-price">Koszt: 1000 Złota</div>
+        </div>
+        <button class="shop-buy-btn" onclick="buyManaWithGold()">Kup</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="shop-icon">📦</div>
+        <div class="shop-info">
+          <div class="shop-title">Drewniana Skrzynia</div>
+          <div class="shop-price">Koszt: 500 Złota (Losowy Łup)</div>
+        </div>
+        <button class="shop-buy-btn" onclick="buyChest(500, 'wood')">Kup</button>
+      </div>
+
+      <div class="shop-item">
+        <div class="shop-icon">🎁</div>
+        <div class="shop-info">
+          <div class="shop-title">Srebrna Skrzynia</div>
+          <div class="shop-price">Koszt: 2000 Złota (Lepszy Łup)</div>
+        </div>
+        <button class="shop-buy-btn" onclick="buyChest(2000, 'silver')">Kup</button>
+      </div>
+
+      <button class="close-modal" onclick="closeShop()">Zamknij</button>
+    </div>
+  </div>
+
+  <!-- EKRAN SKRZYNI (OTWIERANIE) -->
+  <div id="chest-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="chest-title">Drewniana Skrzynia</h2>
+      <div class="chest-big-icon" id="chest-icon">📦</div>
+      <div id="chest-loot-display" class="chest-rewards"></div>
+      <button class="close-modal" onclick="closeChest()">Odbierz</button>
+    </div>
+  </div>
+
   <!-- EKRAN ZADAŃ -->
   <div id="quests-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Zadania</h2>
-      <div id="quest-list">
-        <!-- Lista zadań generowana przez JS -->
-      </div>
+      <div id="quest-list"></div>
       <button class="close-modal" onclick="closeQuests()">Zamknij</button>
     </div>
   </div>
@@ -322,6 +405,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="game.js?v=28"></script>
+  <script src="game.js?v=29"></script>
 </body>
 </html>
