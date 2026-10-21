@@ -39,11 +39,7 @@ class BaseScene extends Phaser.Scene {
     buildings = []; 
     try { 
       loadGame().forEach(b => {
-        let finalBuildTime = b.buildEndTime;
-        if (finalBuildTime > 0 && Date.now() >= finalBuildTime) {
-          finalBuildTime = 0; 
-        }
-        this.createBuilding(b.gridX, b.gridY, b.type, false, b.level || 1, b.hp || null, finalBuildTime); 
+        this.createBuilding(b.gridX, b.gridY, b.type, false, b.level || 1, b.hp || null); 
       }); 
     } catch (e) {}
     
@@ -97,8 +93,7 @@ class BaseScene extends Phaser.Scene {
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let aG = 0, aE = 0;
-      // Sprawdzamy czy budynek jest ukończony (brak timera)
-      buildings.forEach(b => { if (!b.buildTimer) { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; } });
+      buildings.forEach(b => { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; });
       if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
       prodTimer = 0;
     }
@@ -129,7 +124,7 @@ class BaseScene extends Phaser.Scene {
     updateUI(); saveGame();
   }
 
-  createBuilding(gridX, gridY, type, isNew, level, hp = null, buildEndTime = 0) {
+  createBuilding(gridX, gridY, type, isNew, level, hp = null) {
     const def = BUILDINGS[type];
     let screenX = gridX * TILE + TILE/2;
     let screenY = gridY * TILE + TILE/2;
@@ -137,46 +132,14 @@ class BaseScene extends Phaser.Scene {
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     
     const label = this.add.text(screenX, screenY + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
-    const buildText = this.add.text(screenX, screenY - 35, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
     const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
     const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
     
     container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
-    container.label = label; container.hpBar = hpBar; container.buildText = buildText;
-    container.buildTimer = null; // Nowy system timerów
+    container.label = label; container.hpBar = hpBar;
     
-    // Jeśli to nowy budynek, ustawiamy czas budowy
-    if (isNew) {
-      let buildTimeMs = def.buildTime * level * 1000;
-      container.setAlpha(0.5); 
-      label.setAlpha(0.5);
-      
-      let remain = Math.ceil(buildTimeMs / 1000);
-      buildText.setText('🔨 ' + remain + 's');
-
-      // Używamy Phaserowego zegara zamiast systemowego
-      container.buildTimer = this.time.addEvent({
-        delay: 1000, 
-        repeat: remain - 1,
-        callback: () => {
-          remain--;
-          if (remain > 0) {
-            buildText.setText('🔨 ' + remain + 's');
-          } else {
-            // KONIEC BUDOWY
-            buildText.setText('');
-            container.setAlpha(1);
-            label.setAlpha(1);
-            container.buildTimer = null;
-            saveGame();
-            if (currentlySelectedBuilding === container) openBuildingPanel(container);
-            showMessage('Budowa ukończona!');
-          }
-        }
-      });
-    }
-    
+    // ZABEZPIECZENIE: Brak timera, budynek jest od razu gotowy
     container.hp = hp !== null ? hp : def.hp * level; 
     container.maxHp = def.hp * level; 
     container.hpBar.scaleX = container.hp / container.maxHp;
@@ -373,7 +336,7 @@ class DefenseScene extends Phaser.Scene {
       const label = this.add.text(screenX, screenY + 20, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
       const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
       const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
-      this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime });
+      this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower') });
     });
     
     let centerX = Math.floor(GRID/2) * TILE + TILE/2;
@@ -387,7 +350,7 @@ class DefenseScene extends Phaser.Scene {
     this.time.addEvent({ delay: 1500, loop: true, callback: () => {
         if (this.battleEnded) return;
         this.playerBuildings.forEach(tower => {
-          if (tower.alive && tower.isDefense && tower.buildEndTime <= Date.now()) {
+          if (tower.alive && tower.isDefense) {
             let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 400);
             if (target) {
               const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff);
