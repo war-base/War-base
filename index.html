@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v10</title>
+  <title>War Base v11</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -109,6 +109,13 @@
       border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 40;
       text-align: center;
     }
+
+    /* Przycisk resetowania (awaryjny) */
+    #reset-btn {
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
+      background: rgba(200, 0, 0, 0.7); color: white; border: none;
+      padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 999;
+    }
   </style>
 </head>
 <body>
@@ -119,6 +126,8 @@
     <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">1000</span></div>
   </div>
   
+  <button id="reset-btn" onclick="resetGame()">RESET</button>
+
   <div id="build-menu">
     <button class="build-btn" onclick="selectBuilding('townhall')">🏰 Ratusz<span class="btn-sub gold">1000 🪙</span></button>
     <button class="build-btn" onclick="selectBuilding('mine')">⛏️ Kopalnia<span class="btn-sub elixir">150 💧</span></button>
@@ -206,6 +215,7 @@
     let prodTimer = 0;
     let currentlySelectedBuilding = null;
     let baseSceneInstance = null; 
+    let isEndingBattle = false;
 
     function updateUI() {
       document.getElementById('ui-gold').innerText = Math.floor(gold);
@@ -223,6 +233,13 @@
       if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
       if(document.getElementById('ui-archer')) document.getElementById('ui-archer').innerText = army.archer;
       if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
+    }
+
+    function resetGame() {
+      if (confirm("Na pewno zresetować grę? Stracisz cały postęp.")) {
+        localStorage.removeItem('warBaseSave');
+        location.reload();
+      }
     }
 
     function selectBuilding(type) {
@@ -351,7 +368,7 @@
 
     function saveGame() {
       const data = { 
-        version: 10, 
+        version: 11, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -367,11 +384,11 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 10 && typeof data.gold === 'number') {
+          if (data.version === 11 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             army = data.army || { barbarian: 5, archer: 3, giant: 1 };
-            return data.buildings;
+            return data.buildings || []; // ZABEZPIECZENIE: Zawsze zwraca tablicę
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
       }
@@ -397,10 +414,14 @@
       
       selectBattleTroop('barbarian'); 
       updateUI();
+      isEndingBattle = false; // Reset flagi przy nowej bitwie
       game.scene.start('BattleScene');
     }
 
     function endBattle(won = false, lootGold = 0, lootElixir = 0) {
+      if (isEndingBattle) return; // ZABEZPIECZENIE PRZED PODWÓJNYM WYWOŁANIEM
+      isEndingBattle = true;
+
       army = { barbarian: 0, archer: 0, giant: 0 }; 
       
       document.getElementById('build-menu').style.display = 'flex';
@@ -416,11 +437,11 @@
         updateUI(); saveGame();
         showMessage(`Zwycięstwo!\nZdobyto łup: ${500 + lootGold} 🪙 i ${200 + lootElixir} 💧`);
       } else {
-        // Nawet przy poddaniu się, gracz zachowuje to, co zdążył zniszczyć
         gold += lootGold; elixir += lootElixir;
         updateUI(); saveGame();
         showMessage(`Wycofano wojska.\nUratowany łup: ${lootGold} 🪙 i ${lootElixir} 💧`);
       }
+      
       game.scene.start('BaseScene');
     }
 
@@ -455,7 +476,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 10, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 11, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -484,7 +505,11 @@
         this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
         buildings = []; 
-        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1, b.hp || null, b.buildEndTime || 0));
+        try {
+          loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1, b.hp || null, b.buildEndTime || 0));
+        } catch (e) {
+          console.error("Błąd wczytywania bazy:", e);
+        }
         updateUI();
 
         this.input.on('pointermove', (p) => {
@@ -614,7 +639,6 @@
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
-        // Dodajemy łup do wrogich budynków (Kopalnie dają złoto, Ratusz daje eliksir)
         this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', '🏰', false, 200, 100); 
         this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true, 0, 0);
         this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true, 0, 0); 
@@ -722,12 +746,10 @@
               troop.y += Math.sin(angle) * troop.def.speed * dt;
               troop.sprite.setPosition(troop.x, troop.y);
             } else {
-              // Obrażenia
               let dmg = troop.def.damage * dt;
               troop.target.hp -= dmg;
               troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
               
-              // Pokazywanie tekstu obrażeń co jakiś czas (żeby nie spamować)
               if (time > this.lastDamageText + 200) {
                 this.showDamageText(troop.target.x + Phaser.Math.Between(-20, 20), troop.target.y, dmg * 5); 
                 this.lastDamageText = time;
@@ -739,19 +761,15 @@
               }
 
               if (troop.target.hp <= 0) {
-                // BUDYNEK ZNISZCZONY
                 troop.target.alive = false; 
                 this.explode(troop.target.x, troop.target.y, 0xffaa00);
                 troop.target.sprite.destroy(); 
                 troop.target.hpBar.destroy(); 
                 
-                // Zbieranie łupu
                 if (troop.target.lootG > 0 || troop.target.lootE > 0) {
                   this.lootGold += troop.target.lootG;
                   this.lootElixir += troop.target.lootE;
                   document.getElementById('loot-display').innerText = `${this.lootGold} 🪙, ${this.lootElixir} 💧`;
-                  
-                  // Efekt wylatującego łupu
                   this.showDamageText(troop.target.x, troop.target.y, '+' + troop.target.lootG + ' 🪙');
                 }
 
@@ -960,7 +978,7 @@
     }
 
     const config = {
-      type: Phaser.CANVAS, 
+      type: Phaser.AUTO, // ZMIENIONO NA AUTO (WebGL), CO NAPRAWIA BŁĘDY GRAFICZNE
       parent: 'game',
       width: window.innerWidth,
       height: window.innerHeight,
