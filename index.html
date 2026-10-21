@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v9</title>
+  <title>War Base v10</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -34,7 +34,6 @@
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ff69b4; }
 
-    /* Przycisk powrotu do środka */
     #home-btn {
       position: absolute; bottom: 230px; right: 20px;
       background: #444; color: white; border: 2px solid #888;
@@ -70,9 +69,10 @@
       background: rgba(0, 0, 0, 0.85); color: white; 
       padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px;
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 18px; font-weight: bold; pointer-events: auto;
+      font-size: 16px; font-weight: bold; pointer-events: auto;
     }
     #battle-top-bar button, #defense-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
+    #loot-display { color: #ffd700; }
 
     #troop-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
@@ -133,7 +133,7 @@
 
   <div id="battle-ui">
     <div id="battle-top-bar">
-      <div id="battle-status">Armia gotowa</div>
+      <div id="battle-status">Łup: <span id="loot-display">0 🪙, 0 💧</span></div>
       <button onclick="endBattle(false)">Poddaj się</button>
     </div>
     <div id="troop-menu">
@@ -179,7 +179,7 @@
   
   <script>
     const TILE = 64; 
-    const GRID = 25; // ZMNIEJSZONO MAPĘ z 35 na 25, żeby była gęstsza
+    const GRID = 25; 
     
     let gold = 1000;
     let elixir = 1000;
@@ -205,7 +205,7 @@
     let buildings = [];
     let prodTimer = 0;
     let currentlySelectedBuilding = null;
-    let baseSceneInstance = null; // Referencja do sceny bazy
+    let baseSceneInstance = null; 
 
     function updateUI() {
       document.getElementById('ui-gold').innerText = Math.floor(gold);
@@ -242,7 +242,7 @@
     function centerCamera() {
       if (!baseSceneInstance) return;
       let target = buildings.find(b => b.type === 'townhall');
-      if (!target && buildings.length > 0) target = buildings[0]; // Jeśli nie ma ratusza, centruj na pierwszym budynku
+      if (!target && buildings.length > 0) target = buildings[0];
       
       let cx = (TILE * GRID) / 2;
       let cy = (TILE * GRID) / 2;
@@ -351,7 +351,7 @@
 
     function saveGame() {
       const data = { 
-        version: 9, 
+        version: 10, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -367,7 +367,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 9 && typeof data.gold === 'number') {
+          if (data.version === 10 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             army = data.army || { barbarian: 5, archer: 3, giant: 1 };
@@ -400,9 +400,8 @@
       game.scene.start('BattleScene');
     }
 
-    function endBattle(won = false) {
+    function endBattle(won = false, lootGold = 0, lootElixir = 0) {
       army = { barbarian: 0, archer: 0, giant: 0 }; 
-      saveGame();
       
       document.getElementById('build-menu').style.display = 'flex';
       document.getElementById('home-btn').style.display = 'block';
@@ -412,10 +411,15 @@
       document.getElementById('battle-ui').style.display = 'none';
       
       if (won) {
-        gold += 500; elixir += 200; updateUI(); saveGame();
-        showMessage("Zwycięstwo!\nZdobyto 500 🪙 i 200 💧");
+        gold += 500 + lootGold; 
+        elixir += 200 + lootElixir; 
+        updateUI(); saveGame();
+        showMessage(`Zwycięstwo!\nZdobyto łup: ${500 + lootGold} 🪙 i ${200 + lootElixir} 💧`);
       } else {
-        showMessage("Przegrana.\nTwoja armia została zniszczona.");
+        // Nawet przy poddaniu się, gracz zachowuje to, co zdążył zniszczyć
+        gold += lootGold; elixir += lootElixir;
+        updateUI(); saveGame();
+        showMessage(`Wycofano wojska.\nUratowany łup: ${lootGold} 🪙 i ${lootElixir} 💧`);
       }
       game.scene.start('BaseScene');
     }
@@ -451,7 +455,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 9, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 10, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -470,10 +474,9 @@
     class BaseScene extends Phaser.Scene {
       constructor() { super('BaseScene'); }
       create() {
-        baseSceneInstance = this; // Zapisujemy instancję dla przycisku Home
+        baseSceneInstance = this; 
         let cam = this.cameras.main;
         
-        // ZMNIEJSZONA MAPA (25 zamiast 35) DLA LEPSZEJ WIDOCZNOŚCI
         let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
         grid.setOrigin(0, 0);
 
@@ -503,10 +506,8 @@
         });
 
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
-        
-        // ZWIĘKSZONY ZOOM (z 0.7 na 1.0) ŻEBY BYŁO LEPIEJ WIDAĆ
         cam.setZoom(1.0); 
-        centerCamera(); // Automatyczne wyśrodkowanie na starcie
+        centerCamera(); 
       }
 
       update(time, delta) {
@@ -560,7 +561,6 @@
         const def = BUILDINGS[type];
         const container = this.add.container(x, y);
         
-        // ZWIĘKSZONO IKONY, NAPISY I PASKI ŻYCIA
         const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
         const icon = this.add.text(0, -5, def.emoji, { fontSize: '32px' }).setOrigin(0.5);
         const label = this.add.text(0, 20, def.name + ' L' + level, { fontSize: '11px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
@@ -605,15 +605,21 @@
         this.enemyBuildings = [];
         this.troops = [];
         this.battleEnded = false;
+        this.lootGold = 0;
+        this.lootElixir = 0;
+        this.lastDamageText = 0;
+
+        document.getElementById('loot-display').innerText = '0 🪙, 0 💧';
 
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
-        this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', '🏰', false); 
-        this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true);
-        this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true); 
-        this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false); 
-        this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false); 
+        // Dodajemy łup do wrogich budynków (Kopalnie dają złoto, Ratusz daje eliksir)
+        this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', '🏰', false, 200, 100); 
+        this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true, 0, 0);
+        this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true, 0, 0); 
+        this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false, 300, 0); 
+        this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false, 300, 0); 
 
         this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
 
@@ -630,14 +636,17 @@
         });
       }
 
-      createEnemyBuilding(x, y, hp, color, name, emoji, isDefense) {
+      createEnemyBuilding(x, y, hp, color, name, emoji, isDefense, lootG, lootE) {
         const size = 60;
         const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
         this.add.text(x, y - 5, emoji, {fontSize: '32px'}).setOrigin(0.5);
         this.add.text(x, y + 20, name, {fontSize: '11px', color: '#fff'}).setOrigin(0.5);
         this.add.rectangle(x, y - 40, size, 8, 0x000000);
         const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
-        this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isDefense: isDefense });
+        this.enemyBuildings.push({ 
+          sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, 
+          isDefense: isDefense, lootG: lootG, lootE: lootE 
+        });
       }
 
       spawnTroop(x, y, type) {
@@ -645,6 +654,28 @@
         const troopSprite = this.add.text(x, y, def.emoji, { fontSize: '28px' }).setOrigin(0.5);
         const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5);
         this.troops.push({ type: type, def: def, sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: def.hp, maxHp: def.hp });
+      }
+
+      showDamageText(x, y, amount) {
+        let dmgText = this.add.text(x, y - 30, '-' + Math.floor(amount), { fontSize: '18px', color: '#ff4444', fontStyle: 'bold' }).setOrigin(0.5);
+        this.tweens.add({
+          targets: dmgText,
+          y: y - 70,
+          alpha: 0,
+          duration: 800,
+          onComplete: () => dmgText.destroy()
+        });
+      }
+
+      explode(x, y, color) {
+        let blast = this.add.circle(x, y, 20, color, 0.8);
+        this.tweens.add({
+          targets: blast,
+          scale: 3,
+          alpha: 0,
+          duration: 400,
+          onComplete: () => blast.destroy()
+        });
       }
 
       towersShoot() {
@@ -663,6 +694,7 @@
               laser.setOrigin(0, 0); laser.setLineWidth(4); 
               setTimeout(() => laser.destroy(), 150); 
               nearestTroop.hp -= 25;
+              this.showDamageText(nearestTroop.x, nearestTroop.y, 25);
             }
           }
         });
@@ -690,16 +722,40 @@
               troop.y += Math.sin(angle) * troop.def.speed * dt;
               troop.sprite.setPosition(troop.x, troop.y);
             } else {
-              troop.target.hp -= troop.def.damage * dt;
+              // Obrażenia
+              let dmg = troop.def.damage * dt;
+              troop.target.hp -= dmg;
               troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
               
+              // Pokazywanie tekstu obrażeń co jakiś czas (żeby nie spamować)
+              if (time > this.lastDamageText + 200) {
+                this.showDamageText(troop.target.x + Phaser.Math.Between(-20, 20), troop.target.y, dmg * 5); 
+                this.lastDamageText = time;
+              }
+
               if (troop.type === 'archer' && Math.random() < 0.1) {
                 const arrow = this.add.line(0, 0, troop.x, troop.y, troop.target.x, troop.target.y, 0xffffff);
                 arrow.setOrigin(0,0); setTimeout(() => arrow.destroy(), 100);
               }
 
               if (troop.target.hp <= 0) {
-                troop.target.alive = false; troop.target.sprite.destroy(); troop.target.hpBar.destroy(); troop.target = null; 
+                // BUDYNEK ZNISZCZONY
+                troop.target.alive = false; 
+                this.explode(troop.target.x, troop.target.y, 0xffaa00);
+                troop.target.sprite.destroy(); 
+                troop.target.hpBar.destroy(); 
+                
+                // Zbieranie łupu
+                if (troop.target.lootG > 0 || troop.target.lootE > 0) {
+                  this.lootGold += troop.target.lootG;
+                  this.lootElixir += troop.target.lootE;
+                  document.getElementById('loot-display').innerText = `${this.lootGold} 🪙, ${this.lootElixir} 💧`;
+                  
+                  // Efekt wylatującego łupu
+                  this.showDamageText(troop.target.x, troop.target.y, '+' + troop.target.lootG + ' 🪙');
+                }
+
+                troop.target = null; 
               }
             }
           }
@@ -707,10 +763,10 @@
 
         if (this.enemyBuildings.filter(b => b.alive).length === 0) {
           this.battleEnded = true;
-          setTimeout(() => endBattle(true), 1000);
+          setTimeout(() => endBattle(true, this.lootGold, this.lootElixir), 1000);
         } else if (army.barbarian + army.archer + army.giant === 0 && this.troops.length === 0 && !this.battleEnded) {
           this.battleEnded = true;
-          setTimeout(() => endBattle(false), 1000);
+          setTimeout(() => endBattle(false, this.lootGold, this.lootElixir), 1000);
         }
       }
 
