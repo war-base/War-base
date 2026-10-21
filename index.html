@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v8</title>
+  <title>War Base v9</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -33,6 +33,16 @@
     .btn-sub { font-size: 10px; font-weight: normal; color: #ccc; }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ff69b4; }
+
+    /* Przycisk powrotu do środka */
+    #home-btn {
+      position: absolute; bottom: 230px; right: 20px;
+      background: #444; color: white; border: 2px solid #888;
+      padding: 12px 15px; border-radius: 50px;
+      font-size: 20px; font-weight: bold; z-index: 15;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
+    }
+    #home-btn:active { background: #222; }
 
     #attack-btn {
       position: absolute; bottom: 90px; right: 20px;
@@ -64,7 +74,6 @@
     }
     #battle-top-bar button, #defense-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
-    /* Menu wyboru wojsk w bitwie */
     #troop-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; justify-content: space-around; gap: 10px;
@@ -78,7 +87,6 @@
     }
     .troop-btn.selected { border: 2px solid #ffd700; background: #444; }
 
-    /* Panel Budynku */
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(0,0,0,0.95); color: white; padding: 20px; border-radius: 10px;
@@ -119,6 +127,7 @@
     <button class="build-btn" onclick="selectBuilding('tower')">🏹 Wieża<span class="btn-sub gold">300 🪙</span></button>
   </div>
 
+  <button id="home-btn" onclick="centerCamera()">🏠</button>
   <button id="attack-btn" onclick="startAttack()">⚔️ Atakuj</button>
   <button id="defend-btn" onclick="startDefense()">🛡️ Broń</button>
 
@@ -127,7 +136,6 @@
       <div id="battle-status">Armia gotowa</div>
       <button onclick="endBattle(false)">Poddaj się</button>
     </div>
-    <!-- Menu wyboru zrzucanego wojska -->
     <div id="troop-menu">
       <button class="troop-btn selected" id="btn-troop-barbarian" onclick="selectBattleTroop('barbarian')">
         🗡️ Barbarzyńca<br><span id="ui-barbarian">0</span>
@@ -171,12 +179,11 @@
   
   <script>
     const TILE = 64; 
-    const GRID = 35; 
+    const GRID = 25; // ZMNIEJSZONO MAPĘ z 35 na 25, żeby była gęstsza
     
     let gold = 1000;
     let elixir = 1000;
     
-    // ZMIANA: Armia to teraz obiekt zamiast pojedynczej liczby
     let army = { barbarian: 5, archer: 3, giant: 1 }; 
     let selectedBattleTroopType = 'barbarian';
     
@@ -188,7 +195,6 @@
       tower: { name: 'Wieża', emoji: '🏹', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
     };
 
-    // STATYSTYKI JEDNOSTEK
     const TROOPS = {
       barbarian: { name: 'Barbarzyńca', emoji: '🗡️', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
       archer: { name: 'Łucznik', emoji: '🏹', hp: 40, damage: 10, speed: 130, range: 180, cost: 75, target: 'any' },
@@ -199,6 +205,7 @@
     let buildings = [];
     let prodTimer = 0;
     let currentlySelectedBuilding = null;
+    let baseSceneInstance = null; // Referencja do sceny bazy
 
     function updateUI() {
       document.getElementById('ui-gold').innerText = Math.floor(gold);
@@ -213,7 +220,6 @@
         if (selectedBuildingType === 'tower') btns[4].classList.add('selected');
       }
       
-      // Aktualizacja UI w bitwie
       if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
       if(document.getElementById('ui-archer')) document.getElementById('ui-archer').innerText = army.archer;
       if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
@@ -231,6 +237,18 @@
       msg.innerText = text;
       msg.style.display = 'block';
       setTimeout(() => { msg.style.display = 'none'; }, 2500);
+    }
+
+    function centerCamera() {
+      if (!baseSceneInstance) return;
+      let target = buildings.find(b => b.type === 'townhall');
+      if (!target && buildings.length > 0) target = buildings[0]; // Jeśli nie ma ratusza, centruj na pierwszym budynku
+      
+      let cx = (TILE * GRID) / 2;
+      let cy = (TILE * GRID) / 2;
+      if (target) { cx = target.x; cy = target.y; }
+      
+      baseSceneInstance.cameras.main.pan(cx, cy, 300, 'Sine.easeInOut');
     }
 
     function openBuildingPanel(building) {
@@ -333,7 +351,7 @@
 
     function saveGame() {
       const data = { 
-        version: 8, 
+        version: 9, 
         gold: gold, 
         elixir: elixir, 
         army: army, 
@@ -349,10 +367,10 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 8 && typeof data.gold === 'number') {
+          if (data.version === 9 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
-            army = data.army || { barbarian: 5, archer: 0, giant: 0 };
+            army = data.army || { barbarian: 5, archer: 3, giant: 1 };
             return data.buildings;
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -371,12 +389,13 @@
       if (army.barbarian + army.archer + army.giant <= 0) { showMessage('Nie masz wojska!'); return; }
       
       document.getElementById('build-menu').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
       document.getElementById('defend-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
       document.getElementById('battle-ui').style.display = 'block';
       
-      selectBattleTroop('barbarian'); // Domyślny wybór
+      selectBattleTroop('barbarian'); 
       updateUI();
       game.scene.start('BattleScene');
     }
@@ -386,6 +405,7 @@
       saveGame();
       
       document.getElementById('build-menu').style.display = 'flex';
+      document.getElementById('home-btn').style.display = 'block';
       document.getElementById('attack-btn').style.display = 'block';
       document.getElementById('defend-btn').style.display = 'block';
       document.getElementById('top-bar').style.display = 'flex';
@@ -405,6 +425,7 @@
       saveGame(); 
       
       document.getElementById('build-menu').style.display = 'none';
+      document.getElementById('home-btn').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
       document.getElementById('defend-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
@@ -417,6 +438,7 @@
 
     function endDefense(won) {
       document.getElementById('build-menu').style.display = 'flex';
+      document.getElementById('home-btn').style.display = 'block';
       document.getElementById('attack-btn').style.display = 'block';
       document.getElementById('defend-btn').style.display = 'block';
       document.getElementById('top-bar').style.display = 'flex';
@@ -429,7 +451,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 8, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
+        if (!data) data = { version: 9, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -448,7 +470,10 @@
     class BaseScene extends Phaser.Scene {
       constructor() { super('BaseScene'); }
       create() {
+        baseSceneInstance = this; // Zapisujemy instancję dla przycisku Home
         let cam = this.cameras.main;
+        
+        // ZMNIEJSZONA MAPA (25 zamiast 35) DLA LEPSZEJ WIDOCZNOŚCI
         let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
         grid.setOrigin(0, 0);
 
@@ -477,15 +502,11 @@
           }
         });
 
-        const townhall = buildings.find(b => b.type === 'townhall');
-        let centerX = TILE * GRID / 2;
-        let centerY = TILE * GRID / 2;
-        if (townhall) { centerX = townhall.x; centerY = townhall.y; }
-        
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
-        cam.setZoom(0.7); 
-        cam.scrollX = centerX - cam.width / 2 / cam.zoom;
-        cam.scrollY = centerY - cam.height / 2 / cam.zoom;
+        
+        // ZWIĘKSZONY ZOOM (z 0.7 na 1.0) ŻEBY BYŁO LEPIEJ WIDAĆ
+        cam.setZoom(1.0); 
+        centerCamera(); // Automatyczne wyśrodkowanie na starcie
       }
 
       update(time, delta) {
@@ -539,13 +560,14 @@
         const def = BUILDINGS[type];
         const container = this.add.container(x, y);
         
-        const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
-        const icon = this.add.text(0, -5, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
-        const label = this.add.text(0, 15, def.name + ' L' + level, { fontSize: '9px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-        const buildText = this.add.text(0, -30, '', { fontSize: '16px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
+        // ZWIĘKSZONO IKONY, NAPISY I PASKI ŻYCIA
+        const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
+        const icon = this.add.text(0, -5, def.emoji, { fontSize: '32px' }).setOrigin(0.5);
+        const label = this.add.text(0, 20, def.name + ' L' + level, { fontSize: '11px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+        const buildText = this.add.text(0, -35, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
 
-        const hpBarBg = this.add.rectangle(0, -TILE/2 + 5, TILE - 10, 6, 0x000000);
-        const hpBar = this.add.rectangle(-(TILE - 10)/2, -TILE/2 + 5, TILE - 10, 6, 0x00ff00).setOrigin(0, 0.5);
+        const hpBarBg = this.add.rectangle(0, -TILE/2 + 6, TILE - 8, 8, 0x000000);
+        const hpBar = this.add.rectangle(-(TILE - 8)/2, -TILE/2 + 6, TILE - 8, 8, 0x00ff00).setOrigin(0, 0.5);
         
         container.add([rect, icon, label, hpBarBg, hpBar, buildText]);
         container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
@@ -611,8 +633,8 @@
       createEnemyBuilding(x, y, hp, color, name, emoji, isDefense) {
         const size = 60;
         const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
-        this.add.text(x, y - 5, emoji, {fontSize: '24px'}).setOrigin(0.5);
-        this.add.text(x, y + 18, name, {fontSize: '10px', color: '#fff'}).setOrigin(0.5);
+        this.add.text(x, y - 5, emoji, {fontSize: '32px'}).setOrigin(0.5);
+        this.add.text(x, y + 20, name, {fontSize: '11px', color: '#fff'}).setOrigin(0.5);
         this.add.rectangle(x, y - 40, size, 8, 0x000000);
         const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
         this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isDefense: isDefense });
@@ -620,8 +642,8 @@
 
       spawnTroop(x, y, type) {
         const def = TROOPS[type];
-        const troopSprite = this.add.text(x, y, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
-        const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
+        const troopSprite = this.add.text(x, y, def.emoji, { fontSize: '28px' }).setOrigin(0.5);
+        const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5);
         this.troops.push({ type: type, def: def, sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: def.hp, maxHp: def.hp });
       }
 
@@ -656,7 +678,7 @@
             troop.sprite.destroy(); troop.hpBar.destroy(); this.troops.splice(i, 1); continue;
           }
           troop.hpBar.width = 24 * (troop.hp / troop.maxHp);
-          troop.hpBar.setPosition(troop.x - 12, troop.y - 20);
+          troop.hpBar.setPosition(troop.x - 12, troop.y - 24);
 
           if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y, troop.def.target);
           
@@ -671,7 +693,6 @@
               troop.target.hp -= troop.def.damage * dt;
               troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
               
-              // Efekt ataku dla łucznika
               if (troop.type === 'archer' && Math.random() < 0.1) {
                 const arrow = this.add.line(0, 0, troop.x, troop.y, troop.target.x, troop.target.y, 0xffffff);
                 arrow.setOrigin(0,0); setTimeout(() => arrow.destroy(), 100);
@@ -684,7 +705,6 @@
           }
         }
 
-        // Sprawdzenie przegranej (brak jednostek na polu bitwy i w rezerwie)
         if (this.enemyBuildings.filter(b => b.alive).length === 0) {
           this.battleEnded = true;
           setTimeout(() => endBattle(true), 1000);
@@ -698,7 +718,6 @@
         let nearest = null, minDist = Infinity;
         this.enemyBuildings.forEach(b => {
           if (b.alive) {
-            // Gigant atakuje tylko budynki obronne. Jeśli ich nie ma, atakuje cokolwiek.
             const hasDefenses = this.enemyBuildings.some(eb => eb.alive && eb.isDefense);
             if (targetType === 'defense' && hasDefenses && !b.isDefense) return;
 
@@ -725,12 +744,12 @@
         saved.forEach(b => {
           const def = BUILDINGS[b.type];
           const container = this.add.container(b.x, b.y);
-          const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
-          const icon = this.add.text(0, -5, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
-          const label = this.add.text(0, 18, def.name + ' L' + b.level, { fontSize: '9px', color: '#fff' }).setOrigin(0.5);
+          const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
+          const icon = this.add.text(0, -5, def.emoji, { fontSize: '32px' }).setOrigin(0.5);
+          const label = this.add.text(0, 20, def.name + ' L' + b.level, { fontSize: '11px', color: '#fff' }).setOrigin(0.5);
           
-          const hpBarBg = this.add.rectangle(0, -TILE/2 + 5, TILE - 10, 6, 0x000000);
-          const hpBar = this.add.rectangle(-(TILE - 10)/2, -TILE/2 + 5, TILE - 10, 6, 0x00ff00).setOrigin(0, 0.5);
+          const hpBarBg = this.add.rectangle(0, -TILE/2 + 6, TILE - 8, 8, 0x000000);
+          const hpBar = this.add.rectangle(-(TILE - 8)/2, -TILE/2 + 6, TILE - 8, 8, 0x00ff00).setOrigin(0, 0.5);
           container.add([rect, icon, label, hpBarBg, hpBar]);
           
           this.playerBuildings.push({
@@ -739,11 +758,11 @@
         });
         
         const townhall = this.playerBuildings.find(b => b.type === 'townhall');
-        let centerX = townhall ? townhall.x : TILE * GRID / 2;
-        let centerY = townhall ? townhall.y : TILE * GRID / 2;
+        let centerX = townhall ? townhall.x : (this.playerBuildings.length > 0 ? this.playerBuildings[0].x : TILE * GRID / 2);
+        let centerY = townhall ? townhall.y : (this.playerBuildings.length > 0 ? this.playerBuildings[0].y : TILE * GRID / 2);
         
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
-        cam.setZoom(0.8);
+        cam.setZoom(1.0);
         cam.scrollX = centerX - cam.width / 2 / cam.zoom;
         cam.scrollY = centerY - cam.height / 2 / cam.zoom;
         
@@ -822,8 +841,8 @@
           const x = this.centerBase.x + Math.cos(angle) * distance;
           const y = this.centerBase.y + Math.sin(angle) * distance;
           
-          const sprite = this.add.text(x, y, '👹', { fontSize: '28px' }).setOrigin(0.5);
-          const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
+          const sprite = this.add.text(x, y, '👹', { fontSize: '32px' }).setOrigin(0.5);
+          const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5);
           
           this.enemies.push({
             sprite, hpBar, x, y, hp: 100, maxHp: 100, target: null, alive: true, damage: 15, speed: 80
@@ -841,7 +860,7 @@
             enemy.alive = false; enemy.sprite.destroy(); enemy.hpBar.destroy(); this.enemies.splice(i, 1); continue;
           }
           enemy.hpBar.width = 24 * (enemy.hp / enemy.maxHp);
-          enemy.hpBar.setPosition(enemy.x - 12, enemy.y - 20);
+          enemy.hpBar.setPosition(enemy.x - 12, enemy.y - 24);
           
           if (!enemy.target || !enemy.target.alive) {
             let nearest = null, minDist = Infinity;
