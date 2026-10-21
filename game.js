@@ -1,30 +1,30 @@
 const TILE = 64; 
 const GRID = 25; 
 
-let gold = 3000; // Zwiększone na start, żeby przetestować Ołtarz
-let elixir = 1000;
+let gold = 3000; 
+let elixir = 1000; // Mana
 
 let army = { barbarian: 5, archer: 3, giant: 1, hero: 0 }; 
 let troopLevels = { barbarian: 1, archer: 1, giant: 1 }; 
 let selectedBattleTroopType = 'barbarian';
 
+// MROCZNE, ŚREDNIOWIECZNE NAZWY I KOLORY
 const BUILDINGS = {
-  townhall: { name: 'Ratusz', short: 'R', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
-  mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
-  barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
-  camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x228b22, stroke: 0x006400, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30 },
-  lab: { name: 'Laboratorium', short: 'L', cost: { gold: 0, elixir: 500 }, color: 0x8a2be2, stroke: 0x4b0082, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40 },
-  altar: { name: 'Ołtarz', short: 'B', cost: { gold: 2000, elixir: 0 }, color: 0xff8c00, stroke: 0x8b4500, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50 },
-  wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x808080, stroke: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
-  tower: { name: 'Wieża', short: 'W', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
+  townhall: { name: 'Warownia', short: 'W', cost: { gold: 1000, elixir: 0 }, color: 0x555555, stroke: 0x333333, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
+  mine: { name: 'Kopalnia', short: 'K', cost: { gold: 0, elixir: 150 }, color: 0x8b6508, stroke: 0x5c4305, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
+  barracks: { name: 'Koszary', short: 'Ko', cost: { gold: 0, elixir: 150 }, color: 0x5c2e2e, stroke: 0x3b1a1a, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
+  camp: { name: 'Obóz', short: 'O', cost: { gold: 0, elixir: 250 }, color: 0x4a5c38, stroke: 0x2e3b22, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 30 },
+  lab: { name: 'Wieża Magów', short: 'M', cost: { gold: 0, elixir: 500 }, color: 0x483d8b, stroke: 0x2e2757, prod: { gold: 0, elixir: 0 }, hp: 800, buildTime: 40 },
+  altar: { name: 'Ołtarz Krwi', short: '🩸', cost: { gold: 2000, elixir: 0 }, color: 0x2a1a30, stroke: 0x550000, prod: { gold: 0, elixir: 0 }, hp: 1200, buildTime: 50 },
+  wall: { name: 'Mur', short: 'M', cost: { gold: 50, elixir: 0 }, color: 0x696969, stroke: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
+  tower: { name: 'Wieża Straż.', short: 'WS', cost: { gold: 300, elixir: 0 }, color: 0x36454f, stroke: 0x1a2025, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
 };
 
 const BASE_TROOPS = {
-  barbarian: { name: 'Barbarzyńca', short: 'B', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
+  barbarian: { name: 'Wojownik', short: 'W', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
   archer: { name: 'Łucznik', short: 'Ł', hp: 40, damage: 10, speed: 130, range: 180, cost: 75, target: 'any' },
-  giant: { name: 'Gigant', short: 'G', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' },
-  // Potężny Król
-  hero: { name: 'Król', short: '👑', hp: 1500, damage: 80, speed: 120, range: 50, cost: 0, target: 'any' } 
+  giant: { name: 'Golem', short: 'G', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' },
+  hero: { name: 'Watażka', short: '🩸', hp: 1500, damage: 80, speed: 120, range: 50, cost: 0, target: 'any' } 
 };
 
 let selectedBuildingType = null;
@@ -71,7 +71,7 @@ function getTroopStats(type) {
   const base = BASE_TROOPS[type];
   let lvl = troopLevels[type] || 1;
   let multiplier = 1 + (lvl - 1) * 0.3;
-  if (type === 'hero') multiplier = 1; // Król nie ma poziomów w laboratorium
+  if (type === 'hero') multiplier = 1; 
   
   return {
     name: base.name, short: base.short, speed: base.speed, range: base.range, cost: base.cost, target: base.target,
@@ -93,7 +93,7 @@ function getMaxArmy() {
   buildings.forEach(b => { if (b.type === 'camp') max += 10 * b.level; });
   return max;
 }
-function getCurrentArmySize() { return army.barbarian + army.archer + army.giant; } // Król nie zajmuje miejsca w armii
+function getCurrentArmySize() { return army.barbarian + army.archer + army.giant; }
 
 function updateUI() {
   document.getElementById('ui-gold').innerText = Math.floor(gold);
@@ -121,7 +121,6 @@ function updateUI() {
 }
 
 function checkHeroAvailability() {
-  // Sprawdzamy, czy gracz ma zbudowany Ołtarz
   const hasAltar = buildings.some(b => b.type === 'altar');
   const heroBtn = document.getElementById('btn-troop-hero');
   if (!heroBtn) return;
@@ -131,13 +130,13 @@ function checkHeroAvailability() {
     document.getElementById('ui-hero').innerText = "Gotowy";
   } else {
     heroBtn.classList.add('disabled');
-    document.getElementById('ui-hero').innerText = hasAltar ? "Zużyty" : "Brak Ołtarza";
+    document.getElementById('ui-hero').innerText = hasAltar ? "Ranny" : "Brak Ołtarza";
     if (selectedBattleTroopType === 'hero') selectBattleTroop('barbarian');
   }
 }
 
 function resetGame() {
-  if (confirm("Na pewno zresetować grę? Stracisz cały postęp.")) {
+  if (confirm("Zresetować twierdzę? Cały postęp przepadnie.")) {
     localStorage.removeItem('warBaseSave'); location.reload();
   }
 }
@@ -168,7 +167,7 @@ function openBuildingPanel(building) {
 
   if (isBuilding) {
     const remain = Math.ceil((building.buildEndTime - now) / 1000);
-    document.getElementById('bp-status-text').innerHTML = `🔨 W budowie: <span style="color:#ffaa00">${remain}s</span>`;
+    document.getElementById('bp-status-text').innerHTML = `🔨 Budowa: <span style="color:#ffaa00">${remain}s</span>`;
     document.getElementById('bp-upgrade').style.display = 'none';
     document.getElementById('bp-sell').style.display = 'none';
     document.getElementById('bp-train-section').style.display = 'none';
@@ -179,17 +178,17 @@ function openBuildingPanel(building) {
     const prodGold = (def.prod.gold || 0) * building.level;
     const prodElixir = (def.prod.elixir || 0) * building.level;
     let prodStr = [];
-    if (prodGold > 0) prodStr.push(prodGold + ' 🪙');
-    if (prodElixir > 0) prodStr.push(prodElixir + ' 💧');
+    if (prodGold > 0) prodStr.push(prodGold + ' 💰');
+    if (prodElixir > 0) prodStr.push(prodElixir + ' 🔮');
     document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
     
     const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
     const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
-    document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧)`;
+    document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${upgradeCostElixir} 🔮)`;
     
     const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
     const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
-    document.getElementById('bp-sell').innerText = `Sprzedaj (+${sellValueGold} 🪙, +${sellValueElixir} 💧)`;
+    document.getElementById('bp-sell').innerText = `Zburz (+${sellValueGold} 💰, +${sellValueElixir} 🔮)`;
     
     document.getElementById('bp-upgrade').style.display = 'block';
     document.getElementById('bp-sell').style.display = 'block';
@@ -216,7 +215,7 @@ function updateLabUI() {
     const lvl = troopLevels[type];
     const cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5); 
     const btn = document.getElementById('lab-up-' + type);
-    if(btn) btn.innerText = `Ulepsz ${BASE_TROOPS[type].name} na L${lvl+1} (${cost} 💧)`;
+    if(btn) btn.innerText = `Ulepsz ${BASE_TROOPS[type].name} L${lvl+1} (${cost} 🔮)`;
   });
 }
 
@@ -224,20 +223,20 @@ function upgradeTroop(type) {
   const lvl = troopLevels[type];
   const cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5);
   
-  if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
+  if (elixir < cost) { showMessage('Za mało Many!'); return; }
   
   elixir -= cost; troopLevels[type]++;
   playSound('build'); updateUI(); saveGame(); updateLabUI();
-  showMessage(`Ulepszono ${BASE_TROOPS[type].name} do L${troopLevels[type]}!`);
+  showMessage(`Wyszkolono: ${BASE_TROOPS[type].name} (Lvl ${troopLevels[type]})!`);
 }
 
 function trainTroop(type) {
   const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
-  if (!barracks) { showMessage('Brak gotowych Koszar!'); return; }
-  if (getCurrentArmySize() >= getMaxArmy()) { showMessage('Osiągnięto limit armii!'); return; }
+  if (!barracks) { showMessage('Koszary są zniszczone lub w budowie!'); return; }
+  if (getCurrentArmySize() >= getMaxArmy()) { showMessage('Brak miejsca w Obozach!'); return; }
   
   const cost = BASE_TROOPS[type].cost;
-  if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
+  if (elixir < cost) { showMessage('Za mało Many!'); return; }
 
   elixir -= cost; army[type]++;
   playSound('build'); updateUI(); saveGame();
@@ -254,14 +253,14 @@ function upgradeBuilding() {
   const townhall = buildings.find(b => b.type === 'townhall');
   
   if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
-    showMessage('Ulepsz najpierw Ratusz!'); return;
+    showMessage('Najpierw ulepsz Warownię!'); return;
   }
   
   const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
   const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
   
   if (gold < costGold) { showMessage('Za mało złota!'); return; }
-  if (elixir < costElixir) { showMessage('Za mało eliksiru!'); return; }
+  if (elixir < costElixir) { showMessage('Za mało Many!'); return; }
   
   gold -= costGold; elixir -= costElixir;
   currentlySelectedBuilding.level++;
@@ -287,7 +286,7 @@ function sellBuilding() {
 
 function saveGame() {
   const data = { 
-    version: 22, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
+    version: 24, gold: gold, elixir: elixir, army: army, troopLevels: troopLevels,
     buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime })) 
   };
   localStorage.setItem('warBaseSave', JSON.stringify(data));
@@ -298,7 +297,7 @@ function loadGame() {
   if (saved) {
     try {
       const data = JSON.parse(saved);
-      if (data.version === 22 && typeof data.gold === 'number') {
+      if (data.version === 24 && typeof data.gold === 'number') {
         gold = data.gold; elixir = data.elixir; 
         army = data.army || { barbarian: 5, archer: 3, giant: 1, hero: 0 };
         troopLevels = data.troopLevels || { barbarian: 1, archer: 1, giant: 1 };
@@ -318,9 +317,8 @@ function selectBattleTroop(type) {
 
 function startAttack() {
   closeBuildingPanel();
-  if (getCurrentArmySize() <= 0 && army.hero <= 0) { showMessage('Nie masz wojska!'); return; }
+  if (getCurrentArmySize() <= 0 && army.hero <= 0) { showMessage('Brak wojska do ataku!'); return; }
   
-  // Sprawdzenie Ołtarza - jeśli jest, dodajemy Króla
   const hasAltar = buildings.some(b => b.type === 'altar');
   army.hero = (hasAltar) ? 1 : 0;
 
@@ -348,8 +346,8 @@ function endBattle(won = false, lootGold = 0, lootElixir = 0) {
   else { gold += lootGold; elixir += lootElixir; }
   
   updateUI(); saveGame();
-  if (won) alert(`Zwycięstwo!\nZdobyto łup: ${500 + lootGold} 🪙 i ${200 + lootElixir} 💧\n\nKliknij OK, aby wrócić.`);
-  else alert(`Koniec bitwy.\nUratowany łup: ${lootGold} 🪙 i ${lootElixir} 💧\n\nKliknij OK, aby wrócić.`);
+  if (won) alert(`Zwycięstwo!\nZdobyto: ${500 + lootGold} 💰 i ${200 + lootElixir} 🔮\n\nKliknij OK, aby wrócić do twierdzy.`);
+  else alert(`Odwrót.\nUratowano: ${lootGold} 💰 i ${lootElixir} 🔮\n\nKliknij OK, aby wrócić do twierdzy.`);
   
   window.location.reload();
 }
@@ -362,7 +360,7 @@ function startDefense() {
   document.getElementById('defend-btn').style.display = 'none';
   document.getElementById('top-bar').style.display = 'none';
   document.getElementById('defense-ui').style.display = 'block';
-  document.getElementById('defense-status').innerText = '🛡️ Obrona Bazy (Moździerz: Gotowy)';
+  document.getElementById('defense-status').innerText = '🛡️ Obrona (Moździerz: Gotowy)';
   playSound('build'); game.scene.start('DefenseScene');
 }
 
@@ -371,13 +369,13 @@ function endDefense(won) {
   if (defenseScene) {
     const survivingBuildings = defenseScene.playerBuildings.filter(b => b.alive).map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
     let data = JSON.parse(localStorage.getItem('warBaseSave'));
-    if (!data) data = { version: 22, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
+    if (!data) data = { version: 24, gold: 3000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0, hero: 0 }, troopLevels: { barbarian: 1, archer: 1, giant: 1 }, buildings: [] };
     data.buildings = survivingBuildings;
     if (won) { data.gold += 300; data.elixir += 150; playSound('coin'); }
     localStorage.setItem('warBaseSave', JSON.stringify(data));
   }
-  if (won) alert("Obrona udana!\nZdobyto 300 🪙 i 150 💧\n\nKliknij OK.");
-  else alert("Twoja baza została zniszczona!\n\nKliknij OK.");
+  if (won) alert("Twierdza obroniona!\nZdobyto 300 💰 i 150 🔮\n\nKliknij OK.");
+  else alert("Wróg splądrował Twoją twierdzę!\n\nKliknij OK.");
   window.location.reload();
 }
 
@@ -386,7 +384,8 @@ class BaseScene extends Phaser.Scene {
   create() {
     baseSceneInstance = this; 
     let cam = this.cameras.main;
-    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
+    // Ciemniejsze, mszyste tło
+    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1);
     grid.setOrigin(0, 0);
     
     window.preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
@@ -442,7 +441,7 @@ class BaseScene extends Phaser.Scene {
       if (Date.now() > lastGoldWarningTime) { showMessage('Za mało złota!'); lastGoldWarningTime = Date.now() + 1500; }
       return; 
     }
-    if (elixir < def.cost.elixir) { showMessage('Za mało eliksiru!'); return; }
+    if (elixir < def.cost.elixir) { showMessage('Za mało Many!'); return; }
 
     gold -= def.cost.gold; elixir -= def.cost.elixir;
     playSound('build'); this.createBuilding(x, y, selectedBuildingType, true, 1);
@@ -455,7 +454,7 @@ class BaseScene extends Phaser.Scene {
     const container = this.add.container(x, y);
     const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
     const icon = this.add.text(0, -5, def.short, { fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-    const label = this.add.text(0, 20, def.name + ' L' + level, { fontSize: '11px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
+    const label = this.add.text(0, 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
     const buildText = this.add.text(0, -35, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
     const hpBarBg = this.add.rectangle(0, -TILE/2 + 6, TILE - 8, 8, 0x000000);
     const hpBar = this.add.rectangle(-(TILE - 8)/2, -TILE/2 + 6, TILE - 8, 8, 0x00ff00).setOrigin(0, 0.5);
@@ -480,7 +479,8 @@ class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
     let cam = this.cameras.main;
-    cam.setBackgroundColor('#3e1a1a'); cam.setScroll(0, 0); cam.setZoom(1);
+    cam.setBackgroundColor('#1a1a1a'); // Ciemne, spalone pole bitwy
+    cam.setScroll(0, 0); cam.setZoom(1);
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0;
     
@@ -499,10 +499,10 @@ class BattleScene extends Phaser.Scene {
       }
     });
 
-    document.getElementById('loot-display').innerText = '0 🪙, 0 💧';
+    document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
     const cx = window.innerWidth / 2; const cy = window.innerHeight / 2;
 
-    this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', 'R', false, 200, 100); 
+    this.createEnemyBuilding(cx, cy, 400, 0x555555, 'Warownia', 'W', false, 200, 100); 
 
     let numBuildings = Phaser.Math.Between(6, 9);
     for(let i = 0; i < numBuildings; i++) {
@@ -518,10 +518,10 @@ class BattleScene extends Phaser.Scene {
         
         if (valid) {
             let typeRnd = Phaser.Math.Between(1, 10);
-            if (typeRnd <= 3) this.createEnemyBuilding(ex, ey, 150, 0x555555, 'Wieża', 'W', true, 0, 0);
-            else if (typeRnd <= 6) this.createEnemyBuilding(ex, ey, 100, 0xffd700, 'Kopalnia', 'K', false, 300, 0);
-            else if (typeRnd <= 8) this.createEnemyBuilding(ex, ey, 150, 0x8b0000, 'Koszary', 'Ko', false, 0, 200);
-            else this.createEnemyBuilding(ex, ey, 250, 0x808080, 'Mur', 'M', false, 0, 0);
+            if (typeRnd <= 3) this.createEnemyBuilding(ex, ey, 150, 0x36454f, 'Wieża', 'WS', true, 0, 0);
+            else if (typeRnd <= 6) this.createEnemyBuilding(ex, ey, 100, 0x8b6508, 'Kopalnia', 'K', false, 300, 0);
+            else if (typeRnd <= 8) this.createEnemyBuilding(ex, ey, 150, 0x5c2e2e, 'Koszary', 'Ko', false, 0, 200);
+            else this.createEnemyBuilding(ex, ey, 250, 0x696969, 'Mur', 'M', false, 0, 0);
         }
     }
 
@@ -549,8 +549,8 @@ class BattleScene extends Phaser.Scene {
 
   spawnTroop(x, y, type) {
     const def = getTroopStats(type); 
-    let bgColor = '#1e90ff'; // Niebieski dla zwykłych
-    if (type === 'hero') bgColor = '#ff8c00'; // Pomarańczowy/Złoty dla Króla
+    let bgColor = '#4a5c38'; 
+    if (type === 'hero') bgColor = '#8b0000'; 
     let size = (type === 'hero') ? '32px' : '20px';
 
     const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?8:4), y: (type==='hero'?8:4)} }).setOrigin(0.5);
@@ -617,8 +617,8 @@ class BattleScene extends Phaser.Scene {
             troop.target.sprite.destroy(); troop.target.hpBar.destroy(); 
             if (troop.target.lootG > 0 || troop.target.lootE > 0) {
               this.lootGold += troop.target.lootG; this.lootElixir += troop.target.lootE;
-              document.getElementById('loot-display').innerText = `${this.lootGold} 🪙, ${this.lootElixir} 💧`;
-              this.showDamageText(troop.target.x, troop.target.y, '+' + troop.target.lootG + ' 🪙'); playSound('coin');
+              document.getElementById('loot-display').innerText = `${this.lootGold} 💰, ${this.lootElixir} 🔮`;
+              this.showDamageText(troop.target.x, troop.target.y, '+' + troop.target.lootG + ' 💰'); playSound('coin');
             }
             troop.target = null; 
           }
@@ -651,8 +651,8 @@ class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
     let cam = this.cameras.main;
-    cam.setBackgroundColor('#2d4a3e');
-    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2d4a3e, 1, 0x5a8a6e, 1);
+    cam.setBackgroundColor('#2b3625');
+    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1);
     grid.setOrigin(0, 0);
     this.playerBuildings = [];
     const saved = loadGame(); 
@@ -661,7 +661,7 @@ class DefenseScene extends Phaser.Scene {
       const container = this.add.container(b.x, b.y);
       const rect = this.add.rectangle(0, 0, TILE - 4, TILE - 4, def.color).setStrokeStyle(2, def.stroke);
       const icon = this.add.text(0, -5, def.short, { fontSize: '20px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-      const label = this.add.text(0, 20, def.name + ' L' + b.level, { fontSize: '11px', color: '#fff' }).setOrigin(0.5);
+      const label = this.add.text(0, 20, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff' }).setOrigin(0.5);
       const hpBarBg = this.add.rectangle(0, -TILE/2 + 6, TILE - 8, 8, 0x000000);
       const hpBar = this.add.rectangle(-(TILE - 8)/2, -TILE/2 + 6, TILE - 8, 8, 0x00ff00).setOrigin(0, 0.5);
       container.add([rect, icon, label, hpBarBg, hpBar]);
@@ -703,13 +703,13 @@ class DefenseScene extends Phaser.Scene {
         const dist = Phaser.Math.Distance.Between(clickX, clickY, enemy.x, enemy.y);
         if (dist <= 80) enemy.hp -= 100;
       });
-      this.mortarCooldown = 3000; document.getElementById('defense-status').innerText = '🛡️ Obrona Bazy (Moździerz: 3s)';
+      this.mortarCooldown = 3000; document.getElementById('defense-status').innerText = '🛡️ Moździerz: Ładuje (3s)';
       this.time.addEvent({
         delay: 1000, repeat: 2, callback: () => {
           if (this.battleEnded) return;
           this.mortarCooldown -= 1000;
-          if (this.mortarCooldown <= 0) document.getElementById('defense-status').innerText = '🛡️ Obrona Bazy (Moździerz: Gotowy)';
-          else document.getElementById('defense-status').innerText = `🛡️ Obrona Bazy (Moździerz: ${this.mortarCooldown/1000}s)`;
+          if (this.mortarCooldown <= 0) document.getElementById('defense-status').innerText = '🛡️ Moździerz: Gotowy';
+          else document.getElementById('defense-status').innerText = `🛡️ Moździerz: ${this.mortarCooldown/1000}s`;
         }
       });
     });
@@ -723,7 +723,7 @@ class DefenseScene extends Phaser.Scene {
     for (let i = 0; i < numEnemies; i++) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2); const distance = Phaser.Math.Between(400, 600); 
       const x = this.centerBase.x + Math.cos(angle) * distance; const y = this.centerBase.y + Math.sin(angle) * distance;
-      const sprite = this.add.text(x, y, 'W', { fontSize: '20px', color: '#fff', backgroundColor: '#ff0000', padding: {x:4, y:4} }).setOrigin(0.5);
+      const sprite = this.add.text(x, y, '🩸', { fontSize: '20px', color: '#fff', backgroundColor: '#8b0000', padding: {x:4, y:4} }).setOrigin(0.5);
       const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5);
       this.enemies.push({ sprite, hpBar, x, y, hp: 100, maxHp: 100, target: null, alive: true, damage: 15, speed: 80 });
     }
@@ -765,7 +765,7 @@ const config = {
   parent: 'game',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#2d4a3e',
+  backgroundColor: '#2b3625',
   render: { clearBeforeRender: false },
   scene: [BaseScene, BattleScene, DefenseScene]
 };
