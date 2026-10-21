@@ -1,41 +1,22 @@
-function gridToScreen(gridX, gridY) {
-    let screenX = (gridX - gridY) * (TILE_W / 2);
-    let screenY = (gridX + gridY) * (TILE_H / 2);
-    return { x: screenX, y: screenY };
-}
+function drawBuildingTexture(scene, x, y, def, alpha = 1) {
+  let container = scene.add.container(x, y);
+  
+  let shadow = scene.add.ellipse(0, TILE/2 - 5, TILE - 10, 15, 0x000000, 0.4 * alpha);
+  let base = scene.add.rectangle(0, 5, TILE - 12, TILE - 16, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+  let roof = scene.add.rectangle(0, -12, TILE - 8, TILE/2, def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
+  let detail = scene.add.text(0, -12, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
 
-function screenToGrid(screenX, screenY) {
-    let gridX = (screenX / (TILE_W / 2) + screenY / (TILE_H / 2)) / 2;
-    let gridY = (screenY / (TILE_H / 2) - screenX / (TILE_W / 2)) / 2;
-    return { x: Math.round(gridX), y: Math.round(gridY) };
-}
-
-function drawIsoBuilding(scene, gridX, gridY, def, alpha = 1) {
-    let pos = gridToScreen(gridX, gridY);
-    let container = scene.add.container(pos.x, pos.y);
-
-    // Rysowanie cienia
-    let shadow = scene.add.ellipse(0, TILE_H / 4, TILE_W, TILE_H, 0x000000, 0.4 * alpha);
-
-    // Wymiary bazowe
-    let w = TILE_W - 8;
-    let h = TILE_H - 8;
-    let height = def.size === 2 ? 40 : 25; // Warownia jest wyższa
-
-    // Podstawa (podłoga budynku)
-    let base = scene.add.ellipse(0, 0, w, h, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
-
-    // Ściana (prostokąt w pionie, żeby dać efekt bryły)
-    let wall = scene.add.rectangle(0, -height/2, w, height, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
-
-    // Dach (elipsa na górze)
-    let roof = scene.add.ellipse(0, -height, w, h, def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
-
-    // Litera na dachu
-    let detail = scene.add.text(0, -height, def.short, { fontSize: '18px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
-
-    container.add([shadow, base, wall, roof, detail]);
-    return container;
+  if (def.name !== 'Mur') {
+    let window1 = scene.add.rectangle(-10, 5, 6, 10, 0x111111).setAlpha(alpha);
+    let window2 = scene.add.rectangle(10, 5, 6, 10, 0x111111).setAlpha(alpha);
+    container.add([shadow, base, roof, window1, window2, detail]);
+  } else {
+    let brick1 = scene.add.rectangle(0, 5, TILE - 12, 4, 0x000000).setAlpha(0.3 * alpha);
+    let brick2 = scene.add.rectangle(0, 15, TILE - 12, 4, 0x000000).setAlpha(0.3 * alpha);
+    container.add([shadow, base, roof, brick1, brick2, detail]);
+  }
+  
+  return container;
 }
 
 class BaseScene extends Phaser.Scene {
@@ -43,19 +24,16 @@ class BaseScene extends Phaser.Scene {
   create() {
     baseSceneInstance = this; 
     let cam = this.cameras.main;
-    
-    // Rysowanie siatki
-    let graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x3e4a35, 0.5);
-    for (let i = 0; i <= GRID; i++) {
-        let p1 = gridToScreen(i, 0); let p2 = gridToScreen(i, GRID);
-        graphics.lineBetween(p1.x, p1.y, p2.x, p2.y);
-        let p3 = gridToScreen(0, i); let p4 = gridToScreen(GRID, i);
-        graphics.lineBetween(p3.x, p3.y, p4.x, p4.y);
+    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1);
+    grid.setOrigin(0, 0);
+
+    for(let i=0; i<150; i++) {
+        let rx = Phaser.Math.Between(0, TILE*GRID);
+        let ry = Phaser.Math.Between(0, TILE*GRID);
+        this.add.circle(rx, ry, Phaser.Math.Between(2, 5), 0x1a2415, 0.5);
     }
-
-    window.preview = this.add.ellipse(0, 0, TILE_W, TILE_H, 0xffffff, 0.5).setVisible(false).setDepth(10);
-
+    
+    window.preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
     this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
     buildings = []; 
@@ -71,11 +49,13 @@ class BaseScene extends Phaser.Scene {
     
     this.input.on('pointermove', (p) => {
       if (selectedBuildingType) {
-        let gridPos = screenToGrid(p.worldX, p.worldY);
-        let screenPos = gridToScreen(gridPos.x, gridPos.y);
+        let gridX = Math.floor(p.worldX / TILE);
+        let gridY = Math.floor(p.worldY / TILE);
+        let screenX = gridX * TILE + TILE/2;
+        let screenY = gridY * TILE + TILE/2;
         if (window.preview) { 
             window.preview.setFillStyle(BUILDINGS[selectedBuildingType].color, 0.6); 
-            window.preview.setPosition(screenPos.x, screenPos.y).setVisible(true); 
+            window.preview.setPosition(screenX, screenY).setVisible(true); 
         }
         if (selectedBuildingType === 'wall' && p.isDown) this.tryPlaceBuilding(p);
       } else if (p.isDown) {
@@ -89,7 +69,7 @@ class BaseScene extends Phaser.Scene {
         if (window.preview) window.preview.setVisible(false); 
     });
     
-    cam.setBounds(-TILE_W * GRID, 0, TILE_W * GRID * 2, TILE_H * GRID * 2); 
+    cam.setBounds(0, 0, TILE * GRID, TILE * GRID); 
     cam.setZoom(1.0); 
     centerCamera(); 
   }
@@ -114,12 +94,12 @@ class BaseScene extends Phaser.Scene {
   }
 
   tryPlaceBuilding(p) {
-    let gridPos = screenToGrid(p.worldX, p.worldY);
-    let gx = gridPos.x; let gy = gridPos.y;
+    let gridX = Math.floor(p.worldX / TILE);
+    let gridY = Math.floor(p.worldY / TILE);
     
-    if (gx === this.lastGridX && gy === this.lastGridY) return;
-    if (gx < 0 || gy < 0 || gx >= GRID || gy >= GRID) return;
-    if (buildings.some(b => b.gridX === gx && b.gridY === gy)) return;
+    if (gridX === this.lastGridX && gridY === this.lastGridY) return;
+    if (gridX < 0 || gridY < 0 || gridX >= GRID || gridY >= GRID) return;
+    if (buildings.some(b => b.gridX === gridX && b.gridY === gridY)) return;
     
     const def = BUILDINGS[selectedBuildingType];
     if (gold < def.cost.gold) { 
@@ -132,22 +112,24 @@ class BaseScene extends Phaser.Scene {
     if (selectedBuildingType === 'mine') updateQuest('build_mine', 1);
     if (selectedBuildingType === 'altar') updateQuest('build_altar', 1);
 
-    playSound('build'); this.createBuilding(gx, gy, selectedBuildingType, true, 1);
-    this.lastGridX = gx; this.lastGridY = gy;
+    playSound('build'); this.createBuilding(gridX, gridY, selectedBuildingType, true, 1);
+    this.lastGridX = gridX; this.lastGridY = gridY;
     updateUI(); saveGame();
   }
 
   createBuilding(gridX, gridY, type, isNew, level, hp = null, buildEndTime = 0) {
     const def = BUILDINGS[type];
-    const container = drawIsoBuilding(this, gridX, gridY, def, 1);
+    let screenX = gridX * TILE + TILE/2;
+    let screenY = gridY * TILE + TILE/2;
     
-    let screenPos = gridToScreen(gridX, gridY);
-    const label = this.add.text(screenPos.x, screenPos.y + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
-    const buildText = this.add.text(screenPos.x, screenPos.y - 50, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
-    const hpBarBg = this.add.rectangle(screenPos.x, screenPos.y - 35, 30, 4, 0x000000);
-    const hpBar = this.add.rectangle(screenPos.x - 15, screenPos.y - 35, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     
-    container.setSize(TILE_W, TILE_H).setInteractive({ useHandCursor: true });
+    const label = this.add.text(screenX, screenY + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
+    const buildText = this.add.text(screenX, screenY - 35, '', { fontSize: '18px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
+    const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
+    const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    
+    container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
     container.label = label; container.hpBar = hpBar; container.buildText = buildText;
     container.buildEndTime = isNew ? Date.now() + (def.buildTime * level * 1000) : buildEndTime;
@@ -212,13 +194,14 @@ class BattleScene extends Phaser.Scene {
   
   createEnemyBuilding(gridX, gridY, hp, type, isDefense, lootG, lootE) {
     const def = BUILDINGS[type]; 
-    let container = drawIsoBuilding(this, gridX, gridY, def, 1); 
-    let pos = gridToScreen(gridX, gridY);
+    let screenX = gridX * TILE + TILE/2;
+    let screenY = gridY * TILE + TILE/2;
+    let container = drawBuildingTexture(this, screenX, screenY, def, 1); 
     
-    let hpBarBg = this.add.rectangle(pos.x, pos.y - 30, 30, 4, 0x000000);
-    let hpBar = this.add.rectangle(pos.x - 15, pos.y - 30, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    let hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
+    let hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
     
-    this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: pos.x, y: pos.y, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
+    this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: screenX, y: screenY, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
   }
   
   spawnTroop(x, y, type) {
@@ -333,31 +316,26 @@ class BattleScene extends Phaser.Scene {
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
-    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a');
-    
-    let graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x3e4a35, 0.5);
-    for (let i = 0; i <= GRID; i++) {
-        let p1 = gridToScreen(i, 0); let p2 = gridToScreen(i, GRID);
-        graphics.lineBetween(p1.x, p1.y, p2.x, p2.y);
-        let p3 = gridToScreen(0, i); let p4 = gridToScreen(GRID, i);
-        graphics.lineBetween(p3.x, p3.y, p4.x, p4.y);
-    }
-    
+    let cam = this.cameras.main; cam.setBackgroundColor('#2b3625');
+    let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1); grid.setOrigin(0, 0);
+    for(let i=0; i<100; i++) { this.add.circle(Phaser.Math.Between(0, TILE*GRID), Phaser.Math.Between(0, TILE*GRID), Phaser.Math.Between(2, 4), 0x1a2415, 0.5); }
     this.playerBuildings = []; const saved = loadGame(); 
     saved.forEach(b => {
-      const def = BUILDINGS[b.type]; let container = drawIsoBuilding(this, b.gridX, b.gridY, def, 1);
-      let pos = gridToScreen(b.gridX, b.gridY);
+      const def = BUILDINGS[b.type]; 
+      let screenX = b.gridX * TILE + TILE/2; let screenY = b.gridY * TILE + TILE/2;
+      let container = drawBuildingTexture(this, screenX, screenY, def, 1);
       
-      const hpBarBg = this.add.rectangle(pos.x, pos.y - 30, 30, 4, 0x000000);
-      const hpBar = this.add.rectangle(pos.x - 15, pos.y - 30, 30, 4, 0x00ff00).setOrigin(0, 0.5);
-      this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: pos.x, y: pos.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime });
+      const label = this.add.text(screenX, screenY + 20, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
+      const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
+      const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+      this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime });
     });
     
-    let center = gridToScreen(Math.floor(GRID/2), Math.floor(GRID/2));
-    cam.setBounds(-TILE_W * GRID, 0, TILE_W * GRID * 2, TILE_H * GRID * 2); cam.setZoom(1.0);
-    cam.scrollX = center.x - cam.width / 2; cam.scrollY = center.y - cam.height / 2;
-    this.centerBase = { x: center.x, y: center.y };
+    let centerX = Math.floor(GRID/2) * TILE + TILE/2;
+    let centerY = Math.floor(GRID/2) * TILE + TILE/2;
+    cam.setBounds(0, 0, TILE * GRID, TILE * GRID); cam.setZoom(1.0);
+    cam.scrollX = centerX - cam.width / 2; cam.scrollY = centerY - cam.height / 2;
+    this.centerBase = { x: centerX, y: centerY };
 
     this.enemies = []; this.waveCount = 0; this.battleEnded = false; this.mortarCooldown = 0; 
     this.spawnWave();
