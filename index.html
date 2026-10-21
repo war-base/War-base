@@ -5,49 +5,64 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Twierdza - Dark Fantasy</title>
   <style>
-    html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
-    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; } /* Ciemna, mszysta zieleń */
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
+    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
 
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); color: white; 
-      padding: max(12px, env(safe-area-inset-top)) 12px 12px 12px; 
-      display: flex; justify-content: space-around; font-weight: bold; font-size: 16px; z-index: 10; pointer-events: none;
+      padding: max(8px, env(safe-area-inset-top)) 10px 8px 10px; 
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+      font-weight: bold; font-size: 14px; z-index: 10; pointer-events: none; gap: 5px;
+      border-bottom: 2px solid #5c4305;
     }
+    .stat-box { background: rgba(30, 30, 30, 0.9); padding: 4px 8px; border-radius: 5px; border: 1px solid #5c4305; display: flex; align-items: center; gap: 5px; }
     .res-gold { color: #ffd700; }
-    .res-elixir { color: #ba55d3; } /* Fiolet dla Many */
+    .res-elixir { color: #ba55d3; }
+    .trophies { color: #ff3333; }
+    .player-level { color: #88ff88; }
+
+    /* Ikona Ustawień */
+    #settings-btn {
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
+      background: rgba(50, 50, 50, 0.9); color: white; border: 1px solid #5c4305;
+      width: 35px; height: 35px; border-radius: 50%; font-size: 18px; z-index: 15;
+      display: flex; justify-content: center; align-items: center; cursor: pointer;
+      pointer-events: auto;
+    }
+    #settings-btn:active { background: #222; }
 
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; gap: 10px;
-      border-top: 2px solid #444; z-index: 10; overflow-x: auto; white-space: nowrap;
+      background: rgba(0, 0, 0, 0.9); padding: 10px; display: flex; gap: 10px;
+      border-top: 2px solid #5c4305; z-index: 10; overflow-x: auto; white-space: nowrap;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .build-btn {
-      min-width: 80px; padding: 10px 5px; border: none; border-radius: 8px;
-      background: #333; color: white; font-weight: bold; font-size: 12px;
+      min-width: 80px; padding: 10px 5px; border: none; border-radius: 4px;
+      background: #2a2a2a; color: #ddd; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: auto;
-      border: 1px solid #555;
+      border: 1px solid #444;
     }
-    .build-btn.selected { background: #4a3b2a; border: 2px solid #c9a06c; }
+    .build-btn.selected { background: #4a3b2a; border: 2px solid #c9a06c; color: #fff; box-shadow: 0 0 10px #c9a06c; }
     .build-btn:active { background: #555; }
-    .btn-sub { font-size: 10px; font-weight: normal; color: #ccc; }
+    .btn-sub { font-size: 10px; font-weight: normal; color: #aaa; }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ba55d3; }
 
     #home-btn {
       position: absolute; bottom: 230px; right: 20px;
-      background: #444; color: white; border: 2px solid #888;
-      padding: 12px 15px; border-radius: 50px;
+      background: #333; color: white; border: 2px solid #5c4305;
+      padding: 12px 15px; border-radius: 8px;
       font-size: 20px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
-    #home-btn:active { background: #222; }
+    #home-btn:active { background: #111; }
 
     #attack-btn {
       position: absolute; bottom: 90px; right: 20px;
       background: #8b0000; color: white; border: 2px solid #ff4444;
-      padding: 15px 25px; border-radius: 50px;
+      padding: 15px 25px; border-radius: 8px;
       font-size: 18px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
@@ -56,7 +71,7 @@
     #defend-btn {
       position: absolute; bottom: 160px; right: 20px;
       background: #2f4f4f; color: white; border: 2px solid #5f9ea0;
-      padding: 15px 25px; border-radius: 50px;
+      padding: 15px 25px; border-radius: 8px;
       font-size: 18px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
@@ -68,46 +83,46 @@
     }
     #battle-top-bar, #defense-top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.9); color: white; 
+      background: rgba(10, 10, 10, 0.95); color: white; 
       padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px;
       display: flex; justify-content: space-between; align-items: center;
-      font-size: 16px; font-weight: bold; pointer-events: auto;
+      font-size: 16px; font-weight: bold; pointer-events: auto; border-bottom: 2px solid #8b0000;
     }
-    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
+    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
     #loot-display { color: #ffd700; }
     #timer-display { color: #ffaa00; }
 
     #troop-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.9); padding: 10px; display: flex; justify-content: space-around; gap: 5px;
-      z-index: 21; pointer-events: auto;
+      background: rgba(10, 10, 10, 0.95); padding: 10px; display: flex; justify-content: space-around; gap: 5px;
+      z-index: 21; pointer-events: auto; border-top: 2px solid #5c4305;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .troop-btn {
-      flex: 1; padding: 8px 5px; border: 2px solid #333; border-radius: 8px;
-      background: #222; color: white; font-weight: bold; font-size: 12px;
+      flex: 1; padding: 8px 5px; border: 2px solid #333; border-radius: 4px;
+      background: #1a1a1a; color: #ccc; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px;
     }
-    .troop-btn.selected { border: 2px solid #c9a06c; background: #4a3b2a; }
-    .troop-btn span { font-size: 12px; color: #ccc; }
-    .troop-btn.hero-btn { border-color: #ba55d3; background: #2a1a30; }
-    .troop-btn.hero-btn.selected { border-color: #ffd700; background: #4a2055; }
-    .troop-btn.hero-btn.disabled { opacity: 0.5; pointer-events: none; }
+    .troop-btn.selected { border: 2px solid #c9a06c; background: #332a1c; color: #fff; }
+    .troop-btn span { font-size: 12px; color: #aaa; }
+    .troop-btn.hero-btn { border-color: #ba55d3; background: #1a0f1f; }
+    .troop-btn.hero-btn.selected { border-color: #ffd700; background: #332040; }
+    .troop-btn.hero-btn.disabled { opacity: 0.4; pointer-events: none; }
 
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(20,20,20,0.98); color: white; padding: 20px; border-radius: 10px;
-      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #c9a06c;
-      max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 20px rgba(0,0,0,0.8);
+      background: rgba(15,15,15,0.98); color: white; padding: 20px; border-radius: 8px;
+      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #5c4305;
+      max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9);
     }
-    #building-panel h3 { margin: 0 0 10px 0; color: #c9a06c; font-size: 22px; text-transform: uppercase; }
+    #building-panel h3 { margin: 0 0 10px 0; color: #c9a06c; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
     #building-panel p { margin: 5px 0; font-size: 16px; }
-    #building-panel button { margin: 5px 0; padding: 10px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; font-size: 14px; width: 100%; }
+    #building-panel button { margin: 5px 0; padding: 10px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; width: 100%; }
 
     #bp-upgrade { background: #4a5c38; color: white; }
     #bp-sell { background: #8b0000; color: white; }
     #bp-close { background: #444; color: white; }
-    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 10px; background: rgba(47, 79, 79, 0.2); border-radius: 8px; border: 1px solid #5f9ea0; }
+    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 10px; background: rgba(47, 79, 79, 0.2); border-radius: 4px; border: 1px solid #5f9ea0; }
     #bp-lab-section { background: rgba(138, 43, 226, 0.1); border: 1px solid #8a2be2; }
     .train-btn { background: #5f9ea0; color: white; margin-top: 5px; }
     .train-btn:active { background: #2f4f4f; }
@@ -115,17 +130,52 @@
     .lab-btn:active { background: #551a8b; }
 
     #message {
-      position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
+      position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
       background: rgba(139, 0, 0, 0.95); color: white; padding: 12px 24px;
-      border-radius: 5px; font-weight: bold; display: none; pointer-events: none; z-index: 9999;
-      text-align: center; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-      white-space: nowrap; border: 1px solid #ff8888;
+      border-radius: 4px; font-weight: bold; display: none; pointer-events: none; z-index: 9999;
+      text-align: center; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.8);
+      white-space: nowrap; border: 1px solid #ff8888; text-transform: uppercase;
     }
 
+    /* --- NOWE EKRANY NAKŁADKI (MODALE) --- */
+    .modal-overlay {
+      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.85); z-index: 1000;
+      display: none; justify-content: center; align-items: center;
+      pointer-events: auto; backdrop-filter: blur(3px);
+    }
+    .modal-content {
+      background: #1a1a1a; border: 2px solid #5c4305; border-radius: 10px;
+      padding: 30px; min-width: 300px; text-align: center; color: white;
+      box-shadow: 0 0 40px rgba(0,0,0,0.9);
+    }
+    .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 28px; letter-spacing: 2px; }
+    .modal-content p { font-size: 18px; margin: 5px 0; }
+    .modal-content button { 
+      margin-top: 15px; padding: 12px 20px; font-weight: bold; font-size: 16px; 
+      border-radius: 5px; border: none; cursor: pointer; width: 100%;
+      background: #4a5c38; color: white; text-transform: uppercase;
+    }
+    .modal-content button:active { background: #2e3b22; }
+    .modal-content .btn-danger { background: #8b0000; }
+    .modal-content .btn-danger:active { background: #5c0000; }
+
+    /* Ekran Wyników Bitwy */
+    #battle-result-overlay .modal-content { border-color: #ffd700; }
+    .stars-container { font-size: 50px; margin: 10px 0; letter-spacing: 5px; }
+    .star { color: #333; }
+    .star.earned { color: #ffd700; text-shadow: 0 0 15px #ffd700; }
+    .loot-summary { background: #2a2a2a; padding: 15px; border-radius: 8px; margin: 15px 0; }
+    .loot-item { font-size: 20px; margin: 5px 0; }
+
+    /* Ekran Ustawień */
+    #settings-overlay .modal-content { border-color: #5f9ea0; }
+    #settings-overlay h2 { color: #5f9ea0; }
+    
     #reset-btn {
-      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
+      position: absolute; top: max(50px, env(safe-area-inset-top)); right: 55px;
       background: rgba(139, 0, 0, 0.7); color: white; border: none;
-      padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 999;
+      padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 999;
     }
   </style>
 </head>
@@ -133,10 +183,13 @@
   <div id="game"></div>
 
   <div id="top-bar">
-    <div class="res-gold">💰 Złoto: <span id="ui-gold">3000</span></div>
-    <div class="res-elixir">🔮 Mana: <span id="ui-elixir">1000</span></div>
+    <div class="stat-box player-level">🩸 Ranga: <span id="ui-level">1</span></div>
+    <div class="stat-box trophies">💀 <span id="ui-trophies">0</span></div>
+    <div class="stat-box res-gold">💰 <span id="ui-gold">3000</span></div>
+    <div class="stat-box res-elixir">🔮 <span id="ui-elixir">1000</span></div>
   </div>
   
+  <button id="settings-btn" onclick="openSettings()">⚙️</button>
   <button id="reset-btn" onclick="resetGame()">RESET</button>
 
   <div id="build-menu">
@@ -208,7 +261,38 @@
   
   <div id="message">Za mało surowców!</div>
 
+  <!-- EKRAN WYNIKÓW BITWY -->
+  <div id="battle-result-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2 id="result-title">Zwycięstwo!</h2>
+      <div class="stars-container">
+        <span class="star" id="star1">★</span>
+        <span class="star" id="star2">★</span>
+        <span class="star" id="star3">★</span>
+      </div>
+      <p id="result-destroyed">Zniszczono: 0% bazy</p>
+      <div class="loot-summary">
+        <div class="loot-item loot-gold">💰 +<span id="result-gold">0</span></div>
+        <div class="loot-item loot-elixir">🔮 +<span id="result-elixir">0</span></div>
+        <div class="loot-item" style="color:#ff3333">💀 +<span id="result-trophies">0</span></div>
+        <div class="loot-item" style="color:#88ff88">🌟 +<span id="result-xp">0</span> XP</div>
+      </div>
+      <button onclick="closeBattleResult()">Wróć do twierdzy</button>
+    </div>
+  </div>
+
+  <!-- EKRAN USTAWIEŃ -->
+  <div id="settings-overlay" class="modal-overlay">
+    <div class="modal-content">
+      <h2>Ustawienia</h2>
+      <p>Głośność dźwięków:</p>
+      <button id="sound-toggle-btn" onclick="toggleSound()">🔊 Dźwięk: Włączony</button>
+      <button class="btn-danger" onclick="resetGame()">Zresetuj grę</button>
+      <button onclick="closeSettings()">Zamknij</button>
+    </div>
+  </div>
+
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="game.js?v=24"></script>
+  <script src="game.js?v=27"></script>
 </body>
 </html>
