@@ -175,7 +175,6 @@ function upgradeBuilding() {
   const def = BUILDINGS[currentlySelectedBuilding.type];
   const townhall = buildings.find(b => b.type === 'townhall');
   
-  // ZABEZPIECZENIE: Nie można ulepszyć ponad poziom Ratusza
   if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
     showMessage('Najpierw ulepsz Warownię!'); return;
   }
@@ -186,7 +185,6 @@ function upgradeBuilding() {
   if (gold < costGold) { showMessage('Za mało złota!'); return; }
   if (elixir < costElixir) { showMessage('Za mało Many!'); return; }
   
-  // NATYCHMIASTOWE ULEPSZENIE
   gold -= costGold; elixir -= costElixir;
   currentlySelectedBuilding.level++;
   playSound('build');
@@ -196,10 +194,7 @@ function upgradeBuilding() {
   }
   updateQuest('upgrade_any', 1);
 
-  // Aktualizacja wyglądu
   currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
-  
-  // Zwiększamy HP maksymalne i przywracamy pełne
   currentlySelectedBuilding.maxHp = def.hp * currentlySelectedBuilding.level;
   currentlySelectedBuilding.hp = currentlySelectedBuilding.maxHp;
   currentlySelectedBuilding.hpBar.scaleX = 1;
