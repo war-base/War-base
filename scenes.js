@@ -1,6 +1,9 @@
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   let container = scene.add.container(x, y);
   
+  // Wymuszamy wysoki priorytet dla całego budynku
+  container.setDepth(10);
+
   let shadow = scene.add.ellipse(0, TILE/2 - 5, TILE - 10, 15, 0x000000, 0.4 * alpha);
   let base = scene.add.rectangle(0, 5, TILE - 12, TILE - 16, def.color).setStrokeStyle(2, 0x000000).setAlpha(alpha);
   let roof = scene.add.rectangle(0, -12, TILE - 8, TILE/2, def.roofColor).setStrokeStyle(2, 0x000000).setAlpha(alpha);
@@ -30,10 +33,10 @@ class BaseScene extends Phaser.Scene {
     for(let i=0; i<150; i++) {
         let rx = Phaser.Math.Between(0, TILE*GRID);
         let ry = Phaser.Math.Between(0, TILE*GRID);
-        this.add.circle(rx, ry, Phaser.Math.Between(2, 5), 0x1a2415, 0.5);
+        this.add.circle(rx, ry, Phaser.Math.Between(2, 5), 0x1a2415, 0.5).setDepth(1);
     }
     
-    window.preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(10);
+    window.preview = this.add.rectangle(0, 0, TILE - 4, TILE - 4, 0xffffff, 0.5).setVisible(false).setDepth(5);
     this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
     buildings = []; 
@@ -131,15 +134,15 @@ class BaseScene extends Phaser.Scene {
     
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     
-    const label = this.add.text(screenX, screenY + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
-    const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
-    const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    // Wymuszenie najwyższego priorytetu dla etykiet i pasków życia
+    const label = this.add.text(screenX, screenY + 20, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:2,y:2} }).setOrigin(0.5).setDepth(15);
+    const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000).setDepth(15);
+    const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(15);
     
     container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
     container.label = label; container.hpBar = hpBar;
     
-    // ZABEZPIECZENIE: Brak timera, budynek jest od razu gotowy
     container.hp = hp !== null ? hp : def.hp * level; 
     container.maxHp = def.hp * level; 
     container.hpBar.scaleX = container.hp / container.maxHp;
@@ -206,8 +209,8 @@ class BattleScene extends Phaser.Scene {
     let screenY = gridY * TILE + TILE/2;
     let container = drawBuildingTexture(this, screenX, screenY, def, 1); 
     
-    let hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
-    let hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+    let hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000).setDepth(15);
+    let hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(15);
     
     this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: screenX, y: screenY, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
   }
@@ -217,17 +220,17 @@ class BattleScene extends Phaser.Scene {
     if (type === 'hero') bgColor = '#8b0000'; 
     if (type === 'wallbreaker') bgColor = '#ff8c00'; 
     let size = (type === 'hero') ? '32px' : '20px';
-    const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?8:4), y: (type==='hero'?8:4)} }).setOrigin(0.5);
-    const hpBar = this.add.rectangle(x - 12, y - (type==='hero'?30:24), (type==='hero'?40:24), 6, 0x00ff00).setOrigin(0, 0.5);
+    const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?8:4), y: (type==='hero'?8:4)} }).setOrigin(0.5).setDepth(20);
+    const hpBar = this.add.rectangle(x - 12, y - (type==='hero'?30:24), (type==='hero'?40:24), 6, 0x00ff00).setOrigin(0, 0.5).setDepth(20);
     this.troops.push({ type: type, def: def, sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: def.hp, maxHp: def.hp });
   }
   
   showDamageText(x, y, amount) {
-    let dmgText = this.add.text(x, y - 30, '-' + Math.floor(amount), { fontSize: '18px', color: '#ff4444', fontStyle: 'bold' }).setOrigin(0.5);
+    let dmgText = this.add.text(x, y - 30, '-' + Math.floor(amount), { fontSize: '18px', color: '#ff4444', fontStyle: 'bold' }).setOrigin(0.5).setDepth(21);
     this.tweens.add({ targets: dmgText, y: y - 70, alpha: 0, duration: 800, onComplete: () => dmgText.destroy() });
   }
   explode(x, y, color) {
-    let blast = this.add.circle(x, y, 20, color, 0.8);
+    let blast = this.add.circle(x, y, 20, color, 0.8).setDepth(21);
     this.tweens.add({ targets: blast, scale: 3, alpha: 0, duration: 400, onComplete: () => blast.destroy() });
   }
   
@@ -241,7 +244,7 @@ class BattleScene extends Phaser.Scene {
           if (dist < minDist) { minDist = dist; nearestTroop = troop; }
         });
         if (nearestTroop) {
-          const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000);
+          const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000).setDepth(19);
           laser.setOrigin(0, 0); laser.setLineWidth(4); setTimeout(() => laser.destroy(), 150); 
           nearestTroop.hp -= 25; this.showDamageText(nearestTroop.x, nearestTroop.y, 25); playSound('shoot');
         }
@@ -326,16 +329,16 @@ class DefenseScene extends Phaser.Scene {
   create() {
     let cam = this.cameras.main; cam.setBackgroundColor('#2b3625');
     let grid = this.add.grid(0, 0, TILE * GRID, TILE * GRID, TILE, TILE, 0x2b3625, 1, 0x3e4a35, 1); grid.setOrigin(0, 0);
-    for(let i=0; i<100; i++) { this.add.circle(Phaser.Math.Between(0, TILE*GRID), Phaser.Math.Between(0, TILE*GRID), Phaser.Math.Between(2, 4), 0x1a2415, 0.5); }
+    for(let i=0; i<100; i++) { this.add.circle(Phaser.Math.Between(0, TILE*GRID), Phaser.Math.Between(0, TILE*GRID), Phaser.Math.Between(2, 4), 0x1a2415, 0.5).setDepth(1); }
     this.playerBuildings = []; const saved = loadGame(); 
     saved.forEach(b => {
       const def = BUILDINGS[b.type]; 
       let screenX = b.gridX * TILE + TILE/2; let screenY = b.gridY * TILE + TILE/2;
       let container = drawBuildingTexture(this, screenX, screenY, def, 1);
       
-      const label = this.add.text(screenX, screenY + 20, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:2,y:2} }).setOrigin(0.5);
-      const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000);
-      const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5);
+      const label = this.add.text(screenX, screenY + 20, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:2,y:2} }).setOrigin(0.5).setDepth(15);
+      const hpBarBg = this.add.rectangle(screenX, screenY - 25, 30, 4, 0x000000).setDepth(15);
+      const hpBar = this.add.rectangle(screenX - 15, screenY - 25, 30, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(15);
       this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower') });
     });
     
@@ -353,7 +356,7 @@ class DefenseScene extends Phaser.Scene {
           if (tower.alive && tower.isDefense) {
             let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 400);
             if (target) {
-              const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff);
+              const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff).setDepth(19);
               laser.setOrigin(0, 0); laser.setLineWidth(5); setTimeout(() => laser.destroy(), 150); target.hp -= 30; playSound('shoot');
             }
           }
@@ -362,7 +365,7 @@ class DefenseScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer) => {
       if (this.battleEnded || this.mortarCooldown > 0) return;
       const clickX = pointer.worldX; const clickY = pointer.worldY;
-      const blast = this.add.circle(clickX, clickY, 80, 0xffaa00, 0.6); this.time.delayedCall(200, () => blast.destroy()); playSound('boom');
+      const blast = this.add.circle(clickX, clickY, 80, 0xffaa00, 0.6).setDepth(21); this.time.delayedCall(200, () => blast.destroy()); playSound('boom');
       this.enemies.forEach(enemy => {
         if (!enemy.alive) return;
         const dist = Phaser.Math.Distance.Between(clickX, clickY, enemy.x, enemy.y);
@@ -383,8 +386,8 @@ class DefenseScene extends Phaser.Scene {
     for (let i = 0; i < numEnemies; i++) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2); const distance = Phaser.Math.Between(400, 600); 
       const x = this.centerBase.x + Math.cos(angle) * distance; const y = this.centerBase.y + Math.sin(angle) * distance;
-      const sprite = this.add.text(x, y, '🩸', { fontSize: '20px', color: '#fff', backgroundColor: '#8b0000', padding: {x:4, y:4} }).setOrigin(0.5);
-      const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5);
+      const sprite = this.add.text(x, y, '🩸', { fontSize: '20px', color: '#fff', backgroundColor: '#8b0000', padding: {x:4, y:4} }).setOrigin(0.5).setDepth(20);
+      const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(20);
       this.enemies.push({ sprite, hpBar, x, y, hp: 100, maxHp: 100, target: null, alive: true, damage: 15, speed: 80 });
     }
   }
