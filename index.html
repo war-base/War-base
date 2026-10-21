@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v21</title>
+  <title>War Base v22</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -78,17 +78,20 @@
 
     #troop-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
-      background: rgba(0, 0, 0, 0.9); padding: 10px; display: flex; justify-content: space-around; gap: 10px;
+      background: rgba(0, 0, 0, 0.9); padding: 10px; display: flex; justify-content: space-around; gap: 5px;
       z-index: 21; pointer-events: auto;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .troop-btn {
-      flex: 1; padding: 10px; border: 2px solid #333; border-radius: 8px;
-      background: #222; color: white; font-weight: bold; font-size: 14px;
+      flex: 1; padding: 8px 5px; border: 2px solid #333; border-radius: 8px;
+      background: #222; color: white; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px;
     }
     .troop-btn.selected { border: 2px solid #ffd700; background: #444; }
     .troop-btn span { font-size: 12px; color: #ccc; }
+    .troop-btn.hero-btn { border-color: #ff8c00; background: #332200; }
+    .troop-btn.hero-btn.selected { border-color: #ffd700; background: #664400; }
+    .troop-btn.hero-btn.disabled { opacity: 0.5; pointer-events: none; }
 
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
@@ -129,7 +132,7 @@
   <div id="game"></div>
 
   <div id="top-bar">
-    <div class="res-gold">🪙 Złoto: <span id="ui-gold">1000</span></div>
+    <div class="res-gold">🪙 Złoto: <span id="ui-gold">3000</span></div>
     <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">1000</span></div>
   </div>
   
@@ -141,6 +144,7 @@
     <button class="build-btn" onclick="selectBuilding('barracks')">Koszary<span class="btn-sub elixir">150 💧</span></button>
     <button class="build-btn" onclick="selectBuilding('camp')">Obóz<span class="btn-sub elixir">250 💧</span></button>
     <button class="build-btn" onclick="selectBuilding('lab')">Laboratorium<span class="btn-sub elixir">500 💧</span></button>
+    <button class="build-btn" onclick="selectBuilding('altar')">Ołtarz<span class="btn-sub gold">2000 🪙</span></button>
     <button class="build-btn" onclick="selectBuilding('wall')">Mur<span class="btn-sub gold">50 🪙</span></button>
     <button class="build-btn" onclick="selectBuilding('tower')">Wieża<span class="btn-sub gold">300 🪙</span></button>
   </div>
@@ -163,6 +167,10 @@
       </button>
       <button class="troop-btn" id="btn-troop-giant" onclick="selectBattleTroop('giant')">
         🛡️ Gigant<br><span id="ui-giant">0</span>
+      </button>
+      <!-- Nowy przycisk Bohatera -->
+      <button class="troop-btn hero-btn disabled" id="btn-troop-hero" onclick="selectBattleTroop('hero')">
+        👑 Król<br><span id="ui-hero">0</span>
       </button>
     </div>
   </div>
@@ -201,6 +209,6 @@
   <div id="message">Za mało surowców!</div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="game.js?v=21"></script>
+  <script src="game.js?v=22"></script>
 </body>
 </html>
