@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v22</title>
+  <title>Twierdza - Dark Fantasy</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
-    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
+    #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; } /* Ciemna, mszysta zieleń */
 
     #top-bar {
       position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box;
@@ -15,24 +15,25 @@
       display: flex; justify-content: space-around; font-weight: bold; font-size: 16px; z-index: 10; pointer-events: none;
     }
     .res-gold { color: #ffd700; }
-    .res-elixir { color: #ff69b4; }
+    .res-elixir { color: #ba55d3; } /* Fiolet dla Many */
 
     #build-menu {
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
       background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; gap: 10px;
-      border-top: 2px solid #555; z-index: 10; overflow-x: auto; white-space: nowrap;
+      border-top: 2px solid #444; z-index: 10; overflow-x: auto; white-space: nowrap;
       padding-bottom: max(10px, env(safe-area-inset-bottom));
     }
     .build-btn {
       min-width: 80px; padding: 10px 5px; border: none; border-radius: 8px;
-      background: #444; color: white; font-weight: bold; font-size: 12px;
+      background: #333; color: white; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: auto;
+      border: 1px solid #555;
     }
-    .build-btn.selected { background: #2d8a4e; border: 2px solid #55ff88; }
-    .build-btn:active { background: #666; }
+    .build-btn.selected { background: #4a3b2a; border: 2px solid #c9a06c; }
+    .build-btn:active { background: #555; }
     .btn-sub { font-size: 10px; font-weight: normal; color: #ccc; }
     .btn-sub.gold { color: #ffd700; }
-    .btn-sub.elixir { color: #ff69b4; }
+    .btn-sub.elixir { color: #ba55d3; }
 
     #home-btn {
       position: absolute; bottom: 230px; right: 20px;
@@ -45,21 +46,21 @@
 
     #attack-btn {
       position: absolute; bottom: 90px; right: 20px;
-      background: #cc0000; color: white; border: 2px solid #ff4444;
+      background: #8b0000; color: white; border: 2px solid #ff4444;
       padding: 15px 25px; border-radius: 50px;
       font-size: 18px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
-    #attack-btn:active { background: #990000; transform: scale(0.95); }
+    #attack-btn:active { background: #5c0000; transform: scale(0.95); }
 
     #defend-btn {
       position: absolute; bottom: 160px; right: 20px;
-      background: #1e90ff; color: white; border: 2px solid #00bfff;
+      background: #2f4f4f; color: white; border: 2px solid #5f9ea0;
       padding: 15px 25px; border-radius: 50px;
       font-size: 18px; font-weight: bold; z-index: 15;
       box-shadow: 0 4px 10px rgba(0,0,0,0.6); cursor: pointer;
     }
-    #defend-btn:active { background: #104e8b; transform: scale(0.95); }
+    #defend-btn:active { background: #1a2b2b; transform: scale(0.95); }
 
     #battle-ui, #defense-ui {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box;
@@ -72,7 +73,7 @@
       display: flex; justify-content: space-between; align-items: center;
       font-size: 16px; font-weight: bold; pointer-events: auto;
     }
-    #battle-top-bar button, #defense-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
+    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
     #loot-display { color: #ffd700; }
     #timer-display { color: #ffaa00; }
 
@@ -87,43 +88,43 @@
       background: #222; color: white; font-weight: bold; font-size: 12px;
       display: flex; flex-direction: column; align-items: center; gap: 5px;
     }
-    .troop-btn.selected { border: 2px solid #ffd700; background: #444; }
+    .troop-btn.selected { border: 2px solid #c9a06c; background: #4a3b2a; }
     .troop-btn span { font-size: 12px; color: #ccc; }
-    .troop-btn.hero-btn { border-color: #ff8c00; background: #332200; }
-    .troop-btn.hero-btn.selected { border-color: #ffd700; background: #664400; }
+    .troop-btn.hero-btn { border-color: #ba55d3; background: #2a1a30; }
+    .troop-btn.hero-btn.selected { border-color: #ffd700; background: #4a2055; }
     .troop-btn.hero-btn.disabled { opacity: 0.5; pointer-events: none; }
 
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(0,0,0,0.95); color: white; padding: 20px; border-radius: 10px;
-      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #ffd700;
-      max-height: 80vh; overflow-y: auto; pointer-events: auto;
+      background: rgba(20,20,20,0.98); color: white; padding: 20px; border-radius: 10px;
+      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #c9a06c;
+      max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 20px rgba(0,0,0,0.8);
     }
-    #building-panel h3 { margin: 0 0 10px 0; color: #ffd700; font-size: 22px; }
+    #building-panel h3 { margin: 0 0 10px 0; color: #c9a06c; font-size: 22px; text-transform: uppercase; }
     #building-panel p { margin: 5px 0; font-size: 16px; }
     #building-panel button { margin: 5px 0; padding: 10px; font-weight: bold; border-radius: 5px; border: none; cursor: pointer; font-size: 14px; width: 100%; }
 
-    #bp-upgrade { background: #2d8a4e; color: white; }
+    #bp-upgrade { background: #4a5c38; color: white; }
     #bp-sell { background: #8b0000; color: white; }
-    #bp-close { background: #555; color: white; }
-    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 10px; background: rgba(30, 144, 255, 0.2); border-radius: 8px; border: 1px solid #1e90ff; }
-    #bp-lab-section { background: rgba(138, 43, 226, 0.2); border: 1px solid #8a2be2; }
-    .train-btn { background: #1e90ff; color: white; margin-top: 5px; }
-    .train-btn:active { background: #104e8b; }
+    #bp-close { background: #444; color: white; }
+    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 10px; background: rgba(47, 79, 79, 0.2); border-radius: 8px; border: 1px solid #5f9ea0; }
+    #bp-lab-section { background: rgba(138, 43, 226, 0.1); border: 1px solid #8a2be2; }
+    .train-btn { background: #5f9ea0; color: white; margin-top: 5px; }
+    .train-btn:active { background: #2f4f4f; }
     .lab-btn { background: #8a2be2; color: white; margin-top: 5px; }
     .lab-btn:active { background: #551a8b; }
 
     #message {
       position: absolute; top: 12%; left: 50%; transform: translateX(-50%);
-      background: rgba(220, 20, 20, 0.95); color: white; padding: 12px 24px;
-      border-radius: 30px; font-weight: bold; display: none; pointer-events: none; z-index: 9999;
+      background: rgba(139, 0, 0, 0.95); color: white; padding: 12px 24px;
+      border-radius: 5px; font-weight: bold; display: none; pointer-events: none; z-index: 9999;
       text-align: center; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.6);
-      white-space: nowrap; border: 2px solid #ff8888;
+      white-space: nowrap; border: 1px solid #ff8888;
     }
 
     #reset-btn {
       position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px;
-      background: rgba(200, 0, 0, 0.7); color: white; border: none;
+      background: rgba(139, 0, 0, 0.7); color: white; border: none;
       padding: 5px 10px; border-radius: 5px; font-size: 12px; z-index: 999;
     }
   </style>
@@ -132,21 +133,21 @@
   <div id="game"></div>
 
   <div id="top-bar">
-    <div class="res-gold">🪙 Złoto: <span id="ui-gold">3000</span></div>
-    <div class="res-elixir">💧 Eliksir: <span id="ui-elixir">1000</span></div>
+    <div class="res-gold">💰 Złoto: <span id="ui-gold">3000</span></div>
+    <div class="res-elixir">🔮 Mana: <span id="ui-elixir">1000</span></div>
   </div>
   
   <button id="reset-btn" onclick="resetGame()">RESET</button>
 
   <div id="build-menu">
-    <button class="build-btn" onclick="selectBuilding('townhall')">Ratusz<span class="btn-sub gold">1000 🪙</span></button>
-    <button class="build-btn" onclick="selectBuilding('mine')">Kopalnia<span class="btn-sub elixir">150 💧</span></button>
-    <button class="build-btn" onclick="selectBuilding('barracks')">Koszary<span class="btn-sub elixir">150 💧</span></button>
-    <button class="build-btn" onclick="selectBuilding('camp')">Obóz<span class="btn-sub elixir">250 💧</span></button>
-    <button class="build-btn" onclick="selectBuilding('lab')">Laboratorium<span class="btn-sub elixir">500 💧</span></button>
-    <button class="build-btn" onclick="selectBuilding('altar')">Ołtarz<span class="btn-sub gold">2000 🪙</span></button>
-    <button class="build-btn" onclick="selectBuilding('wall')">Mur<span class="btn-sub gold">50 🪙</span></button>
-    <button class="build-btn" onclick="selectBuilding('tower')">Wieża<span class="btn-sub gold">300 🪙</span></button>
+    <button class="build-btn" onclick="selectBuilding('townhall')">Warownia<span class="btn-sub gold">1000 💰</span></button>
+    <button class="build-btn" onclick="selectBuilding('mine')">Kopalnia<span class="btn-sub elixir">150 🔮</span></button>
+    <button class="build-btn" onclick="selectBuilding('barracks')">Koszary<span class="btn-sub elixir">150 🔮</span></button>
+    <button class="build-btn" onclick="selectBuilding('camp')">Obóz<span class="btn-sub elixir">250 🔮</span></button>
+    <button class="build-btn" onclick="selectBuilding('lab')">Wieża Magów<span class="btn-sub elixir">500 🔮</span></button>
+    <button class="build-btn" onclick="selectBuilding('altar')">Ołtarz Krwi<span class="btn-sub gold">2000 💰</span></button>
+    <button class="build-btn" onclick="selectBuilding('wall')">Mur<span class="btn-sub gold">50 💰</span></button>
+    <button class="build-btn" onclick="selectBuilding('tower')">Wieża Straż.<span class="btn-sub gold">300 💰</span></button>
   </div>
 
   <button id="home-btn" onclick="centerCamera()">🏠</button>
@@ -155,29 +156,28 @@
 
   <div id="battle-ui">
     <div id="battle-top-bar">
-      <div id="battle-status">Łup: <span id="loot-display">0 🪙, 0 💧</span> | ⏱️ <span id="timer-display">3:00</span></div>
-      <button onclick="endBattle(false)">Poddaj się</button>
+      <div id="battle-status">Łup: <span id="loot-display">0 💰, 0 🔮</span> | ⏱️ <span id="timer-display">3:00</span></div>
+      <button onclick="endBattle(false)">Odwrót</button>
     </div>
     <div id="troop-menu">
       <button class="troop-btn selected" id="btn-troop-barbarian" onclick="selectBattleTroop('barbarian')">
-        🗡️ Barbarzyńca<br><span id="ui-barbarian">0</span>
+        ⚔️ Wojownik<br><span id="ui-barbarian">0</span>
       </button>
       <button class="troop-btn" id="btn-troop-archer" onclick="selectBattleTroop('archer')">
         🏹 Łucznik<br><span id="ui-archer">0</span>
       </button>
       <button class="troop-btn" id="btn-troop-giant" onclick="selectBattleTroop('giant')">
-        🛡️ Gigant<br><span id="ui-giant">0</span>
+        🗿 Golem<br><span id="ui-giant">0</span>
       </button>
-      <!-- Nowy przycisk Bohatera -->
       <button class="troop-btn hero-btn disabled" id="btn-troop-hero" onclick="selectBattleTroop('hero')">
-        👑 Król<br><span id="ui-hero">0</span>
+        🩸 Watażka<br><span id="ui-hero">0</span>
       </button>
     </div>
   </div>
 
   <div id="defense-ui">
     <div id="defense-top-bar">
-      <div id="defense-status">🛡️ Obrona Bazy (Moździerz: Gotowy)</div>
+      <div id="defense-status">🛡️ Obrona (Moździerz: Gotowy)</div>
       <button onclick="endDefense(false)">Poddaj się</button>
     </div>
   </div>
@@ -188,27 +188,27 @@
     <p id="bp-status-text">Produkcja: <span id="bp-prod">0</span></p>
     
     <div id="bp-train-section">
-      <p>Rekrutacja Armii: <span id="bp-army-capacity" style="color:#00ff00"></span></p>
-      <button class="train-btn" onclick="trainTroop('barbarian')">Rekrutuj Barbarzyńcę (50 💧)</button>
-      <button class="train-btn" onclick="trainTroop('archer')">Rekrutuj Łucznika (75 💧)</button>
-      <button class="train-btn" onclick="trainTroop('giant')">Rekrutuj Giganta (150 💧)</button>
+      <p>Rekrutacja: <span id="bp-army-capacity" style="color:#c9a06c"></span></p>
+      <button class="train-btn" onclick="trainTroop('barbarian')">Szkol Wojownika (50 🔮)</button>
+      <button class="train-btn" onclick="trainTroop('archer')">Szkol Łucznika (75 🔮)</button>
+      <button class="train-btn" onclick="trainTroop('giant')">Zbuduj Golema (150 🔮)</button>
     </div>
 
     <div id="bp-lab-section">
-      <p>Ulepszanie Jednostek:</p>
-      <button class="lab-btn" id="lab-up-barbarian" onclick="upgradeTroop('barbarian')">Barbarzyńca L1</button>
+      <p>Ulepszanie Wojska:</p>
+      <button class="lab-btn" id="lab-up-barbarian" onclick="upgradeTroop('barbarian')">Wojownik L1</button>
       <button class="lab-btn" id="lab-up-archer" onclick="upgradeTroop('archer')">Łucznik L1</button>
-      <button class="lab-btn" id="lab-up-giant" onclick="upgradeTroop('giant')">Gigant L1</button>
+      <button class="lab-btn" id="lab-up-giant" onclick="upgradeTroop('giant')">Golem L1</button>
     </div>
 
     <button id="bp-upgrade" onclick="upgradeBuilding()">Ulepsz</button>
-    <button id="bp-sell" onclick="sellBuilding()">Sprzedaj</button>
+    <button id="bp-sell" onclick="sellBuilding()">Zburz</button>
     <button id="bp-close" onclick="closeBuildingPanel()">Zamknij</button>
   </div>
   
   <div id="message">Za mało surowców!</div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
-  <script src="game.js?v=22"></script>
+  <script src="game.js?v=24"></script>
 </body>
 </html>
