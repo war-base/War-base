@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v6</title> <!-- Zmieniono tytuł, aby wymusić odświeżenie -->
+  <title>War Base v7</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -123,7 +123,7 @@
   <div id="building-panel">
     <h3 id="bp-name">Budynek</h3>
     <p>Poziom: <span id="bp-level">1</span></p>
-    <p>Produkcja: <span id="bp-prod">0</span></p>
+    <p id="bp-status-text">Produkcja: <span id="bp-prod">0</span></p>
     
     <div id="bp-train-section">
       <p>Twoja Armia: <span id="bp-army">0</span> / <span id="bp-max-army">20</span></p>
@@ -154,12 +154,13 @@
     let prodTimer = 0;
     let currentlySelectedBuilding = null;
 
+    // Dodano buildTime (w sekundach)
     const BUILDINGS = {
-      townhall: { name: 'Ratusz', emoji: '🏰', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000 },
-      mine: { name: 'Kopalnia', emoji: '⛏️', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400 },
-      barracks: { name: 'Koszary', emoji: '⚔️', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 }, hp: 600 },
-      wall: { name: 'Mur', emoji: '🧱', cost: { gold: 50, elixir: 0 }, color: 0x808080, stroke: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500 },
-      tower: { name: 'Wieża', emoji: '🏹', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600 }
+      townhall: { name: 'Ratusz', emoji: '🏰', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
+      mine: { name: 'Kopalnia', emoji: '⛏️', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
+      barracks: { name: 'Koszary', emoji: '⚔️', cost: { gold: 0, elixir: 150 }, color: 0x8b0000, stroke: 0x4a0000, prod: { gold: 0, elixir: 5 }, hp: 600, buildTime: 20 },
+      wall: { name: 'Mur', emoji: '🧱', cost: { gold: 50, elixir: 0 }, color: 0x808080, stroke: 0x404040, prod: { gold: 0, elixir: 0 }, hp: 500, buildTime: 5 },
+      tower: { name: 'Wieża', emoji: '🏹', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
     };
 
     const TROOP_STATS = { hp: 60, damage: 15, speed: 150, range: 40 };
@@ -199,44 +200,61 @@
       document.getElementById('bp-name').innerText = def.name;
       document.getElementById('bp-level').innerText = building.level;
       
-      const prodGold = (def.prod.gold || 0) * building.level;
-      const prodElixir = (def.prod.elixir || 0) * building.level;
-      let prodStr = [];
-      if (prodGold > 0) prodStr.push(prodGold + ' 🪙');
-      if (prodElixir > 0) prodStr.push(prodElixir + ' 💧');
-      document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
-      
-      const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
-      const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
-      document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧)`;
-      
-      const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
-      const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
-      document.getElementById('bp-sell').innerText = `Sprzedaj (+${sellValueGold} 🪙, +${sellValueElixir} 💧)`;
-      
-      if (building.type === 'barracks') {
-        document.getElementById('bp-train-section').style.display = 'block';
-        updateTrainUI();
-      } else {
+      const now = Date.now();
+      const isBuilding = building.buildEndTime > now;
+
+      if (isBuilding) {
+        const remain = Math.ceil((building.buildEndTime - now) / 1000);
+        document.getElementById('bp-status-text').innerHTML = `🔨 W budowie: <span style="color:#ffaa00">${remain}s</span>`;
+        document.getElementById('bp-upgrade').style.display = 'none';
+        document.getElementById('bp-sell').style.display = 'none';
         document.getElementById('bp-train-section').style.display = 'none';
+      } else {
+        document.getElementById('bp-status-text').innerHTML = `Produkcja: <span id="bp-prod">0</span>`;
+        
+        const prodGold = (def.prod.gold || 0) * building.level;
+        const prodElixir = (def.prod.elixir || 0) * building.level;
+        let prodStr = [];
+        if (prodGold > 0) prodStr.push(prodGold + ' 🪙');
+        if (prodElixir > 0) prodStr.push(prodElixir + ' 💧');
+        document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
+        
+        const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
+        const upgradeCostElixir = Math.floor(def.cost.elixir * building.level * 1.5);
+        document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 🪙, ${upgradeCostElixir} 💧)`;
+        
+        const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
+        const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
+        document.getElementById('bp-sell').innerText = `Sprzedaj (+${sellValueGold} 🪙, +${sellValueElixir} 💧)`;
+        
+        document.getElementById('bp-upgrade').style.display = 'block';
+        document.getElementById('bp-sell').style.display = 'block';
+
+        if (building.type === 'barracks') {
+          document.getElementById('bp-train-section').style.display = 'block';
+          updateTrainUI();
+        } else {
+          document.getElementById('bp-train-section').style.display = 'none';
+        }
       }
+      
       document.getElementById('building-panel').style.display = 'block';
     }
 
     function updateTrainUI() {
       let maxArmy = MAX_ARMY_BASE;
-      const barracks = buildings.find(b => b.type === 'barracks');
+      const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
       if (barracks) maxArmy += (barracks.level - 1) * 10;
       document.getElementById('bp-army').innerText = currentArmy;
       document.getElementById('bp-max-army').innerText = maxArmy;
     }
 
     function trainTroop() {
-      const barracks = buildings.find(b => b.type === 'barracks');
-      if (!barracks) return;
+      const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
+      if (!barracks) { showMessage('Brak gotowych Koszar!'); return; }
       let maxArmy = MAX_ARMY_BASE + (barracks.level - 1) * 10;
       
-      if (currentArmy >= maxArmy) { showMessage('Twoja armia jest pełna! Ulepsz Koszary.'); return; }
+      if (currentArmy >= maxArmy) { showMessage('Armia pełna! Ulepsz Koszary.'); return; }
       if (elixir < TROOP_COST_ELIXIR) { showMessage('Za mało eliksiru!'); return; }
 
       elixir -= TROOP_COST_ELIXIR;
@@ -260,10 +278,12 @@
       
       gold -= costGold; elixir -= costElixir;
       currentlySelectedBuilding.level++;
-      currentlySelectedBuilding.hp = def.hp * currentlySelectedBuilding.level; 
-      currentlySelectedBuilding.maxHp = def.hp * currentlySelectedBuilding.level;
-      currentlySelectedBuilding.hpBar.scaleX = 1;
       
+      // Ustawianie czasu budowy
+      currentlySelectedBuilding.buildEndTime = Date.now() + (def.buildTime * currentlySelectedBuilding.level * 1000);
+      currentlySelectedBuilding.rect.setAlpha(0.5);
+      currentlySelectedBuilding.icon.setAlpha(0.5);
+      currentlySelectedBuilding.label.setAlpha(0.5);
       currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
       
       updateUI(); saveGame(); openBuildingPanel(currentlySelectedBuilding); 
@@ -284,11 +304,13 @@
 
     function saveGame() {
       const data = { 
-        version: 6, // Zwiększono wersję zapisu
+        version: 7, 
         gold: gold, 
         elixir: elixir, 
         currentArmy: currentArmy, 
-        buildings: buildings.map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp })) 
+        buildings: buildings.map(b => ({ 
+          x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime 
+        })) 
       };
       localStorage.setItem('warBaseSave', JSON.stringify(data));
     }
@@ -298,7 +320,7 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 6 && typeof data.gold === 'number') {
+          if (data.version === 7 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
             currentArmy = data.currentArmy || 0;
@@ -365,10 +387,10 @@
       if (defenseScene) {
         const survivingBuildings = defenseScene.playerBuildings
           .filter(b => b.alive)
-          .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp }));
+          .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 6, gold: 1000, elixir: 1000, currentArmy: 20, buildings: [] };
+        if (!data) data = { version: 7, gold: 1000, elixir: 1000, currentArmy: 20, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -395,7 +417,7 @@
         this.fpsText = this.add.text(10, 50, 'FPS: 0', { fontSize: '14px', color: '#00ff00', backgroundColor: '#00000088', padding: {x: 10, y: 10} }).setScrollFactor(0).setDepth(20);
 
         buildings = []; 
-        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1, b.hp || null));
+        loadGame().forEach(b => this.createBuilding(b.x, b.y, b.type, false, b.level || 1, b.hp || null, b.buildEndTime || 0));
         updateUI();
 
         this.input.on('pointermove', (p) => {
@@ -416,11 +438,9 @@
           }
         });
 
-        // Niezawodne wyśrodkowanie kamery na Ratuszu (lub środku mapy)
         const townhall = buildings.find(b => b.type === 'townhall');
         let centerX = TILE * GRID / 2;
         let centerY = TILE * GRID / 2;
-        
         if (townhall) {
           centerX = townhall.x;
           centerY = townhall.y;
@@ -428,20 +448,38 @@
         
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.setZoom(0.7); 
-        
-        // RĘCZNE USTAWIENIE POZYCJI (scrollX/Y) zamiast centerOn
         cam.scrollX = centerX - cam.width / 2 / cam.zoom;
         cam.scrollY = centerY - cam.height / 2 / cam.zoom;
       }
 
       update(time, delta) {
         if (this.fpsText) this.fpsText.setText('FPS: ' + Math.round(this.game.loop.actualFps));
+        
+        let now = Date.now();
+        buildings.forEach(b => {
+          if (b.buildEndTime > now) {
+            let rem = Math.ceil((b.buildEndTime - now) / 1000);
+            b.buildText.setText('🔨 ' + rem + 's');
+          } else if (b.buildEndTime > 0) {
+            // Koniec budowy
+            b.buildEndTime = 0;
+            b.buildText.setText('');
+            b.rect.setAlpha(1);
+            b.icon.setAlpha(1);
+            b.label.setAlpha(1);
+            saveGame();
+            if (currentlySelectedBuilding === b) openBuildingPanel(b); // Odświeżenie panelu
+          }
+        });
+
         prodTimer += delta;
         if (prodTimer >= 1000) {
           let aG = 0, aE = 0;
           buildings.forEach(b => {
-            aG += (BUILDINGS[b.type].prod.gold || 0) * b.level;
-            aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level;
+            if (b.buildEndTime <= now) { // Tylko wybudowane budynki produkują
+              aG += (BUILDINGS[b.type].prod.gold || 0) * b.level;
+              aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level;
+            }
           });
           if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
           prodTimer = 0;
@@ -464,7 +502,7 @@
         updateUI(); saveGame();
       }
 
-      createBuilding(x, y, type, isNew, level, hp = null) {
+      createBuilding(x, y, type, isNew, level, hp = null, buildEndTime = 0) {
         const def = BUILDINGS[type];
         const container = this.add.container(x, y);
         
@@ -472,10 +510,13 @@
         const icon = this.add.text(0, -5, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
         const label = this.add.text(0, 15, def.name + ' L' + level, { fontSize: '9px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
         
+        // Tekst odliczania nad budynkiem
+        const buildText = this.add.text(0, -30, '', { fontSize: '16px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
+
         const hpBarBg = this.add.rectangle(0, -TILE/2 + 5, TILE - 10, 6, 0x000000);
         const hpBar = this.add.rectangle(-(TILE - 10)/2, -TILE/2 + 5, TILE - 10, 6, 0x00ff00).setOrigin(0, 0.5);
         
-        container.add([rect, icon, label, hpBarBg, hpBar]);
+        container.add([rect, icon, label, hpBarBg, hpBar, buildText]);
         container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
         container.type = type; 
         container.gridX = x; 
@@ -483,6 +524,22 @@
         container.level = level;
         container.label = label;
         container.hpBar = hpBar;
+        container.rect = rect;
+        container.icon = icon;
+        container.buildText = buildText;
+
+        if (isNew) {
+          container.buildEndTime = Date.now() + (def.buildTime * level * 1000);
+        } else {
+          container.buildEndTime = buildEndTime;
+        }
+
+        if (container.buildEndTime > Date.now()) {
+          rect.setAlpha(0.5);
+          icon.setAlpha(0.5);
+          label.setAlpha(0.5);
+        }
+
         container.hp = hp !== null ? hp : def.hp * level;
         container.maxHp = def.hp * level;
         container.hpBar.scaleX = container.hp / container.maxHp;
@@ -644,7 +701,7 @@
           container.add([rect, icon, label, hpBarBg, hpBar]);
           
           this.playerBuildings.push({
-            sprite: container, rect: rect, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isTower: b.type === 'tower'
+            sprite: container, rect: rect, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isTower: b.type === 'tower', buildEndTime: b.buildEndTime
           });
         });
         
@@ -659,7 +716,6 @@
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.setZoom(0.8);
         
-        // RĘCZNE WYŚRODKOWANIE
         cam.scrollX = centerX - cam.width / 2 / cam.zoom;
         cam.scrollY = centerY - cam.height / 2 / cam.zoom;
         
@@ -676,7 +732,7 @@
           delay: 1500, loop: true, callback: () => {
             if (this.battleEnded) return;
             this.playerBuildings.forEach(tower => {
-              if (tower.alive && tower.isTower) {
+              if (tower.alive && tower.isTower && tower.buildEndTime <= Date.now()) {
                 let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 400);
                 if (target) {
                   const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff);
