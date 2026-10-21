@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>War Base v7</title>
+  <title>War Base v8</title>
   <style>
     html, body { margin: 0; padding: 0; overflow: hidden; background: #1a1a2e; touch-action: none; overscroll-behavior: none; font-family: Arial, sans-serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2d4a3e; }
@@ -64,10 +64,25 @@
     }
     #battle-top-bar button, #defense-top-bar button { background: #cc0000; color: white; border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; }
 
+    /* Menu wyboru wojsk w bitwie */
+    #troop-menu {
+      position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box;
+      background: rgba(0, 0, 0, 0.85); padding: 10px; display: flex; justify-content: space-around; gap: 10px;
+      border-top: 2px solid #555; z-index: 10; pointer-events: auto;
+      padding-bottom: max(10px, env(safe-area-inset-bottom));
+    }
+    .troop-btn {
+      flex: 1; padding: 10px; border: 2px solid #333; border-radius: 8px;
+      background: #222; color: white; font-weight: bold; font-size: 14px;
+      display: flex; flex-direction: column; align-items: center; gap: 5px;
+    }
+    .troop-btn.selected { border: 2px solid #ffd700; background: #444; }
+
+    /* Panel Budynku */
     #building-panel {
       position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
       background: rgba(0,0,0,0.95); color: white; padding: 20px; border-radius: 10px;
-      display: none; z-index: 30; text-align: center; min-width: 250px; border: 2px solid #ffd700;
+      display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #ffd700;
     }
     #building-panel h3 { margin: 0 0 10px 0; color: #ffd700; font-size: 22px; }
     #building-panel p { margin: 5px 0; font-size: 16px; }
@@ -77,7 +92,8 @@
     #bp-sell { background: #8b0000; color: white; }
     #bp-close { background: #555; color: white; }
     #bp-train-section { display: none; margin: 15px 0; padding: 10px; background: rgba(30, 144, 255, 0.2); border-radius: 8px; border: 1px solid #1e90ff; }
-    #bp-train-btn { background: #1e90ff; color: white; margin-top: 5px; }
+    .train-btn { background: #1e90ff; color: white; margin-top: 5px; }
+    .train-btn:active { background: #104e8b; }
 
     #message {
       position: absolute; top: 20%; left: 50%; transform: translate(-50%, -50%);
@@ -108,8 +124,20 @@
 
   <div id="battle-ui">
     <div id="battle-top-bar">
-      <div>🪖 Armia: <span id="ui-army">0</span></div>
+      <div id="battle-status">Armia gotowa</div>
       <button onclick="endBattle(false)">Poddaj się</button>
+    </div>
+    <!-- Menu wyboru zrzucanego wojska -->
+    <div id="troop-menu">
+      <button class="troop-btn selected" id="btn-troop-barbarian" onclick="selectBattleTroop('barbarian')">
+        🗡️ Barbarzyńca<br><span id="ui-barbarian">0</span>
+      </button>
+      <button class="troop-btn" id="btn-troop-archer" onclick="selectBattleTroop('archer')">
+        🏹 Łucznik<br><span id="ui-archer">0</span>
+      </button>
+      <button class="troop-btn" id="btn-troop-giant" onclick="selectBattleTroop('giant')">
+        🛡️ Gigant<br><span id="ui-giant">0</span>
+      </button>
     </div>
   </div>
 
@@ -126,8 +154,10 @@
     <p id="bp-status-text">Produkcja: <span id="bp-prod">0</span></p>
     
     <div id="bp-train-section">
-      <p>Twoja Armia: <span id="bp-army">0</span> / <span id="bp-max-army">20</span></p>
-      <button id="bp-train-btn" onclick="trainTroop()">Rekrutuj Wojownika (50 💧)</button>
+      <p>Rekrutacja Armii:</p>
+      <button class="train-btn" onclick="trainTroop('barbarian')">🗡️ Barbarzyńca (50 💧)</button>
+      <button class="train-btn" onclick="trainTroop('archer')">🏹 Łucznik (75 💧)</button>
+      <button class="train-btn" onclick="trainTroop('giant')">🛡️ Gigant (150 💧)</button>
     </div>
 
     <button id="bp-upgrade" onclick="upgradeBuilding()">Ulepsz</button>
@@ -145,16 +175,11 @@
     
     let gold = 1000;
     let elixir = 1000;
-    let currentArmy = 20; 
-    const MAX_ARMY_BASE = 20;
-    const TROOP_COST_ELIXIR = 50;
-
-    let selectedBuildingType = null;
-    let buildings = [];
-    let prodTimer = 0;
-    let currentlySelectedBuilding = null;
-
-    // Dodano buildTime (w sekundach)
+    
+    // ZMIANA: Armia to teraz obiekt zamiast pojedynczej liczby
+    let army = { barbarian: 5, archer: 3, giant: 1 }; 
+    let selectedBattleTroopType = 'barbarian';
+    
     const BUILDINGS = {
       townhall: { name: 'Ratusz', emoji: '🏰', cost: { gold: 1000, elixir: 0 }, color: 0x8b4513, stroke: 0x5a2d0c, prod: { gold: 0, elixir: 0 }, hp: 1000, buildTime: 60 },
       mine: { name: 'Kopalnia', emoji: '⛏️', cost: { gold: 0, elixir: 150 }, color: 0xffd700, stroke: 0xb8860b, prod: { gold: 10, elixir: 0 }, hp: 400, buildTime: 15 },
@@ -163,7 +188,17 @@
       tower: { name: 'Wieża', emoji: '🏹', cost: { gold: 300, elixir: 0 }, color: 0x555555, stroke: 0x000000, prod: { gold: 0, elixir: 0 }, hp: 600, buildTime: 30 }
     };
 
-    const TROOP_STATS = { hp: 60, damage: 15, speed: 150, range: 40 };
+    // STATYSTYKI JEDNOSTEK
+    const TROOPS = {
+      barbarian: { name: 'Barbarzyńca', emoji: '🗡️', hp: 60, damage: 15, speed: 150, range: 40, cost: 50, target: 'any' },
+      archer: { name: 'Łucznik', emoji: '🏹', hp: 40, damage: 10, speed: 130, range: 180, cost: 75, target: 'any' },
+      giant: { name: 'Gigant', emoji: '🛡️', hp: 400, damage: 25, speed: 60, range: 40, cost: 150, target: 'defense' }
+    };
+
+    let selectedBuildingType = null;
+    let buildings = [];
+    let prodTimer = 0;
+    let currentlySelectedBuilding = null;
 
     function updateUI() {
       document.getElementById('ui-gold').innerText = Math.floor(gold);
@@ -177,6 +212,11 @@
         if (selectedBuildingType === 'wall') btns[3].classList.add('selected');
         if (selectedBuildingType === 'tower') btns[4].classList.add('selected');
       }
+      
+      // Aktualizacja UI w bitwie
+      if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
+      if(document.getElementById('ui-archer')) document.getElementById('ui-archer').innerText = army.archer;
+      if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
     }
 
     function selectBuilding(type) {
@@ -232,7 +272,6 @@
 
         if (building.type === 'barracks') {
           document.getElementById('bp-train-section').style.display = 'block';
-          updateTrainUI();
         } else {
           document.getElementById('bp-train-section').style.display = 'none';
         }
@@ -241,25 +280,16 @@
       document.getElementById('building-panel').style.display = 'block';
     }
 
-    function updateTrainUI() {
-      let maxArmy = MAX_ARMY_BASE;
-      const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
-      if (barracks) maxArmy += (barracks.level - 1) * 10;
-      document.getElementById('bp-army').innerText = currentArmy;
-      document.getElementById('bp-max-army').innerText = maxArmy;
-    }
-
-    function trainTroop() {
+    function trainTroop(type) {
       const barracks = buildings.find(b => b.type === 'barracks' && b.buildEndTime <= Date.now());
       if (!barracks) { showMessage('Brak gotowych Koszar!'); return; }
-      let maxArmy = MAX_ARMY_BASE + (barracks.level - 1) * 10;
       
-      if (currentArmy >= maxArmy) { showMessage('Armia pełna! Ulepsz Koszary.'); return; }
-      if (elixir < TROOP_COST_ELIXIR) { showMessage('Za mało eliksiru!'); return; }
+      const cost = TROOPS[type].cost;
+      if (elixir < cost) { showMessage('Za mało eliksiru!'); return; }
 
-      elixir -= TROOP_COST_ELIXIR;
-      currentArmy++;
-      updateUI(); updateTrainUI(); saveGame();
+      elixir -= cost;
+      army[type]++;
+      updateUI(); saveGame();
     }
 
     function closeBuildingPanel() {
@@ -279,7 +309,6 @@
       gold -= costGold; elixir -= costElixir;
       currentlySelectedBuilding.level++;
       
-      // Ustawianie czasu budowy
       currentlySelectedBuilding.buildEndTime = Date.now() + (def.buildTime * currentlySelectedBuilding.level * 1000);
       currentlySelectedBuilding.rect.setAlpha(0.5);
       currentlySelectedBuilding.icon.setAlpha(0.5);
@@ -304,10 +333,10 @@
 
     function saveGame() {
       const data = { 
-        version: 7, 
+        version: 8, 
         gold: gold, 
         elixir: elixir, 
-        currentArmy: currentArmy, 
+        army: army, 
         buildings: buildings.map(b => ({ 
           x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime 
         })) 
@@ -320,10 +349,10 @@
       if (saved) {
         try {
           const data = JSON.parse(saved);
-          if (data.version === 7 && typeof data.gold === 'number') {
+          if (data.version === 8 && typeof data.gold === 'number') {
             gold = data.gold; 
             elixir = data.elixir; 
-            currentArmy = data.currentArmy || 0;
+            army = data.army || { barbarian: 5, archer: 0, giant: 0 };
             return data.buildings;
           } else { localStorage.removeItem('warBaseSave'); }
         } catch (e) { localStorage.removeItem('warBaseSave'); }
@@ -331,21 +360,31 @@
       return [];
     }
 
+    function selectBattleTroop(type) {
+      selectedBattleTroopType = type;
+      document.querySelectorAll('.troop-btn').forEach(btn => btn.classList.remove('selected'));
+      document.getElementById('btn-troop-' + type).classList.add('selected');
+    }
+
     function startAttack() {
       closeBuildingPanel();
-      if (currentArmy <= 0) { showMessage('Nie masz wojska!'); return; }
+      if (army.barbarian + army.archer + army.giant <= 0) { showMessage('Nie masz wojska!'); return; }
+      
       document.getElementById('build-menu').style.display = 'none';
       document.getElementById('attack-btn').style.display = 'none';
       document.getElementById('defend-btn').style.display = 'none';
       document.getElementById('top-bar').style.display = 'none';
       document.getElementById('battle-ui').style.display = 'block';
-      document.getElementById('ui-army').innerText = currentArmy; 
+      
+      selectBattleTroop('barbarian'); // Domyślny wybór
+      updateUI();
       game.scene.start('BattleScene');
     }
 
     function endBattle(won = false) {
-      currentArmy = 0; 
+      army = { barbarian: 0, archer: 0, giant: 0 }; 
       saveGame();
+      
       document.getElementById('build-menu').style.display = 'flex';
       document.getElementById('attack-btn').style.display = 'block';
       document.getElementById('defend-btn').style.display = 'block';
@@ -390,7 +429,7 @@
           .map(b => ({ x: b.x, y: b.y, type: b.type, level: b.level, hp: b.hp, maxHp: b.maxHp, buildEndTime: b.buildEndTime }));
           
         let data = JSON.parse(localStorage.getItem('warBaseSave'));
-        if (!data) data = { version: 7, gold: 1000, elixir: 1000, currentArmy: 20, buildings: [] };
+        if (!data) data = { version: 8, gold: 1000, elixir: 1000, army: { barbarian: 0, archer: 0, giant: 0 }, buildings: [] };
         data.buildings = survivingBuildings;
         
         if (won) {
@@ -441,10 +480,7 @@
         const townhall = buildings.find(b => b.type === 'townhall');
         let centerX = TILE * GRID / 2;
         let centerY = TILE * GRID / 2;
-        if (townhall) {
-          centerX = townhall.x;
-          centerY = townhall.y;
-        }
+        if (townhall) { centerX = townhall.x; centerY = townhall.y; }
         
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.setZoom(0.7); 
@@ -461,14 +497,11 @@
             let rem = Math.ceil((b.buildEndTime - now) / 1000);
             b.buildText.setText('🔨 ' + rem + 's');
           } else if (b.buildEndTime > 0) {
-            // Koniec budowy
             b.buildEndTime = 0;
             b.buildText.setText('');
-            b.rect.setAlpha(1);
-            b.icon.setAlpha(1);
-            b.label.setAlpha(1);
+            b.rect.setAlpha(1); b.icon.setAlpha(1); b.label.setAlpha(1);
             saveGame();
-            if (currentlySelectedBuilding === b) openBuildingPanel(b); // Odświeżenie panelu
+            if (currentlySelectedBuilding === b) openBuildingPanel(b);
           }
         });
 
@@ -476,7 +509,7 @@
         if (prodTimer >= 1000) {
           let aG = 0, aE = 0;
           buildings.forEach(b => {
-            if (b.buildEndTime <= now) { // Tylko wybudowane budynki produkują
+            if (b.buildEndTime <= now) {
               aG += (BUILDINGS[b.type].prod.gold || 0) * b.level;
               aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level;
             }
@@ -509,8 +542,6 @@
         const rect = this.add.rectangle(0, 0, TILE - 6, TILE - 6, def.color).setStrokeStyle(2, def.stroke);
         const icon = this.add.text(0, -5, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
         const label = this.add.text(0, 15, def.name + ' L' + level, { fontSize: '9px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5);
-        
-        // Tekst odliczania nad budynkiem
         const buildText = this.add.text(0, -30, '', { fontSize: '16px', color: '#ffaa00', fontStyle: 'bold', backgroundColor: '#00000088' }).setOrigin(0.5);
 
         const hpBarBg = this.add.rectangle(0, -TILE/2 + 5, TILE - 10, 6, 0x000000);
@@ -518,26 +549,13 @@
         
         container.add([rect, icon, label, hpBarBg, hpBar, buildText]);
         container.setSize(TILE, TILE).setInteractive({ useHandCursor: true });
-        container.type = type; 
-        container.gridX = x; 
-        container.gridY = y;
-        container.level = level;
-        container.label = label;
-        container.hpBar = hpBar;
-        container.rect = rect;
-        container.icon = icon;
-        container.buildText = buildText;
+        container.type = type; container.gridX = x; container.gridY = y; container.level = level;
+        container.label = label; container.hpBar = hpBar; container.rect = rect; container.icon = icon; container.buildText = buildText;
 
-        if (isNew) {
-          container.buildEndTime = Date.now() + (def.buildTime * level * 1000);
-        } else {
-          container.buildEndTime = buildEndTime;
-        }
+        container.buildEndTime = isNew ? Date.now() + (def.buildTime * level * 1000) : buildEndTime;
 
         if (container.buildEndTime > Date.now()) {
-          rect.setAlpha(0.5);
-          icon.setAlpha(0.5);
-          label.setAlpha(0.5);
+          rect.setAlpha(0.5); icon.setAlpha(0.5); label.setAlpha(0.5);
         }
 
         container.hp = hp !== null ? hp : def.hp * level;
@@ -564,49 +582,53 @@
 
         this.enemyBuildings = [];
         this.troops = [];
-        this.armyLeft = currentArmy; 
         this.battleEnded = false;
 
         const cx = window.innerWidth / 2;
         const cy = window.innerHeight / 2;
 
-        this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', '🏰'); 
-        this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża', '🏹');
-        this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża', '🏹'); 
-        this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️'); 
-        this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️'); 
+        this.createEnemyBuilding(cx, cy, 400, 0x8b0000, 'Ratusz', '🏰', false); 
+        this.createEnemyBuilding(cx - 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true);
+        this.createEnemyBuilding(cx + 150, cy - 100, 150, 0x555555, 'Wieża', '🏹', true); 
+        this.createEnemyBuilding(cx - 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false); 
+        this.createEnemyBuilding(cx + 100, cy + 120, 100, 0xffd700, 'Kopalnia', '⛏️', false); 
 
         this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
 
         this.input.on('pointerdown', (pointer) => {
-          if (this.armyLeft > 0 && !this.battleEnded) {
-            this.spawnTroop(pointer.x, pointer.y);
-            this.armyLeft--;
-            document.getElementById('ui-army').innerText = this.armyLeft;
+          if (this.battleEnded) return;
+          
+          if (army[selectedBattleTroopType] > 0) {
+            this.spawnTroop(pointer.x, pointer.y, selectedBattleTroopType);
+            army[selectedBattleTroopType]--;
+            updateUI();
+          } else {
+            showMessage("Brak tej jednostki!");
           }
         });
       }
 
-      createEnemyBuilding(x, y, hp, color, name, emoji) {
+      createEnemyBuilding(x, y, hp, color, name, emoji, isDefense) {
         const size = 60;
         const rect = this.add.rectangle(x, y, size, size, color).setStrokeStyle(2, 0x000000);
         this.add.text(x, y - 5, emoji, {fontSize: '24px'}).setOrigin(0.5);
         this.add.text(x, y + 18, name, {fontSize: '10px', color: '#fff'}).setOrigin(0.5);
         this.add.rectangle(x, y - 40, size, 8, 0x000000);
         const hpBar = this.add.rectangle(x - size/2, y - 40, size, 8, 0x00ff00).setOrigin(0, 0.5);
-        this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isTower: (name === 'Wieża') });
+        this.enemyBuildings.push({ sprite: rect, hpBar: hpBar, hp: hp, maxHp: hp, x: x, y: y, alive: true, isDefense: isDefense });
       }
 
-      spawnTroop(x, y) {
-        const troopSprite = this.add.text(x, y, '🗡️', { fontSize: '24px' }).setOrigin(0.5);
+      spawnTroop(x, y, type) {
+        const def = TROOPS[type];
+        const troopSprite = this.add.text(x, y, def.emoji, { fontSize: '24px' }).setOrigin(0.5);
         const hpBar = this.add.rectangle(x - 12, y - 20, 24, 4, 0x00ff00).setOrigin(0, 0.5);
-        this.troops.push({ sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: TROOP_STATS.hp });
+        this.troops.push({ type: type, def: def, sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: def.hp, maxHp: def.hp });
       }
 
       towersShoot() {
         if (this.battleEnded) return;
         this.enemyBuildings.forEach(tower => {
-          if (tower.alive && tower.isTower) {
+          if (tower.alive && tower.isDefense) {
             let nearestTroop = null;
             let minDist = 300; 
             this.troops.forEach(troop => {
@@ -616,8 +638,7 @@
 
             if (nearestTroop) {
               const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000);
-              laser.setOrigin(0, 0);
-              laser.setLineWidth(4); 
+              laser.setOrigin(0, 0); laser.setLineWidth(4); 
               setTimeout(() => laser.destroy(), 150); 
               nearestTroop.hp -= 25;
             }
@@ -634,21 +655,28 @@
           if (troop.hp <= 0) {
             troop.sprite.destroy(); troop.hpBar.destroy(); this.troops.splice(i, 1); continue;
           }
-          troop.hpBar.width = 24 * (troop.hp / TROOP_STATS.hp);
+          troop.hpBar.width = 24 * (troop.hp / troop.maxHp);
           troop.hpBar.setPosition(troop.x - 12, troop.y - 20);
 
-          if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y);
+          if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y, troop.def.target);
           
           if (troop.target) {
             const dist = Phaser.Math.Distance.Between(troop.x, troop.y, troop.target.x, troop.target.y);
-            if (dist > TROOP_STATS.range) {
+            if (dist > troop.def.range) {
               const angle = Phaser.Math.Angle.Between(troop.x, troop.y, troop.target.x, troop.target.y);
-              troop.x += Math.cos(angle) * TROOP_STATS.speed * dt;
-              troop.y += Math.sin(angle) * TROOP_STATS.speed * dt;
+              troop.x += Math.cos(angle) * troop.def.speed * dt;
+              troop.y += Math.sin(angle) * troop.def.speed * dt;
               troop.sprite.setPosition(troop.x, troop.y);
             } else {
-              troop.target.hp -= TROOP_STATS.damage * dt;
+              troop.target.hp -= troop.def.damage * dt;
               troop.target.hpBar.scaleX = Math.max(0, troop.target.hp / troop.target.maxHp);
+              
+              // Efekt ataku dla łucznika
+              if (troop.type === 'archer' && Math.random() < 0.1) {
+                const arrow = this.add.line(0, 0, troop.x, troop.y, troop.target.x, troop.target.y, 0xffffff);
+                arrow.setOrigin(0,0); setTimeout(() => arrow.destroy(), 100);
+              }
+
               if (troop.target.hp <= 0) {
                 troop.target.alive = false; troop.target.sprite.destroy(); troop.target.hpBar.destroy(); troop.target = null; 
               }
@@ -656,19 +684,24 @@
           }
         }
 
+        // Sprawdzenie przegranej (brak jednostek na polu bitwy i w rezerwie)
         if (this.enemyBuildings.filter(b => b.alive).length === 0) {
           this.battleEnded = true;
           setTimeout(() => endBattle(true), 1000);
-        } else if (this.armyLeft === 0 && this.troops.length === 0 && !this.battleEnded) {
+        } else if (army.barbarian + army.archer + army.giant === 0 && this.troops.length === 0 && !this.battleEnded) {
           this.battleEnded = true;
           setTimeout(() => endBattle(false), 1000);
         }
       }
 
-      findNearestBuilding(x, y) {
+      findNearestBuilding(x, y, targetType) {
         let nearest = null, minDist = Infinity;
         this.enemyBuildings.forEach(b => {
           if (b.alive) {
+            // Gigant atakuje tylko budynki obronne. Jeśli ich nie ma, atakuje cokolwiek.
+            const hasDefenses = this.enemyBuildings.some(eb => eb.alive && eb.isDefense);
+            if (targetType === 'defense' && hasDefenses && !b.isDefense) return;
+
             const dist = Phaser.Math.Distance.Between(x, y, b.x, b.y);
             if (dist < minDist) { minDist = dist; nearest = b; }
           }
@@ -701,21 +734,16 @@
           container.add([rect, icon, label, hpBarBg, hpBar]);
           
           this.playerBuildings.push({
-            sprite: container, rect: rect, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isTower: b.type === 'tower', buildEndTime: b.buildEndTime
+            sprite: container, rect: rect, hpBar: hpBar, x: b.x, y: b.y, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower'), buildEndTime: b.buildEndTime
           });
         });
         
         const townhall = this.playerBuildings.find(b => b.type === 'townhall');
-        let centerX = TILE * GRID / 2;
-        let centerY = TILE * GRID / 2;
-        if (townhall) {
-          centerX = townhall.x;
-          centerY = townhall.y;
-        }
+        let centerX = townhall ? townhall.x : TILE * GRID / 2;
+        let centerY = townhall ? townhall.y : TILE * GRID / 2;
         
         cam.setBounds(0, 0, TILE * GRID, TILE * GRID);
         cam.setZoom(0.8);
-        
         cam.scrollX = centerX - cam.width / 2 / cam.zoom;
         cam.scrollY = centerY - cam.height / 2 / cam.zoom;
         
@@ -732,12 +760,11 @@
           delay: 1500, loop: true, callback: () => {
             if (this.battleEnded) return;
             this.playerBuildings.forEach(tower => {
-              if (tower.alive && tower.isTower && tower.buildEndTime <= Date.now()) {
+              if (tower.alive && tower.isDefense && tower.buildEndTime <= Date.now()) {
                 let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 400);
                 if (target) {
                   const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff);
-                  laser.setOrigin(0, 0);
-                  laser.setLineWidth(5); 
+                  laser.setOrigin(0, 0); laser.setLineWidth(5); 
                   setTimeout(() => laser.destroy(), 150); 
                   target.hp -= 30; 
                 }
