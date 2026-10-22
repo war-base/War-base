@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - MAPA WIOSKI ZE ŚCIEŻKAMI
+// SCENES.JS - WYRAŹNE ŚCIEŻKI I KRAWĘDZIE
 // ==========================================
 
 const TILE_SIZE = 50; 
@@ -51,18 +51,62 @@ class BaseScene extends Phaser.Scene {
     
     cam.setBackgroundColor('#2d4a22'); 
 
-    // Tło (trawa)
+    // Tło (trawa) - gigantyczny prostokąt
     let bgGraphics = this.add.graphics();
     bgGraphics.fillStyle(0x2d4a22, 1); 
     bgGraphics.fillRect(-5000, -5000, 10000, 10000); 
-    bgGraphics.setDepth(-10);
+    bgGraphics.setDepth(-100);
 
-    // --- RYSOWANIE ŚCIEŻEK (KRĘGOSŁUP WIOSKI) ---
-    this.drawVillagePath();
+    // --- RYSOWANIE WYRAŹNYCH ŚCIEŻEK (PIASKOWY KOLOR) ---
+    let pathGraphics = this.add.graphics();
+    pathGraphics.setDepth(-10); // Nad trawą, pod budynkami
+
+    // Rysujemy ścieżki w kształcie krzyża wokół środka
+    let centerGridX = Math.floor(GRID / 2);
+    let centerGridY = Math.floor(GRID / 2);
+    
+    pathGraphics.fillStyle(0x8b7355, 1); // Piaskowy/brązowy kolor
+    pathGraphics.lineStyle(2, 0x5c4a3a, 1); // Ciemniejsza ramka
+
+    for (let i = -4; i <= 4; i++) {
+        // Ścieżka pozioma
+        let gx = centerGridX + i;
+        let gy = centerGridY;
+        let sx = (gx - gy) * (TILE_SIZE / 2);
+        let sy = (gx + gy) * (TILE_SIZE / 4);
+        
+        pathGraphics.beginPath();
+        pathGraphics.moveTo(sx, sy - TILE_SIZE/3);
+        pathGraphics.lineTo(sx + TILE_SIZE/2, sy);
+        pathGraphics.lineTo(sx, sy + TILE_SIZE/3);
+        pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
+        pathGraphics.closePath();
+        pathGraphics.fillPath();
+        pathGraphics.strokePath();
+
+        // Ścieżka pionowa
+        gx = centerGridX;
+        gy = centerGridY + i;
+        sx = (gx - gy) * (TILE_SIZE / 2);
+        sy = (gx + gy) * (TILE_SIZE / 4);
+        
+        pathGraphics.beginPath();
+        pathGraphics.moveTo(sx, sy - TILE_SIZE/3);
+        pathGraphics.lineTo(sx + TILE_SIZE/2, sy);
+        pathGraphics.lineTo(sx, sy + TILE_SIZE/3);
+        pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
+        pathGraphics.closePath();
+        pathGraphics.fillPath();
+        pathGraphics.strokePath();
+    }
+    
+    // TEST: Czerwony punkt na środku (żeby sprawdzić czy rysowanie działa)
+    let testPoint = this.add.circle(0, 0, 10, 0xff0000).setDepth(9000);
 
     // Siatka
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x000000, 0.15);
+    gridGraphics.setDepth(-5);
     for (let i = 0; i <= GRID * 2; i++) {
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 + (GRID * TILE_SIZE), (GRID * TILE_SIZE));
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
@@ -130,51 +174,6 @@ class BaseScene extends Phaser.Scene {
     this.spawnPatrols();
   }
 
-  // --- RYSOWANIE ŚCIEŻEK ---
-  drawVillagePath() {
-    let pathGraphics = this.add.graphics();
-    pathGraphics.setDepth(-5); // Pod budynkami, ale nad trawą
-
-    // Rysujemy "kręgosłup" wioski - główną ścieżkę od dołu do góry
-    // Współrzędne w rzucie izometrycznym
-    let centerX = Math.floor(GRID/2);
-    let centerY = Math.floor(GRID/2);
-    
-    pathGraphics.fillStyle(0x5c4a3a, 0.8); // Brązowy kolor ścieżki
-    pathGraphics.lineStyle(2, 0x3a2a1a, 0.8);
-
-    // Rysujemy dużą ścieżkę w kształcie krzyża wokół środka
-    for (let i = -3; i <= 3; i++) {
-        // Pozioma ścieżka
-        let gx = centerX + i;
-        let gy = centerY;
-        let sx = (gx - gy) * (TILE_SIZE / 2);
-        let sy = (gx + gy) * (TILE_SIZE / 4);
-        
-        pathGraphics.beginPath();
-        pathGraphics.moveTo(sx, sy - TILE_SIZE/6);
-        pathGraphics.lineTo(sx + TILE_SIZE/2, sy);
-        pathGraphics.lineTo(sx, sy + TILE_SIZE/6);
-        pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
-        pathGraphics.closePath();
-        pathGraphics.fillPath();
-
-        // Pionowa ścieżka
-        gx = centerX;
-        gy = centerY + i;
-        sx = (gx - gy) * (TILE_SIZE / 2);
-        sy = (gx + gy) * (TILE_SIZE / 4);
-        
-        pathGraphics.beginPath();
-        pathGraphics.moveTo(sx, sy - TILE_SIZE/6);
-        pathGraphics.lineTo(sx + TILE_SIZE/2, sy);
-        pathGraphics.lineTo(sx, sy + TILE_SIZE/6);
-        pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
-        pathGraphics.closePath();
-        pathGraphics.fillPath();
-    }
-  }
-
   spawnPatrols() {
     this.patrols = [];
     let townhall = buildings.find(b => b.type === 'townhall') || buildings[0];
@@ -202,7 +201,6 @@ class BaseScene extends Phaser.Scene {
   movePatrol(unit) {
     if (!unit.sprite.active) return;
 
-    // Cel w promieniu 120 od Warowni
     let targetX = unit.centerX + Phaser.Math.Between(-120, 120);
     let targetY = unit.centerY + Phaser.Math.Between(-120, 120);
     
@@ -217,7 +215,7 @@ class BaseScene extends Phaser.Scene {
         ease: 'Linear',
         onUpdate: () => {
             unit.sprite.setDepth(unit.sprite.y + 100);
-            unit.sprite.angle = Math.sin(Date.now() / 100) * 10; // Bujanie
+            unit.sprite.angle = Math.sin(Date.now() / 100) * 10; 
         },
         onComplete: () => {
             unit.sprite.angle = 0;
@@ -286,8 +284,7 @@ class BaseScene extends Phaser.Scene {
     
     if (gridX === this.lastGridX && gridY === this.lastGridY) return;
     
-    // --- BLOKADA KRAWĘDZI ---
-    // Nie pozwalamy stawiać budynków na samych brzegach (np. 0, 1, GRID-1, GRID)
+    // Blokada krawędzi
     if (gridX < 1 || gridY < 1 || gridX >= GRID - 1 || gridY >= GRID - 1) {
         if (Date.now() > lastGoldWarningTime) { 
             showMessage('Za blisko krawędzi mapy!', 'error'); 
