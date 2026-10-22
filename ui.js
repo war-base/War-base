@@ -132,6 +132,11 @@ function updateSoundButton() {
   }
 }
 
+// --- NOWA FUNKCJA: POCZTA ---
+function openMail() {
+  showMessage('Brak nowych wiadomości.', 'info');
+}
+
 function resetGame() {
   if (confirm("Zresetować twierdzę? Cały postęp przepadnie.")) {
     localStorage.removeItem('warBaseSave'); location.reload();
@@ -255,7 +260,7 @@ function sellBuilding() {
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
   
-  // Usuwanie obiektów wizualnych z Phasera
+  // Bezpieczne usuwanie obiektów wizualnych z Phasera
   if (currentlySelectedBuilding.sprite) currentlySelectedBuilding.sprite.destroy();
   if (currentlySelectedBuilding.label) currentlySelectedBuilding.label.destroy();
   if (currentlySelectedBuilding.hpBar) currentlySelectedBuilding.hpBar.destroy();
