@@ -1,24 +1,18 @@
 // ==========================================
-// SCENES.JS - INTELIGENTNE MURY OBRONNE
+// SCENES.JS - KOMPLETNY Z SYSTEMEM CZASU BUDOWANIA
 // ==========================================
 
 const TILE_SIZE = 50; 
 
-function drawBuildingTexture(scene, x, y, def, alpha = 1) {
+// Funkcja rysująca budynek (z obsługą stanu "w budowie")
+function drawBuildingTexture(scene, x, y, def, alpha = 1, isBuilding = false) {
   let container = scene.add.container(x, y);
   
-  // Specjalne rysowanie dla MURÓW
   if (def.short === 'M') {
       let wallGraphics = scene.add.graphics();
-      
-      // Ciemny kamień
       wallGraphics.fillStyle(0x555555, alpha); 
       wallGraphics.lineStyle(2, 0x222222, alpha);
-      
-      const w = TILE_SIZE / 2;
-      const h = TILE_SIZE / 4;
-      
-      // Rysujemy wyższy romb (wyglądający jak mur)
+      const w = TILE_SIZE / 2; const h = TILE_SIZE / 4;
       wallGraphics.beginPath();
       wallGraphics.moveTo(0, -h * 1.5);      
       wallGraphics.lineTo(w, 0);       
@@ -27,45 +21,31 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
       wallGraphics.closePath();
       wallGraphics.fillPath();
       wallGraphics.strokePath();
-      
-      // Dodatkowe "cegły" na murze
       wallGraphics.fillStyle(0x333333, alpha);
       wallGraphics.fillRect(-w/2, -h/2, w, h);
-      
       container.add([wallGraphics]);
   } else {
-      // Standardowy wygląd dla innych budynków
       let graphics = scene.add.graphics();
-      
-      graphics.fillStyle(def.color, alpha);
+      let color = isBuilding ? 0x666666 : def.color;
+      graphics.fillStyle(color, alpha);
       graphics.lineStyle(2, 0x000000, alpha);
-      
-      const w = TILE_SIZE / 2; 
-      const h = TILE_SIZE / 4; 
-      
+      const w = TILE_SIZE / 2; const h = TILE_SIZE / 4; 
       graphics.beginPath();
-      graphics.moveTo(0, -h);      
-      graphics.lineTo(w, 0);       
-      graphics.lineTo(0, h);       
-      graphics.lineTo(-w, 0);      
-      graphics.closePath();
-      graphics.fillPath();
-      graphics.strokePath();
-
+      graphics.moveTo(0, -h); graphics.lineTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(-w, 0);
+      graphics.closePath(); graphics.fillPath(); graphics.strokePath();
       graphics.fillStyle(0x000000, 0.4 * alpha);
       graphics.beginPath();
       graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
       graphics.closePath(); graphics.fillPath();
-
       graphics.fillStyle(0x000000, 0.2 * alpha);
       graphics.beginPath();
       graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
       graphics.closePath(); graphics.fillPath();
-
-      let detail = scene.add.text(0, 0, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
+      
+      let text = isBuilding ? '🔨' : def.short;
+      let detail = scene.add.text(0, 0, text, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
       container.add([graphics, detail]);
   }
-  
   container.setDepth(y);
   return container;
 }
@@ -77,7 +57,6 @@ class BaseScene extends Phaser.Scene {
     generateRivals(); 
     baseSceneInstance = this; 
     let cam = this.cameras.main;
-    
     cam.setBackgroundColor('#2d4a22'); 
 
     let bgGraphics = this.add.graphics();
@@ -85,43 +64,37 @@ class BaseScene extends Phaser.Scene {
     bgGraphics.fillRect(-5000, -5000, 10000, 10000); 
     bgGraphics.setDepth(-100);
 
-    // Ścieżki
-    let pathGraphics = this.add.graphics();
-    pathGraphics.setDepth(-10);
-    let centerGridX = Math.floor(GRID / 2);
-    let centerGridY = Math.floor(GRID / 2);
-    pathGraphics.fillStyle(0x8b7355, 1); 
-    pathGraphics.lineStyle(2, 0x5c4a3a, 1); 
-
+    // Ścieżki i siatka
+    let pathGraphics = this.add.graphics(); pathGraphics.setDepth(-10);
+    let centerGridX = Math.floor(GRID / 2); let centerGridY = Math.floor(GRID / 2);
+    pathGraphics.fillStyle(0x8b7355, 1); pathGraphics.lineStyle(2, 0x5c4a3a, 1); 
     for (let i = -4; i <= 4; i++) {
         let gx = centerGridX + i; let gy = centerGridY;
         let sx = (gx - gy) * (TILE_SIZE / 2); let sy = (gx + gy) * (TILE_SIZE / 4);
-        pathGraphics.beginPath();
-        pathGraphics.moveTo(sx, sy - TILE_SIZE/3); pathGraphics.lineTo(sx + TILE_SIZE/2, sy); pathGraphics.lineTo(sx, sy + TILE_SIZE/3); pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
-        pathGraphics.closePath(); pathGraphics.fillPath(); pathGraphics.strokePath();
-
+        pathGraphics.beginPath(); pathGraphics.moveTo(sx, sy - TILE_SIZE/3); pathGraphics.lineTo(sx + TILE_SIZE/2, sy); pathGraphics.lineTo(sx, sy + TILE_SIZE/3); pathGraphics.lineTo(sx - TILE_SIZE/2, sy); pathGraphics.closePath(); pathGraphics.fillPath(); pathGraphics.strokePath();
         gx = centerGridX; gy = centerGridY + i;
         sx = (gx - gy) * (TILE_SIZE / 2); sy = (gx + gy) * (TILE_SIZE / 4);
-        pathGraphics.beginPath();
-        pathGraphics.moveTo(sx, sy - TILE_SIZE/3); pathGraphics.lineTo(sx + TILE_SIZE/2, sy); pathGraphics.lineTo(sx, sy + TILE_SIZE/3); pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
-        pathGraphics.closePath(); pathGraphics.fillPath(); pathGraphics.strokePath();
+        pathGraphics.beginPath(); pathGraphics.moveTo(sx, sy - TILE_SIZE/3); pathGraphics.lineTo(sx + TILE_SIZE/2, sy); pathGraphics.lineTo(sx, sy + TILE_SIZE/3); pathGraphics.lineTo(sx - TILE_SIZE/2, sy); pathGraphics.closePath(); pathGraphics.fillPath(); pathGraphics.strokePath();
     }
 
-    // Siatka
     let gridGraphics = this.add.graphics();
-    gridGraphics.lineStyle(1, 0x000000, 0.15);
-    gridGraphics.setDepth(-5);
+    gridGraphics.lineStyle(1, 0x000000, 0.15); gridGraphics.setDepth(-5);
     for (let i = 0; i <= GRID * 2; i++) {
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 + (GRID * TILE_SIZE), (GRID * TILE_SIZE));
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
     }
 
     window.preview = this.add.graphics().setVisible(false).setDepth(9999);
-    
     buildings = []; 
-    try { loadGame().forEach(b => this.createBuilding(b.gridX, b.gridY, b.type, false, b.level || 1, b.hp || null)); } catch (e) {}
+    
+    try { 
+        loadGame().forEach(b => {
+            let isBuilding = b.buildEndTime && b.buildEndTime > Date.now();
+            this.createBuilding(b.gridX, b.gridY, b.type, false, b.level || 1, b.hp || null, isBuilding, b.buildEndTime);
+        }); 
+    } catch (e) {}
+    
     updateUI(); updateSoundButton(); updateDailyButtonState();
-
     this.lastGridX = -1; this.lastGridY = -1;
     
     const getIsoX = (gridX, gridY) => (gridX - gridY) * (TILE_SIZE / 2);
@@ -134,36 +107,20 @@ class BaseScene extends Phaser.Scene {
     
     this.input.on('pointermove', (p) => {
       if (selectedBuildingType) {
-        let isoX = p.worldX / (TILE_SIZE / 2);
-        let isoY = p.worldY / (TILE_SIZE / 4);
-        let gridX = Math.round((isoY + isoX) / 2);
-        let gridY = Math.round((isoY - isoX) / 2);
-        
-        let screenX = getIsoX(gridX, gridY);
-        let screenY = getIsoY(gridX, gridY);
-        
+        let isoX = p.worldX / (TILE_SIZE / 2); let isoY = p.worldY / (TILE_SIZE / 4);
+        let gridX = Math.round((isoY + isoX) / 2); let gridY = Math.round((isoY - isoX) / 2);
+        let screenX = getIsoX(gridX, gridY); let screenY = getIsoY(gridX, gridY);
         if (window.preview) {
-          window.preview.clear();
-          window.preview.fillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
-          window.preview.lineStyle(2, 0xffffff, 1);
-          window.preview.beginPath();
-          window.preview.moveTo(screenX, screenY - TILE_SIZE/4);
-          window.preview.lineTo(screenX + TILE_SIZE/2, screenY);
-          window.preview.lineTo(screenX, screenY + TILE_SIZE/4);
-          window.preview.lineTo(screenX - TILE_SIZE/2, screenY);
-          window.preview.closePath();
-          window.preview.fillPath();
-          window.preview.strokePath();
-          window.preview.setVisible(true);
+          window.preview.clear(); window.preview.fillStyle(BUILDINGS[selectedBuildingType].color, 0.6); window.preview.lineStyle(2, 0xffffff, 1);
+          window.preview.beginPath(); window.preview.moveTo(screenX, screenY - TILE_SIZE/4); window.preview.lineTo(screenX + TILE_SIZE/2, screenY); window.preview.lineTo(screenX, screenY + TILE_SIZE/4); window.preview.lineTo(screenX - TILE_SIZE/2, screenY);
+          window.preview.closePath(); window.preview.fillPath(); window.preview.strokePath(); window.preview.setVisible(true);
         }
-        
         if (selectedBuildingType === 'wall' && p.isDown) {
             let now = Date.now();
             if (now - (this.lastWallTime || 0) > 50) { this.tryPlaceBuilding(p); this.lastWallTime = now; }
         }
       } else if (p.isDown) {
-        cam.scrollX -= (p.x - p.prevPosition.x); 
-        cam.scrollY -= (p.y - p.prevPosition.y);
+        cam.scrollX -= (p.x - p.prevPosition.x); cam.scrollY -= (p.y - p.prevPosition.y);
       }
     });
     
@@ -171,73 +128,40 @@ class BaseScene extends Phaser.Scene {
         if (selectedBuildingType && selectedBuildingType !== 'wall') this.tryPlaceBuilding(p); 
         if (window.preview) window.preview.setVisible(false); 
     });
-    
-    cam.setZoom(2.5); 
-    this.centerCamera();
-    
+    cam.setZoom(2.5); this.centerCamera();
     this.spawnPatrols();
   }
 
   spawnPatrols() {
     this.patrols = [];
     let townhall = buildings.find(b => b.type === 'townhall') || buildings[0];
-    let centerX = townhall ? townhall.x : 0;
-    let centerY = townhall ? townhall.y : 0;
-
+    let centerX = townhall ? townhall.x : 0; let centerY = townhall ? townhall.y : 0;
     for (let i = 0; i < 5; i++) {
-      let startX = centerX + Phaser.Math.Between(-80, 80);
-      let startY = centerY + Phaser.Math.Between(-80, 80);
-      
-      let unitIcon = Phaser.Math.RND.pick(['⚔️', '🏹']);
-      let unitColor = unitIcon === '⚔️' ? '#4a5c38' : '#5c4305';
-      
-      let sprite = this.add.text(startX, startY, unitIcon, { 
-          fontSize: '20px', backgroundColor: unitColor, padding: { x: 2, y: 2 }
-      }).setOrigin(0.5).setDepth(startY + 100);
-      
+      let startX = centerX + Phaser.Math.Between(-80, 80); let startY = centerY + Phaser.Math.Between(-80, 80);
+      let unitIcon = Phaser.Math.RND.pick(['⚔️', '🏹']); let unitColor = unitIcon === '⚔️' ? '#4a5c38' : '#5c4305';
+      let sprite = this.add.text(startX, startY, unitIcon, { fontSize: '20px', backgroundColor: unitColor, padding: { x: 2, y: 2 } }).setOrigin(0.5).setDepth(startY + 100);
       let unit = { sprite: sprite, centerX: centerX, centerY: centerY, speed: Phaser.Math.FloatBetween(20, 40) };
       this.patrols.push(unit);
-      
       this.movePatrol(unit);
     }
   }
 
   movePatrol(unit) {
     if (!unit.sprite.active) return;
-
-    let targetX = unit.centerX + Phaser.Math.Between(-120, 120);
-    let targetY = unit.centerY + Phaser.Math.Between(-120, 120);
-    
+    let targetX = unit.centerX + Phaser.Math.Between(-120, 120); let targetY = unit.centerY + Phaser.Math.Between(-120, 120);
     let distance = Phaser.Math.Distance.Between(unit.sprite.x, unit.sprite.y, targetX, targetY);
     let duration = (distance / unit.speed) * 1000;
-    
     this.tweens.add({
-        targets: unit.sprite,
-        x: targetX,
-        y: targetY,
-        duration: duration,
-        ease: 'Linear',
-        onUpdate: () => {
-            unit.sprite.setDepth(unit.sprite.y + 100);
-            unit.sprite.angle = Math.sin(Date.now() / 100) * 10; 
-        },
-        onComplete: () => {
-            unit.sprite.angle = 0;
-            this.time.delayedCall(Phaser.Math.Between(1000, 3000), () => {
-                this.movePatrol(unit);
-            });
-        }
+        targets: unit.sprite, x: targetX, y: targetY, duration: duration, ease: 'Linear',
+        onUpdate: () => { unit.sprite.setDepth(unit.sprite.y + 100); unit.sprite.angle = Math.sin(Date.now() / 100) * 10; },
+        onComplete: () => { unit.sprite.angle = 0; this.time.delayedCall(Phaser.Math.Between(1000, 3000), () => { this.movePatrol(unit); }); }
     });
   }
 
   centerCamera() {
     let target = buildings.find(b => b.type === 'townhall') || buildings[0];
-    let gridX = target ? target.gridX : Math.floor(GRID/2);
-    let gridY = target ? target.gridY : Math.floor(GRID/2);
-    
-    let cx = (gridX - gridY) * (TILE_SIZE / 2);
-    let cy = (gridX + gridY) * (TILE_SIZE / 4);
-    
+    let gridX = target ? target.gridX : Math.floor(GRID/2); let gridY = target ? target.gridY : Math.floor(GRID/2);
+    let cx = (gridX - gridY) * (TILE_SIZE / 2); let cy = (gridX + gridY) * (TILE_SIZE / 4);
     this.cameras.main.pan(cx, cy, 300, 'Sine.easeInOut');
   }
 
@@ -245,95 +169,69 @@ class BaseScene extends Phaser.Scene {
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let aG = 0, aE = 0;
-      
       buildings.forEach(b => {
-        let def = BUILDINGS[b.type];
-        let goldProd = (def.prod.gold || 0) * b.level;
-        let elixirProd = (def.prod.elixir || 0) * b.level;
-
-        if (goldProd > 0) {
-            this.spawnProductionText(b.x, b.y - 20, '+' + goldProd + ' 💰', '#ffd700');
-            aG += goldProd;
-        }
-        if (elixirProd > 0) {
-            this.spawnProductionText(b.x, b.y - 20, '+' + elixirProd + ' 🔮', '#ba55d3');
-            aE += elixirProd;
+        let def = BUILDINGS[b.type]; 
+        if (!b.isBuilding) {
+            let goldProd = (def.prod.gold || 0) * b.level; let elixirProd = (def.prod.elixir || 0) * b.level;
+            if (goldProd > 0) { this.spawnProductionText(b.x, b.y - 20, '+' + goldProd + ' 💰', '#ffd700'); aG += goldProd; }
+            if (elixirProd > 0) { this.spawnProductionText(b.x, b.y - 20, '+' + elixirProd + ' 🔮', '#ba55d3'); aE += elixirProd; }
         }
       });
-
       if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
       prodTimer = 0;
     }
-  }
-
-  spawnProductionText(x, y, text, color) {
-    let offsetX = Phaser.Math.Between(-15, 15);
-    let offsetY = Phaser.Math.Between(-5, 5);
     
-    let prodText = this.add.text(x + offsetX, y + offsetY, text, {
-        fontSize: '14px', color: color, fontStyle: 'bold', stroke: '#000000', strokeThickness: 3
-    }).setOrigin(0.5).setDepth(9999);
-
-    this.tweens.add({
-        targets: prodText, y: y - 60, alpha: 0, duration: 1500, ease: 'Cubic.easeOut',
-        onComplete: () => prodText.destroy()
+    buildings.forEach(b => {
+        if (b.isBuilding && b.buildEndTime <= Date.now()) {
+            this.finishBuilding(b);
+        }
     });
   }
 
+  spawnProductionText(x, y, text, color) {
+    let offsetX = Phaser.Math.Between(-15, 15); let offsetY = Phaser.Math.Between(-5, 5);
+    let prodText = this.add.text(x + offsetX, y + offsetY, text, { fontSize: '14px', color: color, fontStyle: 'bold', stroke: '#000000', strokeThickness: 3 }).setOrigin(0.5).setDepth(9999);
+    this.tweens.add({ targets: prodText, y: y - 60, alpha: 0, duration: 1500, ease: 'Cubic.easeOut', onComplete: () => prodText.destroy() });
+  }
+
   tryPlaceBuilding(p) {
-    let isoX = p.worldX / (TILE_SIZE / 2);
-    let isoY = p.worldY / (TILE_SIZE / 4);
-    let gridX = Math.round((isoY + isoX) / 2);
-    let gridY = Math.round((isoY - isoX) / 2);
-    
+    let isoX = p.worldX / (TILE_SIZE / 2); let isoY = p.worldY / (TILE_SIZE / 4);
+    let gridX = Math.round((isoY + isoX) / 2); let gridY = Math.round((isoY - isoX) / 2);
     if (gridX === this.lastGridX && gridY === this.lastGridY) return;
     
-    // --- SYSTEM MURÓW: BLOKADA ŚRODKA ---
     if (selectedBuildingType === 'wall') {
-        // Sprawdzamy odległość od środka (Warowni)
-        let centerX = Math.floor(GRID / 2);
-        let centerY = Math.floor(GRID / 2);
-        let distFromCenter = Math.abs(gridX - centerX) + Math.abs(gridY - centerY);
-        
-        // Mur można stawiać tylko z dala od środka (np. minimum 3 kratki)
-        if (distFromCenter < 3) {
-            if (Date.now() > lastGoldWarningTime) { 
-                showMessage('Mury stawiamy na obrzeżach!', 'error'); 
-                lastGoldWarningTime = Date.now() + 1500; 
-            }
+        let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
+        if (Math.abs(gridX - centerX) + Math.abs(gridY - centerY) < 3) {
+            if (Date.now() > lastGoldWarningTime) { showMessage('Mury stawiamy na obrzeżach!', 'error'); lastGoldWarningTime = Date.now() + 1500; }
             return;
         }
     } else {
-        // Inne budynki: standardowa blokada krawędzi
         if (gridX < 1 || gridY < 1 || gridX >= GRID - 1 || gridY >= GRID - 1) {
             if (Date.now() > lastGoldWarningTime) { showMessage('Za blisko krawędzi!', 'error'); lastGoldWarningTime = Date.now() + 1500; }
             return;
         }
     }
-
     if (buildings.some(b => b.gridX === gridX && b.gridY === gridY)) return;
-    
     const def = BUILDINGS[selectedBuildingType];
-    if (gold < def.cost.gold) { 
-      if (Date.now() > lastGoldWarningTime) { showMessage('Za mało złota!', 'error'); lastGoldWarningTime = Date.now() + 1500; }
-      return; 
-    }
+    if (gold < def.cost.gold) { if (Date.now() > lastGoldWarningTime) { showMessage('Za mało złota!', 'error'); lastGoldWarningTime = Date.now() + 1500; } return; }
     if (elixir < def.cost.elixir) { showMessage('Za mało Many!', 'error'); return; }
-
+    
     gold -= def.cost.gold; elixir -= def.cost.elixir; addXP(10); 
-
-    playSound('build'); this.createBuilding(gridX, gridY, selectedBuildingType, true, 1);
+    
+    let buildTime = 10000; 
+    let buildEndTime = Date.now() + buildTime;
+    
+    playSound('build'); 
+    this.createBuilding(gridX, gridY, selectedBuildingType, true, 1, null, true, buildEndTime);
     this.lastGridX = gridX; this.lastGridY = gridY;
     updateUI(); saveGame();
   }
 
-  createBuilding(gridX, gridY, type, isNew, level, hp = null) {
+  createBuilding(gridX, gridY, type, isNew, level, hp = null, isBuilding = false, buildEndTime = null) {
     const def = BUILDINGS[type];
+    let screenX = (gridX - gridY) * (TILE_SIZE / 2); let screenY = (gridX + gridY) * (TILE_SIZE / 4);
     
-    let screenX = (gridX - gridY) * (TILE_SIZE / 2);
-    let screenY = (gridX + gridY) * (TILE_SIZE / 4);
-    
-    const container = drawBuildingTexture(this, screenX, screenY, def, 1);
+    const container = drawBuildingTexture(this, screenX, screenY, def, 1, isBuilding);
     container.type = type; 
     
     const label = this.add.text(screenX, screenY + 25, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:3,y:1} }).setOrigin(0.5).setDepth(screenY + 1);
@@ -342,20 +240,66 @@ class BaseScene extends Phaser.Scene {
     
     container.setSize(TILE_SIZE, TILE_SIZE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
-    container.label = label; container.hpBar = hpBar;
-    container.x = screenX; container.y = screenY;
+    container.label = label; container.hpBar = hpBar; container.x = screenX; container.y = screenY;
+    container.isBuilding = isBuilding;
+    container.buildEndTime = buildEndTime;
     
-    container.hp = hp !== null ? hp : def.hp * level; 
-    container.maxHp = def.hp * level; 
-    container.hpBar.scaleX = container.hp / container.maxHp;
+    container.hp = hp !== null ? hp : def.hp * level; container.maxHp = def.hp * level; container.hpBar.scaleX = container.hp / container.maxHp;
 
-    container.on('pointerdown', (pointer, localX, localY, event) => {
-      if (event) event.stopPropagation(); if (selectedBuildingType) return; openBuildingPanel(container);
+    container.on('pointerdown', (pointer, localX, localY, event) => { 
+        if (event) event.stopPropagation(); 
+        if (selectedBuildingType) return; 
+        openBuildingPanel(container); 
     });
+    
     buildings.push(container); 
     if (isNew && window.preview) window.preview.setVisible(false);
     
+    if (isBuilding) { this.startBuildTimer(container); }
+    
     saveGame();
+  }
+
+  startBuildTimer(building) {
+    let timerText = this.add.text(building.x, building.y - 50, '', { fontSize: '12px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(9999);
+    building.timerText = timerText;
+    
+    let timerEvent = this.time.addEvent({
+        delay: 1000, loop: true,
+        callback: () => {
+            if (!building.active) { timerEvent.remove(); return; }
+            let timeLeft = building.buildEndTime - Date.now();
+            if (timeLeft > 0) {
+                let seconds = Math.ceil(timeLeft / 1000);
+                let m = Math.floor(seconds / 60); let s = seconds % 60;
+                building.timerText.setText(`${m}:${s < 10 ? '0' : ''}${s}`);
+            } else { timerEvent.remove(); }
+        }
+    });
+  }
+
+  finishBuilding(building) {
+    building.isBuilding = false;
+    if (building.timerText) { building.timerText.destroy(); }
+    
+    const def = BUILDINGS[building.type];
+    let oldX = building.x; let oldY = building.y;
+    
+    // Usuwanie starego obiektu z tablicy i sceny
+    buildings = buildings.filter(b => b !== building);
+    if (building.label) building.label.destroy();
+    if (building.hpBar) building.hpBar.destroy();
+    building.destroy();
+    
+    // Tworzenie nowego, gotowego
+    this.createBuilding(building.gridX, building.gridY, building.type, false, building.level, building.hp, false, null);
+    
+    let flash = this.add.circle(oldX, oldY, 30, 0x00ff00, 0.6).setDepth(9999);
+    this.tweens.add({ targets: flash, scale: 2, alpha: 0, duration: 500, onComplete: () => flash.destroy() });
+    
+    playSound('coin');
+    showMessage('Budowa zakończona!', 'success');
+    updateUI(); saveGame();
   }
 }
 
@@ -363,20 +307,11 @@ class BaseScene extends Phaser.Scene {
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
-    let cam = this.cameras.main; 
-    cam.setBackgroundColor('#2d4a22'); 
-    
-    let bgGraphics = this.add.graphics();
-    bgGraphics.fillStyle(0x2d4a22, 1);
-    bgGraphics.fillRect(-5000, -5000, 10000, 10000);
-    bgGraphics.setDepth(-10);
-
-    cam.setZoom(2.5);
-    cam.centerOn(0, 0);
-    
+    let cam = this.cameras.main; cam.setBackgroundColor('#2d4a22'); 
+    let bgGraphics = this.add.graphics(); bgGraphics.fillStyle(0x2d4a22, 1); bgGraphics.fillRect(-5000, -5000, 10000, 10000); bgGraphics.setDepth(-10);
+    cam.setZoom(2.5); cam.centerOn(0, 0);
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
-    
     this.battleTime = 180; 
     this.time.addEvent({ delay: 1000, loop: true, callback: () => {
         if (this.battleEnded) return;
@@ -384,18 +319,14 @@ class BattleScene extends Phaser.Scene {
         document.getElementById('timer-display').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
         if (this.battleTime <= 0) { this.battleEnded = true; setTimeout(() => endBattle(false, this.lootGold, this.lootElixir, this.destroyedCount, this.totalEnemyBuildings), 1000); }
     }});
-
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
-    
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
     this.createEnemyBuilding(centerX, centerY, 400, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
-
     let numBuildings = Phaser.Math.Between(6, 9);
     for(let i = 0; i < numBuildings; i++) {
         let ex = Phaser.Math.Between(2, GRID - 2); let ey = Phaser.Math.Between(2, GRID - 2);
         let valid = true;
         for (let b of this.enemyBuildings) { if (Math.abs(ex - b.gridX) < 2 && Math.abs(ey - b.gridY) < 2) { valid = false; break; } }
-        
         if (valid) {
             let typeRnd = Phaser.Math.Between(1, 10);
             if (typeRnd <= 3) this.createEnemyBuilding(ex, ey, 150, 'tower', true, 0, 0);
@@ -405,9 +336,7 @@ class BattleScene extends Phaser.Scene {
             this.totalEnemyBuildings++;
         }
     }
-
     this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
-    
     this.input.on('pointerdown', (pointer) => {
       if (this.battleEnded) return;
       if (army[selectedBattleTroopType] > 0) {
@@ -420,8 +349,7 @@ class BattleScene extends Phaser.Scene {
   
   createEnemyBuilding(gridX, gridY, hp, type, isDefense, lootG, lootE) {
     const def = BUILDINGS[type]; 
-    let screenX = (gridX - gridY) * (TILE_SIZE / 2); 
-    let screenY = (gridX + gridY) * (TILE_SIZE / 4);
+    let screenX = (gridX - gridY) * (TILE_SIZE / 2); let screenY = (gridX + gridY) * (TILE_SIZE / 4);
     let container = drawBuildingTexture(this, screenX, screenY, def, 1); 
     let hpBar = this.add.rectangle(screenX - 15, screenY - 35, 30, 5, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
     this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: screenX, y: screenY, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
@@ -429,8 +357,7 @@ class BattleScene extends Phaser.Scene {
   
   spawnTroop(x, y, type) {
     const def = getTroopStats(type); let bgColor = '#4a5c38'; 
-    if (type === 'hero') bgColor = '#8b0000'; 
-    if (type === 'wallbreaker') bgColor = '#ff8c00'; 
+    if (type === 'hero') bgColor = '#8b0000'; if (type === 'wallbreaker') bgColor = '#ff8c00'; 
     let size = (type === 'hero') ? '24px' : '16px';
     const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?6:3), y: (type==='hero'?6:3)} }).setOrigin(0.5).setDepth(y + 100);
     const hpBar = this.add.rectangle(x - 10, y - (type==='hero'?24:18), (type==='hero'?30:18), 4, 0x00ff00).setOrigin(0, 0.5).setDepth(y + 100);
@@ -473,19 +400,15 @@ class BattleScene extends Phaser.Scene {
       if (troop.hp <= 0) { troop.sprite.destroy(); troop.hpBar.destroy(); this.troops.splice(i, 1); continue; }
       let barWidth = (troop.type === 'hero') ? 30 : 18;
       troop.hpBar.width = barWidth * (troop.hp / troop.maxHp); troop.hpBar.setPosition(troop.x - barWidth/2, troop.y - (troop.type==='hero'?24:18));
-      
       if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y, troop.def.target);
-      
       if (troop.target) {
         const dist = Phaser.Math.Distance.Between(troop.x, troop.y, troop.target.x, troop.target.y);
-        
         if (troop.type === 'wallbreaker' && dist <= troop.def.range) {
           this.explode(troop.target.x, troop.target.y, 0xff8c00); this.explode(troop.x, troop.y, 0xff0000); playSound('boom');
           troop.target.hp -= 1000;
           this.enemyBuildings.forEach(b => { if (b.alive && Phaser.Math.Distance.Between(troop.x, troop.y, b.x, b.y) < 80) b.hp -= 300; });
           troop.hp = 0; continue;
         }
-        
         if (dist > troop.def.range) {
           const angle = Phaser.Math.Angle.Between(troop.x, troop.y, troop.target.x, troop.target.y);
           troop.x += Math.cos(angle) * troop.def.speed * dt; troop.y += Math.sin(angle) * troop.def.speed * dt; troop.sprite.setPosition(troop.x, troop.y);
@@ -536,38 +459,23 @@ class BattleScene extends Phaser.Scene {
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
-    let cam = this.cameras.main; 
-    cam.setBackgroundColor('#2d4a22'); 
-    
-    let bgGraphics = this.add.graphics();
-    bgGraphics.fillStyle(0x2d4a22, 1);
-    bgGraphics.fillRect(-5000, -5000, 10000, 10000);
-    bgGraphics.setDepth(-10);
-
+    let cam = this.cameras.main; cam.setBackgroundColor('#2d4a22'); 
+    let bgGraphics = this.add.graphics(); bgGraphics.fillStyle(0x2d4a22, 1); bgGraphics.fillRect(-5000, -5000, 10000, 10000); bgGraphics.setDepth(-10);
     this.playerBuildings = []; const saved = loadGame(); 
     saved.forEach(b => {
       const def = BUILDINGS[b.type]; 
-      let screenX = (b.gridX - b.gridY) * (TILE_SIZE / 2); 
-      let screenY = (b.gridX + b.gridY) * (TILE_SIZE / 4);
-      
+      let screenX = (b.gridX - b.gridY) * (TILE_SIZE / 2); let screenY = (b.gridX + b.gridY) * (TILE_SIZE / 4);
       let container = drawBuildingTexture(this, screenX, screenY, def, 1);
       const label = this.add.text(screenX, screenY + 25, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:3,y:1} }).setOrigin(0.5).setDepth(screenY + 1);
       const hpBar = this.add.rectangle(screenX - 15, screenY - 35, 30, 5, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
-      
       this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower') });
     });
-    
     let centerX = Math.floor(GRID/2); let centerY = Math.floor(GRID/2);
-    let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2);
-    let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
-    
-    cam.setZoom(2.5);
-    cam.centerOn(isoCenterX, isoCenterY);
+    let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2); let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
+    cam.setZoom(2.5); cam.centerOn(isoCenterX, isoCenterY);
     this.centerBase = { x: isoCenterX, y: isoCenterY };
-
     this.enemies = []; this.waveCount = 0; this.battleEnded = false; this.mortarCooldown = 0; 
     this.spawnWave();
-    
     this.time.addEvent({ delay: 1500, loop: true, callback: () => {
         if (this.battleEnded) return;
         this.playerBuildings.forEach(tower => {
@@ -580,7 +488,6 @@ class DefenseScene extends Phaser.Scene {
           }
         });
     }});
-    
     this.input.on('pointerdown', (pointer) => {
       if (this.battleEnded || this.mortarCooldown > 0) return;
       const clickX = pointer.worldX; const clickY = pointer.worldY;
@@ -600,7 +507,6 @@ class DefenseScene extends Phaser.Scene {
     });
     this.time.addEvent({ delay: 10000, loop: true, callback: () => { if (!this.battleEnded) this.spawnWave(); } });
   }
-  
   spawnWave() {
     this.waveCount++; const numEnemies = 2 + this.waveCount * 2; 
     for (let i = 0; i < numEnemies; i++) {
@@ -611,7 +517,6 @@ class DefenseScene extends Phaser.Scene {
       this.enemies.push({ sprite, hpBar, x, y, hp: 100, maxHp: 100, target: null, alive: true, damage: 15, speed: 80 });
     }
   }
-  
   update(time, delta) {
     if (this.battleEnded) return;
     const dt = delta / 1000;
