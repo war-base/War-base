@@ -1,11 +1,9 @@
 // ==========================================
-// SCENES.JS - MAPA WIOSKI I MNIEJSZE BUDYNKI
+// SCENES.JS - MAPA WIOSKI (POPRAWIONA)
 // ==========================================
 
-// Zmniejszamy kafelek, żeby budynki były mniejsze i zgrabniejsze
 const TILE_SIZE = 50; 
 
-// --- RYSOWANIE TEKSTURY BUDYNKU (PROSTOKĄTY Z CZYSTYM TŁEM) ---
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   let container = scene.add.container(x, y);
   let graphics = scene.add.graphics();
@@ -16,7 +14,6 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   const w = TILE_SIZE / 2; 
   const h = TILE_SIZE / 4; 
   
-  // Podstawa (romb)
   graphics.beginPath();
   graphics.moveTo(0, -h);      
   graphics.lineTo(w, 0);       
@@ -26,7 +23,6 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   graphics.fillPath();
   graphics.strokePath();
 
-  // Efekt 3D (ściany)
   graphics.fillStyle(0x000000, 0.4 * alpha);
   graphics.beginPath();
   graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
@@ -37,7 +33,6 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
   graphics.closePath(); graphics.fillPath();
 
-  // Skrócona nazwa (np. "Ko" zamiast "Kopalnia")
   let detail = scene.add.text(0, 0, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
   
   container.add([graphics, detail]);
@@ -53,14 +48,13 @@ class BaseScene extends Phaser.Scene {
     generateRivals(); 
     baseSceneInstance = this; 
     let cam = this.cameras.main;
-    cam.setBackgroundColor('#1a1a1a'); 
+    
+    // USTAWIAMY KOLOR TŁA NA CIEMNĄ ZIELEŃ (TRAWA)
+    cam.setBackgroundColor('#2d4a22'); 
 
-    // --- GENEROWANIE MAPY WIOSKI (TŁO) ---
-    this.createVillageGround(cam);
-
-    // Siatka izometryczna (delikatna)
+    // Rysowanie delikatnej siatki
     let gridGraphics = this.add.graphics();
-    gridGraphics.lineStyle(1, 0x000000, 0.2);
+    gridGraphics.lineStyle(1, 0x000000, 0.15);
     for (let i = 0; i <= GRID * 2; i++) {
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 + (GRID * TILE_SIZE), (GRID * TILE_SIZE));
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
@@ -122,53 +116,14 @@ class BaseScene extends Phaser.Scene {
         if (window.preview) window.preview.setVisible(false); 
     });
     
-    // Zwiększamy zoom, bo kafelki są mniejsze
+    // ZOOM 2.5 (lepszy widok)
     cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
-    cam.setZoom(3.5); 
+    cam.setZoom(2.5); 
     this.centerCamera();
     
-    // Ożywienie bazy
     this.spawnVillagers();
   }
 
-  // --- NOWA FUNKCJA: GENEROWANIE TRAWY I ŚCIEŻEK ---
-  createVillageGround(cam) {
-    let groundGraphics = this.add.graphics();
-    groundGraphics.setDepth(-1);
-
-    // Rysowanie dużego zielonego rombu (trawa)
-    let grassColor = 0x2d4a22; // Ciemna zieleń
-    groundGraphics.fillStyle(grassColor, 1);
-    groundGraphics.beginPath();
-    groundGraphics.moveTo(0, -GRID * TILE_SIZE / 2);
-    groundGraphics.lineTo(GRID * TILE_SIZE, 0);
-    groundGraphics.lineTo(0, GRID * TILE_SIZE / 2);
-    groundGraphics.lineTo(-GRID * TILE_SIZE, 0);
-    groundGraphics.closePath();
-    groundGraphics.fillPath();
-
-    // Dodawanie losowych plam ciemniejszej i jaśniejszej trawy (tekstura)
-    for (let i = 0; i < 300; i++) {
-        let rx = Phaser.Math.Between(-GRID * TILE_SIZE, GRID * TILE_SIZE);
-        let ry = Phaser.Math.Between(-GRID * TILE_SIZE / 2, GRID * TILE_SIZE / 2);
-        
-        let color = Phaser.Math.RND.pick([0x3a5c2e, 0x243d1b, 0x4a6e3a]);
-        groundGraphics.fillStyle(color, 0.5);
-        groundGraphics.fillCircle(rx, ry, Phaser.Math.Between(5, 20));
-    }
-
-    // Rysowanie "ścieżki" wokół środka (kamienie)
-    groundGraphics.fillStyle(0x555555, 0.8);
-    for (let i = 0; i < 50; i++) {
-        let angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
-        let dist = Phaser.Math.Between(50, 150);
-        let cx = Math.cos(angle) * dist;
-        let cy = Math.sin(angle) * dist / 2; 
-        groundGraphics.fillEllipse(cx, cy, Phaser.Math.Between(10, 25), Phaser.Math.Between(5, 12));
-    }
-  }
-
-  // --- CHODZĄCE JEDNOSTKI ---
   spawnVillagers() {
     this.villagers = [];
     const numVillagers = 6; 
@@ -303,11 +258,15 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY (DOSTOSOWANA DO MNIEJSZYCH BUDYNKÓW) ---
+// --- SCENA BITWY ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
-    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(3.5);
+    let cam = this.cameras.main; 
+    cam.setBackgroundColor('#2d4a22'); // Trawa również w bitwie
+    cam.setScroll(0, 0); 
+    cam.setZoom(2.5);
+    
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
     
@@ -320,9 +279,6 @@ class BattleScene extends Phaser.Scene {
     }});
 
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
-    
-    // Dodajemy tło (trawę) również do bitwy
-    this.createVillageGround();
     
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
     this.createEnemyBuilding(centerX, centerY, 400, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
@@ -353,26 +309,6 @@ class BattleScene extends Phaser.Scene {
         if (selectedBattleTroopType === 'hero') checkHeroAvailability();
       } else { showMessage("Brak tej jednostki!", 'error'); }
     });
-  }
-
-  createVillageGround() {
-      let groundGraphics = this.add.graphics();
-      groundGraphics.setDepth(-1);
-      groundGraphics.fillStyle(0x2d4a22, 1);
-      groundGraphics.beginPath();
-      groundGraphics.moveTo(0, -GRID * TILE_SIZE / 2);
-      groundGraphics.lineTo(GRID * TILE_SIZE, 0);
-      groundGraphics.lineTo(0, GRID * TILE_SIZE / 2);
-      groundGraphics.lineTo(-GRID * TILE_SIZE, 0);
-      groundGraphics.closePath();
-      groundGraphics.fillPath();
-      for (let i = 0; i < 300; i++) {
-          let rx = Phaser.Math.Between(-GRID * TILE_SIZE, GRID * TILE_SIZE);
-          let ry = Phaser.Math.Between(-GRID * TILE_SIZE / 2, GRID * TILE_SIZE / 2);
-          let color = Phaser.Math.RND.pick([0x3a5c2e, 0x243d1b, 0x4a6e3a]);
-          groundGraphics.fillStyle(color, 0.5);
-          groundGraphics.fillCircle(rx, ry, Phaser.Math.Between(5, 15));
-      }
   }
   
   createEnemyBuilding(gridX, gridY, hp, type, isDefense, lootG, lootE) {
@@ -489,23 +425,12 @@ class BattleScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA OBRONY (DOSTOSOWANA DO MNIEJSZYCH BUDYNKÓW) ---
+// --- SCENA OBRONY ---
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
-    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a');
-    
-    // Tło dla obrony
-    let groundGraphics = this.add.graphics();
-    groundGraphics.setDepth(-1);
-    groundGraphics.fillStyle(0x2d4a22, 1);
-    groundGraphics.beginPath();
-    groundGraphics.moveTo(0, -GRID * TILE_SIZE / 2);
-    groundGraphics.lineTo(GRID * TILE_SIZE, 0);
-    groundGraphics.lineTo(0, GRID * TILE_SIZE / 2);
-    groundGraphics.lineTo(-GRID * TILE_SIZE, 0);
-    groundGraphics.closePath();
-    groundGraphics.fillPath();
+    let cam = this.cameras.main; 
+    cam.setBackgroundColor('#2d4a22'); // Trawa
 
     this.playerBuildings = []; const saved = loadGame(); 
     saved.forEach(b => {
@@ -524,7 +449,7 @@ class DefenseScene extends Phaser.Scene {
     let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2);
     let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
     
-    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(3.5);
+    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(2.5);
     cam.scrollX = isoCenterX - cam.width / 2; cam.scrollY = isoCenterY - cam.height / 2;
     this.centerBase = { x: isoCenterX, y: isoCenterY };
 
@@ -609,7 +534,7 @@ const config = {
   parent: 'game',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#1a1a1a',
+  backgroundColor: '#2d4a22',
   render: { clearBeforeRender: false },
   scene: [BaseScene, BattleScene, DefenseScene]
 };
