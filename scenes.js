@@ -1,9 +1,10 @@
 // ==========================================
-// SCENES.JS - MAPA WIOSKI (POPRAWIONA)
+// SCENES.JS - OSTATECZNA POPRAWKA TŁA
 // ==========================================
 
 const TILE_SIZE = 50; 
 
+// Funkcja rysująca budynek (bez zmian)
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   let container = scene.add.container(x, y);
   let graphics = scene.add.graphics();
@@ -49,10 +50,17 @@ class BaseScene extends Phaser.Scene {
     baseSceneInstance = this; 
     let cam = this.cameras.main;
     
-    // USTAWIAMY KOLOR TŁA NA CIEMNĄ ZIELEŃ (TRAWA)
+    // Twarde ustawienie tła
     cam.setBackgroundColor('#2d4a22'); 
 
-    // Rysowanie delikatnej siatki
+    // --- RYSOWANIE GIGANTYCZNEGO TŁA TRAWY ---
+    // Rysujemy ogromny prostokąt, żeby na pewno zakrył cały ekran
+    let bgGraphics = this.add.graphics();
+    bgGraphics.fillStyle(0x2d4a22, 1); // Kolor trawy
+    bgGraphics.fillRect(-5000, -5000, 10000, 10000); // Ogromny kwadrat
+    bgGraphics.setDepth(-10);
+
+    // Rysowanie siatki
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x000000, 0.15);
     for (let i = 0; i <= GRID * 2; i++) {
@@ -116,10 +124,14 @@ class BaseScene extends Phaser.Scene {
         if (window.preview) window.preview.setVisible(false); 
     });
     
-    // ZOOM 2.5 (lepszy widok)
-    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
+    // Precyzyjne ustawienie kamery na środku
+    let centerGridX = Math.floor(GRID / 2);
+    let centerGridY = Math.floor(GRID / 2);
+    let centerScreenX = (centerGridX - centerGridY) * (TILE_SIZE / 2);
+    let centerScreenY = (centerGridX + centerGridY) * (TILE_SIZE / 4);
+    
     cam.setZoom(2.5); 
-    this.centerCamera();
+    cam.centerOn(centerScreenX, centerScreenY);
     
     this.spawnVillagers();
   }
@@ -129,15 +141,15 @@ class BaseScene extends Phaser.Scene {
     const numVillagers = 6; 
     
     for (let i = 0; i < numVillagers; i++) {
-      let startX = Phaser.Math.Between(-100, 100);
-      let startY = Phaser.Math.Between(-100, 100);
+      let startX = Phaser.Math.Between(-50, 50);
+      let startY = Phaser.Math.Between(-50, 50);
       
       let sprite = this.add.text(startX, startY, '🛡️', { fontSize: '20px' }).setOrigin(0.5).setDepth(startY + 100);
       
       let tween = this.tweens.add({
         targets: sprite,
-        x: startX + Phaser.Math.Between(-50, 50),
-        y: startY + Phaser.Math.Between(-50, 50),
+        x: startX + Phaser.Math.Between(-30, 30),
+        y: startY + Phaser.Math.Between(-30, 30),
         duration: Phaser.Math.Between(2000, 4000),
         yoyo: true,
         repeat: -1,
@@ -258,14 +270,20 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY ---
+// --- SCENA BITWY (SKOPIOWANE TŁO) ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
     let cam = this.cameras.main; 
-    cam.setBackgroundColor('#2d4a22'); // Trawa również w bitwie
-    cam.setScroll(0, 0); 
+    cam.setBackgroundColor('#2d4a22'); 
+    
+    let bgGraphics = this.add.graphics();
+    bgGraphics.fillStyle(0x2d4a22, 1);
+    bgGraphics.fillRect(-5000, -5000, 10000, 10000);
+    bgGraphics.setDepth(-10);
+
     cam.setZoom(2.5);
+    cam.centerOn(0, 0);
     
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
@@ -425,12 +443,17 @@ class BattleScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA OBRONY ---
+// --- SCENA OBRONY (SKOPIOWANE TŁO) ---
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
     let cam = this.cameras.main; 
-    cam.setBackgroundColor('#2d4a22'); // Trawa
+    cam.setBackgroundColor('#2d4a22'); 
+    
+    let bgGraphics = this.add.graphics();
+    bgGraphics.fillStyle(0x2d4a22, 1);
+    bgGraphics.fillRect(-5000, -5000, 10000, 10000);
+    bgGraphics.setDepth(-10);
 
     this.playerBuildings = []; const saved = loadGame(); 
     saved.forEach(b => {
@@ -449,8 +472,8 @@ class DefenseScene extends Phaser.Scene {
     let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2);
     let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
     
-    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(2.5);
-    cam.scrollX = isoCenterX - cam.width / 2; cam.scrollY = isoCenterY - cam.height / 2;
+    cam.setZoom(2.5);
+    cam.centerOn(isoCenterX, isoCenterY);
     this.centerBase = { x: isoCenterX, y: isoCenterY };
 
     this.enemies = []; this.waveCount = 0; this.battleEnded = false; this.mortarCooldown = 0; 
@@ -534,7 +557,7 @@ const config = {
   parent: 'game',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#2d4a22',
+  backgroundColor: '#2d4a22', // Kolor trawy
   render: { clearBeforeRender: false },
   scene: [BaseScene, BattleScene, DefenseScene]
 };
