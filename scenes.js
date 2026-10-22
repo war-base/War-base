@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - WERSJA Z WIZUALIZACJĄ PRODUKCJI I MURAMI
+// SCENES.JS - WERSJA Z OŻYWIONĄ BAZĄ
 // ==========================================
 
 const TILE_SIZE = 80; 
@@ -68,13 +68,11 @@ class BaseScene extends Phaser.Scene {
     const getIsoX = (gridX, gridY) => (gridX - gridY) * (TILE_SIZE / 2);
     const getIsoY = (gridX, gridY) => (gridX + gridY) * (TILE_SIZE / 4);
 
-    // KLIKNIĘCIE (Początek akcji)
     this.input.on('pointerdown', (p) => {
       this.lastGridX = -1; this.lastGridY = -1;
       if (selectedBuildingType === 'wall') this.tryPlaceBuilding(p);
     });
     
-    // RUCH PALCA (Przeciąganie murów i podgląd)
     this.input.on('pointermove', (p) => {
       if (selectedBuildingType) {
         let isoX = p.worldX / (TILE_SIZE / 2);
@@ -85,7 +83,6 @@ class BaseScene extends Phaser.Scene {
         let screenX = getIsoX(gridX, gridY);
         let screenY = getIsoY(gridX, gridY);
         
-        // Podgląd (Biały romb)
         if (window.preview) {
           window.preview.clear();
           window.preview.fillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
@@ -101,22 +98,16 @@ class BaseScene extends Phaser.Scene {
           window.preview.setVisible(true);
         }
         
-        // SYSTEM PRZECIĄGANIA MURÓW
         if (selectedBuildingType === 'wall' && p.isDown) {
             let now = Date.now();
-            if (now - (this.lastWallTime || 0) > 50) { 
-                this.tryPlaceBuilding(p); 
-                this.lastWallTime = now; 
-            }
+            if (now - (this.lastWallTime || 0) > 50) { this.tryPlaceBuilding(p); this.lastWallTime = now; }
         }
       } else if (p.isDown) {
-        // Przesuwanie kamery, gdy nie budujemy
         cam.scrollX -= (p.x - p.prevPosition.x); 
         cam.scrollY -= (p.y - p.prevPosition.y);
       }
     });
     
-    // PUSZCZENIE PALCA (Koniec akcji)
     this.input.on('pointerup', (p) => { 
         if (selectedBuildingType && selectedBuildingType !== 'wall') this.tryPlaceBuilding(p); 
         if (window.preview) window.preview.setVisible(false); 
@@ -125,6 +116,38 @@ class BaseScene extends Phaser.Scene {
     cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
     cam.setZoom(2.2); 
     this.centerCamera();
+    
+    // Ożywienie bazy
+    this.spawnVillagers();
+  }
+
+  // NOWA FUNKCJA: Chodzące jednostki w bazie
+  spawnVillagers() {
+    this.villagers = [];
+    const numVillagers = 5; // Liczba jednostek chodzących po bazie
+    
+    for (let i = 0; i < numVillagers; i++) {
+      // Losowa pozycja startowa wokół środka
+      let startX = Phaser.Math.Between(-100, 100);
+      let startY = Phaser.Math.Between(-100, 100);
+      
+      let sprite = this.add.text(startX, startY, '🛡️', { fontSize: '24px' }).setOrigin(0.5).setDepth(startY + 100);
+      
+      // Prosta animacja "chodzenia" - losowe przesuwanie
+      let tween = this.tweens.add({
+        targets: sprite,
+        x: startX + Phaser.Math.Between(-50, 50),
+        y: startY + Phaser.Math.Between(-50, 50),
+        duration: Phaser.Math.Between(2000, 4000),
+        yoyo: true,
+        repeat: -1,
+        onUpdate: () => {
+            sprite.setDepth(sprite.y + 100);
+        }
+      });
+      
+      this.villagers.push({ sprite, tween });
+    }
   }
 
   centerCamera() {
