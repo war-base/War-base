@@ -26,7 +26,7 @@
     .xp-bar-container { display: flex; flex-direction: column; gap: 2px; }
     .player-name { color: #fff; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
     .xp-bar-bg { width: 100px; height: 8px; background: #111; border: 1px solid #555; border-radius: 4px; overflow: hidden; position: relative; }
-    .xp-bar-fill { height: 100%; background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%); width: 50%; }
+    .xp-bar-fill { height: 100%; background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%); width: 50%; transition: width 0.3s ease; }
     .trophies-container { display: flex; align-items: center; gap: 5px; background: #111; border: 2px solid #555; border-radius: 20px; padding: 4px 10px; margin-top: 5px; }
     .trophies-icon { font-size: 16px; color: #ff3333; }
     .trophies-value { color: #fff; font-size: 14px; font-weight: bold; }
@@ -36,7 +36,8 @@
     .resource-pill { background: #111; border: 2px solid #555; border-radius: 20px; padding: 4px 12px 4px 6px; display: flex; align-items: center; gap: 6px; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
     .resource-icon { font-size: 20px; width: 24px; text-align: center; filter: drop-shadow(0 0 2px #000); }
     .resource-data { display: flex; flex-direction: column; align-items: flex-end; }
-    .resource-value { color: #fff; font-size: 14px; font-weight: bold; line-height: 1; }
+    .resource-value { color: #fff; font-size: 14px; font-weight: bold; line-height: 1; transition: color 0.2s; }
+    .resource-value.updated { color: #88ff88; }
     .resource-max { color: #888; font-size: 10px; line-height: 1; margin-top: 2px; }
     .plus-btn-hud { background: #4a5c38; color: white; border: 1px solid #88ff88; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: flex; justify-content: center; align-items: center; margin-left: 5px; cursor: pointer; }
     .res-gold .resource-icon { color: #ffd700; }
@@ -46,11 +47,11 @@
 
     /* BOCZNE PRZYCISKI */
     .side-buttons { position: absolute; top: max(80px, env(safe-area-inset-top)); right: 15px; display: flex; flex-direction: column; gap: 15px; z-index: 15; pointer-events: auto; }
-    .side-btn { width: 45px; height: 45px; background: #111; border: 2px solid #8b6508; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.8); position: relative; }
-    .side-btn:active { background: #222; }
+    .side-btn { width: 45px; height: 45px; background: #111; border: 2px solid #8b6508; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.8); position: relative; transition: transform 0.1s; }
+    .side-btn:active { transform: scale(0.9); background: #222; }
     .notification-badge { position: absolute; top: -5px; right: -5px; background: #ff3333; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid #fff; }
 
-    /* --- NOWY DOLNY PASEK AKCJI --- */
+    /* --- DOLNY PASEK AKCJI --- */
     #action-bar { 
       position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; 
       background: linear-gradient(to top, #0a0a0a, #1a1a1a); 
@@ -60,7 +61,6 @@
       padding-bottom: max(15px, env(safe-area-inset-bottom));
     }
 
-    /* Duży przycisk Ataku (Lewy) */
     .big-btn { 
       display: flex; flex-direction: column; align-items: center; justify-content: center; 
       width: 90px; height: 90px; border-radius: 12px; border: 3px solid #555; 
@@ -68,19 +68,18 @@
       box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.8);
       cursor: pointer; transition: transform 0.1s;
     }
-    .big-btn:active { transform: scale(0.95); }
+    .big-btn:active { transform: translateY(2px) scale(0.98); box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 2px 5px rgba(0,0,0,0.8); }
     .big-btn.attack-btn { border-color: #ff4444; background: linear-gradient(to bottom, #8b0000, #2a0000); }
     .big-btn.shop-btn { border-color: #8b6508; background: linear-gradient(to bottom, #4a3b2a, #111); }
     .big-btn .icon { font-size: 32px; margin-bottom: 5px; filter: drop-shadow(0 0 5px #000); }
     .big-btn .label { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
-    /* Środkowy Pasek Budowania */
     #build-menu { 
       display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; 
-      flex: 1; margin: 0 15px; padding-bottom: 5px; /* Miejsce na scrollbar */
-      scrollbar-width: none; /* Ukrycie scrollbara w Firefox */
+      flex: 1; margin: 0 15px; padding-bottom: 5px; 
+      scrollbar-width: none; 
     }
-    #build-menu::-webkit-scrollbar { display: none; } /* Ukrycie scrollbara w Chrome */
+    #build-menu::-webkit-scrollbar { display: none; }
 
     .build-btn { 
       min-width: 80px; padding: 10px 5px; border: none; border-radius: 8px; 
@@ -90,11 +89,19 @@
       transition: transform 0.1s;
     }
     .build-btn.selected { background: #4a3b2a; border: 2px solid #ffd700; box-shadow: 0 0 15px #ffd700; transform: scale(1.05); }
-    .build-btn:active { background: #444; }
+    .build-btn:active { transform: scale(0.95); background: #444; }
     .build-btn .icon { font-size: 24px; }
     .btn-sub { font-size: 11px; font-weight: bold; margin-top: 2px; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.5); }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ba55d3; }
+
+    /* --- SYSTEM POWIADOMIEŃ (TOASTY) --- */
+    #toast-container { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none; }
+    .toast { background: rgba(20, 20, 20, 0.95); border: 2px solid #8b6508; color: white; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: slide-down 0.3s ease-out, fade-out 0.5s ease-in 2.5s forwards; text-transform: uppercase; white-space: nowrap; }
+    .toast.error { border-color: #ff4444; background: rgba(60, 0, 0, 0.95); }
+    .toast.success { border-color: #88ff88; background: rgba(0, 40, 0, 0.95); }
+    @keyframes slide-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 
     /* --- RESZTA STYLÓW (MODALE, BITWY, ETC) --- */
     #battle-ui, #defense-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; z-index: 20; pointer-events: none; display: none; }
@@ -189,6 +196,9 @@
 <body>
   <div id="game"></div>
 
+  <!-- SYSTEM POWIADOMIEŃ -->
+  <div id="toast-container"></div>
+
   <!-- GÓRNY PASEK (HUD) -->
   <div id="top-bar">
     <div class="player-profile">
@@ -256,15 +266,13 @@
   
   <button id="reset-btn" onclick="resetGame()">RESET</button>
 
-  <!-- NOWY DOLNY PASEK AKCJI -->
+  <!-- DOLNY PASEK AKCJI -->
   <div id="action-bar">
-    <!-- Lewy: Atak -->
     <div class="big-btn attack-btn" onclick="startAttack()">
       <div class="icon">⚔️</div>
       <div class="label">Atakuj</div>
     </div>
 
-    <!-- Środek: Budowanie -->
     <div id="build-menu">
       <button class="build-btn" onclick="selectBuilding('townhall')"><div class="icon">🏰</div>Warownia<span class="btn-sub gold">1000 💰</span></button>
       <button class="build-btn" onclick="selectBuilding('mine')"><div class="icon">⛏️</div>Kopalnia<span class="btn-sub elixir">150 🔮</span></button>
@@ -276,7 +284,6 @@
       <button class="build-btn" onclick="selectBuilding('tower')"><div class="icon">🗼</div>Wieża Straż.<span class="btn-sub gold">300 💰</span></button>
     </div>
 
-    <!-- Prawy: Sklep -->
     <div class="big-btn shop-btn" onclick="openShop()">
       <div class="icon">🛒</div>
       <div class="label">Sklep</div>
