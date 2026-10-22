@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Twierdza - Dark Fantasy</title>
   <style>
-    /* ... (STYLE SĄ TAKIE SAME JAK OSTATNIO, DODAJĘ TYLKO KILKA POPRAWEK DLA KOPERTY) ... */
+    /* ... (STYLE SĄ TAKIE SAME, DODAJĘ TYLKO STYL DLA #army-bar) ... */
     html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
 
-    /* --- GÓRNY PASEK (HUD) --- */
     #top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(0,0,0,0.8)); padding: max(8px, env(safe-area-inset-top)) 15px 10px 15px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none; border-bottom: 2px solid #8b6508; box-shadow: 0 4px 15px rgba(0,0,0,0.9); }
     .player-profile { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
     .avatar-container { position: relative; width: 60px; height: 60px; }
@@ -27,7 +26,6 @@
     .resource-icon { font-size: 20px; width: 24px; text-align: center; filter: drop-shadow(0 0 2px #000); }
     .resource-data { display: flex; flex-direction: column; align-items: flex-end; }
     .resource-value { color: #fff; font-size: 14px; font-weight: bold; line-height: 1; transition: color 0.2s; }
-    .resource-value.updated { color: #88ff88; }
     .resource-max { color: #888; font-size: 10px; line-height: 1; margin-top: 2px; }
     .plus-btn-hud { background: #4a5c38; color: white; border: 1px solid #88ff88; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: flex; justify-content: center; align-items: center; margin-left: 5px; cursor: pointer; }
     .res-gold .resource-icon { color: #ffd700; }
@@ -39,6 +37,16 @@
     .side-btn { width: 45px; height: 45px; background: #111; border: 2px solid #8b6508; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.8); position: relative; transition: transform 0.1s; }
     .side-btn:active { transform: scale(0.9); background: #222; }
     .notification-badge { position: absolute; top: -5px; right: -5px; background: #ff3333; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid #fff; }
+
+    /* --- NOWY PASEK WOJSKA --- */
+    #army-bar {
+      position: absolute; bottom: 115px; left: 50%; transform: translateX(-50%);
+      background: #111; border: 2px solid #8b6508; border-radius: 20px;
+      padding: 5px 15px; display: flex; gap: 15px; z-index: 9;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.8); pointer-events: none;
+    }
+    .army-item { display: flex; align-items: center; gap: 5px; color: #fff; font-weight: bold; font-size: 14px; }
+    .army-item .icon { font-size: 18px; }
 
     #action-bar { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: linear-gradient(to top, #0a0a0a, #1a1a1a); padding: 10px 15px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 3px solid #8b6508; z-index: 10; pointer-events: auto; box-shadow: 0 -4px 20px rgba(0,0,0,1); padding-bottom: max(15px, env(safe-area-inset-bottom)); }
     .big-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 12px; border: 3px solid #555; background: linear-gradient(to bottom, #333, #111); color: white; box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; transition: transform 0.1s; }
@@ -65,7 +73,7 @@
     @keyframes slide-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 
-    /* ... RESZTA STYLÓW (MODALE ITP.) SĄ BEZ ZMIAN ... */
+    /* RESZTA STYLÓW (MODALE) - BEZ ZMIAN */
     #battle-ui, #defense-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; z-index: 20; pointer-events: none; display: none; }
     #battle-top-bar, #defense-top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.98); color: white; padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; pointer-events: auto; border-bottom: 3px solid #8b0000; }
     #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-weight: bold; font-size: 16px; }
@@ -167,7 +175,7 @@
     </div>
   </div>
 
-  <!-- BOCZNE PRZYCISKI (NOWA KOPERTA) -->
+  <!-- BOCZNE PRZYCISKI -->
   <div class="side-buttons">
     <div class="side-btn" onclick="openMail()">✉️<div class="notification-badge">1</div></div>
     <div class="side-btn" onclick="openQuests()">📜<div class="notification-badge">3</div></div>
@@ -176,6 +184,14 @@
   </div>
   
   <button id="reset-btn" onclick="resetGame()">RESET</button>
+
+  <!-- NOWY PASEK WOJSKA -->
+  <div id="army-bar">
+    <div class="army-item"><span class="icon">⚔️</span> <span id="army-bar-barbarian">0</span></div>
+    <div class="army-item"><span class="icon">🏹</span> <span id="army-bar-archer">0</span></div>
+    <div class="army-item"><span class="icon">🗿</span> <span id="army-bar-giant">0</span></div>
+    <div class="army-item"><span class="icon">🧨</span> <span id="army-bar-wallbreaker">0</span></div>
+  </div>
 
   <!-- DOLNY PASEK AKCJI -->
   <div id="action-bar">
@@ -193,7 +209,7 @@
     <div class="big-btn shop-btn" onclick="openShop()"><div class="icon">🛒</div><div class="label">Sklep</div></div>
   </div>
 
-  <!-- RESZTA MODALI (SKRÓCONE DLA CZYTELNOŚCI, SĄ TAKIE JAK OSTATNIO) -->
+  <!-- RESZTA MODALI (SKRÓCONE) -->
   <div id="battle-ui">
     <div id="battle-top-bar"><div id="battle-status">Łup: <span id="loot-display">0 💰, 0 🔮</span> | ⏱️ <span id="timer-display">3:00</span></div><button onclick="endBattle(false)">Odwrót</button></div>
     <div id="troop-menu">
