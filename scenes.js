@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - SYSTEM BOHATERA (WATAŻKA)
+// SCENES.JS - UNIKALNE POZIOMY KAMPANII
 // ==========================================
 
 const TILE_SIZE = 50; 
@@ -122,12 +122,10 @@ class BaseScene extends Phaser.Scene {
     let townhall = buildings.find(b => b.type === 'townhall') || buildings[0];
     let centerX = townhall ? townhall.x : 0; let centerY = townhall ? townhall.y : 0;
     
-    // Sprawdzenie, czy mamy Ołtarz Krwi (wtedy spawnujemy Bohatera)
     let hasAltar = buildings.some(b => b.type === 'altar');
     if (hasAltar) {
         let heroSprite = this.add.text(centerX + 40, centerY + 40, '🩸', { fontSize: '36px', backgroundColor: '#8b0000', padding: { x: 4, y: 4 }, stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setDepth(9999);
         this.hero = { sprite: heroSprite, centerX: centerX, centerY: centerY };
-        // Bohater też się rusza, ale wolniej
         this.tweens.add({
             targets: heroSprite, x: centerX + Phaser.Math.Between(-50, 50), y: centerY + Phaser.Math.Between(-50, 50),
             duration: 4000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
@@ -270,7 +268,6 @@ class BaseScene extends Phaser.Scene {
     building.isBuilding = false;
     if (building.timerText) { building.timerText.destroy(); }
     
-    const def = BUILDINGS[building.type];
     let oldX = building.x; let oldY = building.y;
     let gridX = building.gridX; let gridY = building.gridY;
     let level = building.level; let hp = building.hp;
@@ -291,15 +288,17 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY ---
+// --- SCENA BITWY (Z UNIKALNYMI POZIOMAMI) ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
     let cam = this.cameras.main; cam.setBackgroundColor('#2d4a22'); 
     let bgGraphics = this.add.graphics(); bgGraphics.fillStyle(0x2d4a22, 1); bgGraphics.fillRect(-5000, -5000, 10000, 10000); bgGraphics.setDepth(-10);
     cam.setZoom(2.5); cam.centerOn(0, 0);
+    
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
+    
     this.battleTime = 180; 
     this.time.addEvent({ delay: 1000, loop: true, callback: () => {
         if (this.battleEnded) return;
@@ -307,24 +306,41 @@ class BattleScene extends Phaser.Scene {
         document.getElementById('timer-display').innerText = `${m}:${s < 10 ? '0' : ''}${s}`;
         if (this.battleTime <= 0) { this.battleEnded = true; setTimeout(() => endBattle(false, this.lootGold, this.lootElixir, this.destroyedCount, this.totalEnemyBuildings), 1000); }
     }});
+
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
+    
+    // --- GENEROWANIE UNIKALNEGO POZIOMU ---
+    let levelId = window.currentCampaignLevel || 1;
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
-    this.createEnemyBuilding(centerX, centerY, 400, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
-    let numBuildings = Phaser.Math.Between(6, 9);
-    for(let i = 0; i < numBuildings; i++) {
-        let ex = Phaser.Math.Between(2, GRID - 2); let ey = Phaser.Math.Between(2, GRID - 2);
-        let valid = true;
-        for (let b of this.enemyBuildings) { if (Math.abs(ex - b.gridX) < 2 && Math.abs(ey - b.gridY) < 2) { valid = false; break; } }
-        if (valid) {
-            let typeRnd = Phaser.Math.Between(1, 10);
-            if (typeRnd <= 3) this.createEnemyBuilding(ex, ey, 150, 'tower', true, 0, 0);
-            else if (typeRnd <= 6) this.createEnemyBuilding(ex, ey, 100, 'mine', false, 300, 0);
-            else if (typeRnd <= 8) this.createEnemyBuilding(ex, ey, 150, 'barracks', false, 0, 200);
-            else this.createEnemyBuilding(ex, ey, 250, 'wall', false, 0, 0);
-            this.totalEnemyBuildings++;
+    
+    if (levelId === 1) {
+        // Wioska Goblinów - słaba obrona
+        this.createEnemyBuilding(centerX, centerY, 300, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
+        this.createEnemyBuilding(centerX + 2, centerY, 100, 'mine', false, 150, 0); this.totalEnemyBuildings++;
+        this.createEnemyBuilding(centerX - 2, centerY + 2, 150, 'tower', true, 0, 0); this.totalEnemyBuildings++;
+    } else if (levelId === 2) {
+        // Mroczna Puszcza - średnia obrona
+        this.createEnemyBuilding(centerX, centerY, 500, 'townhall', false, 500, 300); this.totalEnemyBuildings++;
+        for (let i = 0; i < 3; i++) {
+            this.createEnemyBuilding(centerX + Phaser.Math.Between(-3, 3), centerY + Phaser.Math.Between(-3, 3), 200, 'tower', true, 0, 0); this.totalEnemyBuildings++;
+        }
+        this.createEnemyBuilding(centerX + 2, centerY - 2, 200, 'mine', false, 400, 0); this.totalEnemyBuildings++;
+    } else {
+        // Zamek Krwi - potężna obrona
+        this.createEnemyBuilding(centerX, centerY, 800, 'townhall', false, 1000, 500); this.totalEnemyBuildings++;
+        for (let i = 0; i < 5; i++) {
+            this.createEnemyBuilding(centerX + Phaser.Math.Between(-4, 4), centerY + Phaser.Math.Between(-4, 4), 300, 'tower', true, 0, 0); this.totalEnemyBuildings++;
+        }
+        // Mury wokół bazy
+        for (let x = -3; x <= 3; x++) {
+            this.createEnemyBuilding(centerX + x, centerY - 4, 400, 'wall', false, 0, 0); this.totalEnemyBuildings++;
+            this.createEnemyBuilding(centerX + x, centerY + 4, 400, 'wall', false, 0, 0); this.totalEnemyBuildings++;
         }
     }
+    // --------------------------------------
+
     this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
+    
     this.input.on('pointerdown', (pointer) => {
       if (this.battleEnded) return;
       if (army[selectedBattleTroopType] > 0) {
