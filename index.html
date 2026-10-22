@@ -8,120 +8,168 @@
     html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
 
-    #top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(0,0,0,0.6)); padding: max(8px, env(safe-area-inset-top)) 10px 8px 10px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; font-weight: bold; font-size: 14px; z-index: 10; pointer-events: none; gap: 5px; border-bottom: 1px solid #555; }
-    .res-container { display: flex; gap: 5px; pointer-events: auto; }
-    .res-box { background: linear-gradient(to bottom, #333, #111); padding: 4px 8px; border-radius: 15px; border: 1px solid #8b6508; display: flex; align-items: center; gap: 5px; box-shadow: inset 0 0 5px rgba(0,0,0,0.8); }
-    .res-box .plus-btn { background: #8b6508; color: white; border: none; border-radius: 50%; width: 16px; height: 16px; font-size: 12px; display: flex; justify-content: center; align-items: center; margin-left: 5px; }
+    /* --- GÓRNY PASEK (WIĘKSZY) --- */
+    #top-bar { 
+      position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; 
+      background: linear-gradient(to bottom, rgba(10,10,10,0.98), rgba(0,0,0,0.7)); 
+      padding: max(10px, env(safe-area-inset-top)) 10px 10px 10px; 
+      display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; 
+      font-weight: bold; font-size: 16px; z-index: 10; pointer-events: none; gap: 5px; 
+      border-bottom: 2px solid #8b6508; 
+    }
+    .res-container { display: flex; gap: 8px; pointer-events: auto; }
+    .res-box { 
+      background: linear-gradient(to bottom, #333, #111); padding: 6px 12px; 
+      border-radius: 20px; border: 2px solid #8b6508; display: flex; align-items: center; gap: 8px; 
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.9), 0 2px 5px rgba(0,0,0,0.5); font-size: 16px;
+    }
+    .res-box .plus-btn { background: #8b6508; color: white; border: none; border-radius: 50%; width: 20px; height: 20px; font-size: 14px; display: flex; justify-content: center; align-items: center; margin-left: 5px; cursor: pointer; }
     .res-gold { color: #ffd700; }
     .res-elixir { color: #ba55d3; }
-    .stat-box { background: rgba(0, 0, 0, 0.8); padding: 4px 8px; border-radius: 15px; border: 1px solid #555; display: flex; align-items: center; gap: 5px; }
+    .stat-box { 
+      background: rgba(0, 0, 0, 0.9); padding: 6px 12px; border-radius: 20px; 
+      border: 2px solid #555; display: flex; align-items: center; gap: 8px; font-size: 16px;
+      box-shadow: inset 0 0 8px rgba(0,0,0,0.9);
+    }
     .trophies { color: #ff3333; }
     .player-level { color: #88ff88; }
 
-    #menu-btn { position: absolute; top: max(50px, env(safe-area-inset-top)); right: 10px; background: #222; color: white; border: 2px solid #8b6508; width: 45px; height: 45px; border-radius: 50%; font-size: 24px; z-index: 15; display: flex; justify-content: center; align-items: center; cursor: pointer; pointer-events: auto; box-shadow: 0 4px 10px rgba(0,0,0,0.8); }
+    #menu-btn { 
+      position: absolute; top: max(60px, env(safe-area-inset-top)); right: 10px; 
+      background: #222; color: white; border: 3px solid #8b6508; width: 55px; height: 55px; 
+      border-radius: 50%; font-size: 28px; z-index: 15; display: flex; justify-content: center; align-items: center; 
+      cursor: pointer; pointer-events: auto; box-shadow: 0 4px 15px rgba(0,0,0,0.9); 
+    }
     #menu-btn:active { background: #111; }
 
-    #build-menu { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: linear-gradient(to top, rgba(10,10,10,0.95), rgba(0,0,0,0.6)); padding: 8px; display: flex; gap: 8px; border-top: 1px solid #555; z-index: 10; overflow-x: auto; white-space: nowrap; padding-bottom: max(8px, env(safe-area-inset-bottom)); }
-    .build-btn { min-width: 75px; padding: 10px 5px; border: none; border-radius: 8px; background: linear-gradient(to bottom, #2a2a2a, #111); color: #ddd; font-weight: bold; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: auto; border: 1px solid #555; box-shadow: inset 0 0 5px rgba(0,0,0,0.8); }
-    .build-btn.selected { background: linear-gradient(to bottom, #4a3b2a, #222); border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 10px #8b6508; }
+    /* --- DOLNY PASEK BUDOWANIA (WIĘKSZY) --- */
+    #build-menu { 
+      position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; 
+      background: linear-gradient(to top, rgba(10,10,10,0.98), rgba(0,0,0,0.8)); 
+      padding: 12px 8px; display: flex; gap: 10px; border-top: 3px solid #8b6508; 
+      z-index: 10; overflow-x: auto; white-space: nowrap; padding-bottom: max(12px, env(safe-area-inset-bottom)); 
+    }
+    .build-btn { 
+      min-width: 90px; padding: 12px 8px; border: none; border-radius: 10px; 
+      background: linear-gradient(to bottom, #3a3a3a, #111); color: #ddd; font-weight: bold; font-size: 15px; 
+      display: flex; flex-direction: column; align-items: center; gap: 6px; pointer-events: auto; 
+      border: 2px solid #666; box-shadow: inset 0 0 8px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.7); 
+    }
+    .build-btn.selected { background: linear-gradient(to bottom, #5c4a2a, #222); border: 2px solid #ffd700; color: #fff; box-shadow: 0 0 15px #ffd700; transform: scale(1.05); }
     .build-btn:active { background: #444; }
-    .btn-sub { font-size: 10px; font-weight: normal; color: #aaa; }
+    .btn-sub { font-size: 13px; font-weight: bold; margin-top: 2px; }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ba55d3; }
 
-    #home-btn { position: absolute; bottom: 230px; right: 20px; background: #222; color: white; border: 2px solid #8b6508; padding: 12px 15px; border-radius: 50%; font-size: 20px; font-weight: bold; z-index: 15; box-shadow: 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; }
-    #home-btn:active { background: #111; }
+    /* --- PRZYCISKI AKCJI (ATK, SKLEP, DOM) --- */
+    #home-btn { 
+      position: absolute; bottom: 250px; right: 20px; background: #222; color: white; 
+      border: 3px solid #8b6508; padding: 15px 18px; border-radius: 50%; font-size: 24px; font-weight: bold; 
+      z-index: 15; box-shadow: 0 4px 15px rgba(0,0,0,0.9); cursor: pointer; 
+    }
+    #home-btn:active { background: #111; transform: scale(0.95); }
 
-    #attack-btn { position: absolute; bottom: 90px; left: 20px; background: linear-gradient(to bottom, #8b0000, #4a0000); color: white; border: 2px solid #ff4444; padding: 15px 25px; border-radius: 8px; font-size: 20px; font-weight: bold; z-index: 15; box-shadow: 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; text-transform: uppercase; }
+    #attack-btn { 
+      position: absolute; bottom: 110px; left: 15px; 
+      background: linear-gradient(to bottom, #8b0000, #4a0000); color: white; border: 3px solid #ff4444; 
+      padding: 18px 30px; border-radius: 12px; font-size: 22px; font-weight: bold; z-index: 15; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.9); cursor: pointer; text-transform: uppercase; 
+    }
     #attack-btn:active { transform: scale(0.95); }
 
-    #shop-btn { position: absolute; bottom: 90px; right: 20px; background: linear-gradient(to bottom, #2a2a2a, #111); color: #ffd700; border: 2px solid #8b6508; padding: 15px 25px; border-radius: 8px; font-size: 20px; font-weight: bold; z-index: 15; box-shadow: 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; text-transform: uppercase; }
+    #shop-btn { 
+      position: absolute; bottom: 110px; right: 15px; 
+      background: linear-gradient(to bottom, #3a3a3a, #111); color: #ffd700; border: 3px solid #8b6508; 
+      padding: 18px 30px; border-radius: 12px; font-size: 22px; font-weight: bold; z-index: 15; 
+      box-shadow: 0 4px 15px rgba(0,0,0,0.9); cursor: pointer; text-transform: uppercase; 
+    }
     #shop-btn:active { transform: scale(0.95); }
 
+    /* --- RESZTA STYLÓW (MODALE, BITWY, ETC) --- */
     #battle-ui, #defense-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; z-index: 20; pointer-events: none; display: none; }
-    #battle-top-bar, #defense-top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.95); color: white; padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; pointer-events: auto; border-bottom: 2px solid #8b0000; }
-    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 10px 15px; border-radius: 4px; font-weight: bold; }
+    #battle-top-bar, #defense-top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.95); color: white; padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; pointer-events: auto; border-bottom: 3px solid #8b0000; }
+    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-weight: bold; font-size: 16px; }
     #loot-display { color: #ffd700; }
     #timer-display { color: #ffaa00; }
 
-    #troop-menu { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.95); padding: 10px; display: flex; justify-content: space-around; gap: 5px; z-index: 21; pointer-events: auto; border-top: 2px solid #8b6508; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
-    .troop-btn { flex: 1; padding: 8px 5px; border: 2px solid #333; border-radius: 4px; background: #1a1a1a; color: #ccc; font-weight: bold; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+    #troop-menu { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.95); padding: 12px; display: flex; justify-content: space-around; gap: 8px; z-index: 21; pointer-events: auto; border-top: 3px solid #8b6508; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
+    .troop-btn { flex: 1; padding: 10px 5px; border: 2px solid #444; border-radius: 8px; background: #1a1a1a; color: #ccc; font-weight: bold; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
     .troop-btn.selected { border: 2px solid #ffd700; background: #332a1c; color: #fff; }
-    .troop-btn span { font-size: 12px; color: #aaa; }
+    .troop-btn span { font-size: 14px; color: #aaa; }
     .troop-btn.hero-btn { border-color: #ba55d3; background: #1a0f1f; }
     .troop-btn.hero-btn.selected { border-color: #ffd700; background: #332040; }
     .troop-btn.hero-btn.disabled { opacity: 0.4; pointer-events: none; }
 
-    #building-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(to bottom, #1a1a1a, #050505); color: white; padding: 20px; border-radius: 8px; display: none; z-index: 30; text-align: center; min-width: 280px; border: 2px solid #8b6508; max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 30px rgba(0,0,0,0.9); }
-    #building-panel h3 { margin: 0 0 10px 0; color: #c9a06c; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
-    #building-panel p { margin: 5px 0; font-size: 16px; }
-    #building-panel button { margin: 5px 0; padding: 10px; font-weight: bold; border-radius: 4px; border: none; cursor: pointer; font-size: 14px; width: 100%; }
+    #building-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: linear-gradient(to bottom, #1a1a1a, #050505); color: white; padding: 25px; border-radius: 12px; display: none; z-index: 30; text-align: center; min-width: 300px; border: 3px solid #8b6508; max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+    #building-panel h3 { margin: 0 0 15px 0; color: #c9a06c; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
+    #building-panel p { margin: 8px 0; font-size: 18px; }
+    #building-panel button { margin: 8px 0; padding: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; font-size: 16px; width: 100%; text-transform: uppercase; }
     #bp-upgrade { background: #4a5c38; color: white; }
     #bp-sell { background: #8b0000; color: white; }
     #bp-close { background: #444; color: white; }
-    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 10px; background: rgba(47, 79, 79, 0.2); border-radius: 4px; border: 1px solid #5f9ea0; }
-    #bp-lab-section { background: rgba(138, 43, 226, 0.1); border: 1px solid #8a2be2; }
-    .train-btn { background: #5f9ea0; color: white; margin-top: 5px; }
+    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 15px; background: rgba(47, 79, 79, 0.2); border-radius: 8px; border: 2px solid #5f9ea0; }
+    #bp-lab-section { background: rgba(138, 43, 226, 0.1); border: 2px solid #8a2be2; }
+    .train-btn { background: #5f9ea0; color: white; margin-top: 8px; font-size: 15px; }
     .train-btn:active { background: #2f4f4f; }
-    .lab-btn { background: #8a2be2; color: white; margin-top: 5px; }
+    .lab-btn { background: #8a2be2; color: white; margin-top: 8px; font-size: 15px; }
     .lab-btn:active { background: #551a8b; }
 
-    #message { position: absolute; top: 15%; left: 50%; transform: translateX(-50%); background: rgba(139, 0, 0, 0.95); color: white; padding: 12px 24px; border-radius: 4px; font-weight: bold; display: none; pointer-events: none; z-index: 9999; text-align: center; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); white-space: nowrap; border: 1px solid #ff8888; text-transform: uppercase; }
+    #message { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(139, 0, 0, 0.95); color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 9999; text-align: center; font-size: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.9); white-space: nowrap; border: 2px solid #ff8888; text-transform: uppercase; }
 
     .modal-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; display: none; justify-content: center; align-items: center; pointer-events: auto; backdrop-filter: blur(3px); }
-    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #050505); border: 2px solid #8b6508; border-radius: 10px; padding: 20px; min-width: 320px; max-width: 90vw; text-align: center; color: white; box-shadow: 0 0 40px rgba(0,0,0,0.9); max-height: 85vh; overflow-y: auto; }
-    .modal-content h2 { margin: 0 0 15px 0; color: #c9a06c; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; }
+    .modal-content { background: linear-gradient(to bottom, #1a1a1a, #050505); border: 3px solid #8b6508; border-radius: 12px; padding: 25px; min-width: 340px; max-width: 90vw; text-align: center; color: white; box-shadow: 0 0 50px rgba(0,0,0,0.9); max-height: 85vh; overflow-y: auto; }
+    .modal-content h2 { margin: 0 0 20px 0; color: #c9a06c; text-transform: uppercase; font-size: 28px; letter-spacing: 2px; }
     
-    .menu-btn-item { display: flex; align-items: center; justify-content: flex-start; gap: 15px; width: 100%; padding: 12px 15px; margin-bottom: 10px; background: #2a2a2a; border: 1px solid #444; border-radius: 8px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; text-align: left; }
+    .menu-btn-item { display: flex; align-items: center; justify-content: flex-start; gap: 15px; width: 100%; padding: 15px 18px; margin-bottom: 12px; background: #2a2a2a; border: 2px solid #444; border-radius: 10px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-align: left; }
     .menu-btn-item:active { background: #444; border-color: #8b6508; }
-    .menu-icon { font-size: 24px; }
+    .menu-icon { font-size: 26px; }
 
-    .profile-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
-    .avatar { width: 60px; height: 60px; background: #5c4305; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; border: 2px solid #ffd700; }
-    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-    .stat-card { background: #2a2a2a; padding: 10px; border-radius: 8px; border: 1px solid #444; }
-    .stat-value { font-size: 24px; color: #88ff88; font-weight: bold; }
-    .stat-label { font-size: 12px; color: #aaa; text-transform: uppercase; }
+    .profile-header { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 25px; }
+    .avatar { width: 80px; height: 80px; background: #5c4305; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 40px; border: 3px solid #ffd700; }
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+    .stat-card { background: #2a2a2a; padding: 15px; border-radius: 10px; border: 2px solid #444; }
+    .stat-value { font-size: 28px; color: #88ff88; font-weight: bold; }
+    .stat-label { font-size: 14px; color: #aaa; text-transform: uppercase; }
 
-    .quest-item { background: #2a2a2a; border: 1px solid #444; border-radius: 8px; padding: 10px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
-    .quest-info { flex: 1; padding-right: 10px; }
-    .quest-title { font-size: 16px; font-weight: bold; color: #ddd; margin-bottom: 5px; }
-    .quest-progress { font-size: 12px; color: #aaa; }
-    .quest-btn { padding: 8px 12px; border-radius: 4px; border: none; font-weight: bold; background: #444; color: #888; cursor: not-allowed; font-size: 12px; white-space: nowrap; }
-    .quest-btn.ready { background: #4a5c38; color: white; cursor: pointer; box-shadow: 0 0 10px #88ff88; }
+    .quest-item { background: #2a2a2a; border: 2px solid #444; border-radius: 10px; padding: 15px; margin-bottom: 12px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+    .quest-info { flex: 1; padding-right: 15px; }
+    .quest-title { font-size: 18px; font-weight: bold; color: #ddd; margin-bottom: 8px; }
+    .quest-progress { font-size: 14px; color: #aaa; }
+    .quest-btn { padding: 10px 15px; border-radius: 6px; border: none; font-weight: bold; background: #444; color: #888; cursor: not-allowed; font-size: 14px; white-space: nowrap; }
+    .quest-btn.ready { background: #4a5c38; color: white; cursor: pointer; box-shadow: 0 0 15px #88ff88; }
     .quest-btn.claimed { background: #111; color: #555; }
 
-    .shop-item { background: #2a2a2a; border: 1px solid #8b6508; border-radius: 8px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
-    .shop-icon { font-size: 32px; margin-right: 10px; }
+    .shop-item { background: #2a2a2a; border: 2px solid #8b6508; border-radius: 10px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+    .shop-icon { font-size: 36px; margin-right: 15px; }
     .shop-info { flex: 1; text-align: left; }
-    .shop-title { font-weight: bold; font-size: 16px; color: #ddd; }
-    .shop-price { font-size: 14px; color: #ffd700; margin-top: 3px; }
-    .shop-buy-btn { padding: 10px 15px; border-radius: 4px; border: none; font-weight: bold; background: #ba55d3; color: white; cursor: pointer; font-size: 14px; }
+    .shop-title { font-weight: bold; font-size: 18px; color: #ddd; }
+    .shop-price { font-size: 16px; color: #ffd700; margin-top: 5px; }
+    .shop-buy-btn { padding: 12px 20px; border-radius: 6px; border: none; font-weight: bold; background: #ba55d3; color: white; cursor: pointer; font-size: 16px; }
 
-    .modal-content button.close-modal { margin-top: 15px; padding: 12px 20px; font-weight: bold; font-size: 16px; border-radius: 5px; border: none; cursor: pointer; width: 100%; background: #4a5c38; color: white; text-transform: uppercase; }
+    .modal-content button.close-modal { margin-top: 20px; padding: 15px 25px; font-weight: bold; font-size: 18px; border-radius: 8px; border: none; cursor: pointer; width: 100%; background: #4a5c38; color: white; text-transform: uppercase; }
     .modal-content button.close-modal:active { background: #2e3b22; }
     .modal-content .btn-danger { background: #8b0000; }
 
     #battle-result-overlay .modal-content { border-color: #ffd700; }
-    .stars-container { font-size: 50px; margin: 10px 0; letter-spacing: 5px; }
+    .stars-container { font-size: 60px; margin: 15px 0; letter-spacing: 8px; }
     .star { color: #333; }
-    .star.earned { color: #ffd700; text-shadow: 0 0 15px #ffd700; }
-    .loot-summary { background: #2a2a2a; padding: 15px; border-radius: 8px; margin: 15px 0; }
-    .loot-item { font-size: 20px; margin: 5px 0; }
+    .star.earned { color: #ffd700; text-shadow: 0 0 20px #ffd700; }
+    .loot-summary { background: #2a2a2a; padding: 20px; border-radius: 10px; margin: 20px 0; }
+    .loot-item { font-size: 22px; margin: 8px 0; }
 
     #chest-overlay .modal-content { border-color: #ba55d3; }
-    .chest-big-icon { font-size: 80px; margin: 20px 0; animation: bounce-in 0.5s; }
+    .chest-big-icon { font-size: 100px; margin: 25px 0; animation: bounce-in 0.5s; }
     @keyframes bounce-in { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-    .chest-rewards { font-size: 20px; color: #ffd700; margin: 15px 0; }
+    .chest-rewards { font-size: 24px; color: #ffd700; margin: 20px 0; }
 
-    .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 1px solid #333; }
-    .ranking-row.player-highlight { background: rgba(255, 215, 0, 0.15); border: 1px solid #ffd700; border-radius: 5px; margin-bottom: 5px; }
-    .rank-place { font-weight: bold; color: #c9a06c; width: 40px; text-align: left; }
-    .rank-name { flex: 1; text-align: left; padding-left: 10px; color: #fff; }
-    .rank-level { font-size: 12px; color: #aaa; }
-    .rank-trophies { font-weight: bold; color: #ff3333; text-align: right; }
+    .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 2px solid #333; }
+    .ranking-row.player-highlight { background: rgba(255, 215, 0, 0.15); border: 2px solid #ffd700; border-radius: 8px; margin-bottom: 8px; }
+    .rank-place { font-weight: bold; color: #c9a06c; width: 50px; text-align: left; font-size: 18px; }
+    .rank-name { flex: 1; text-align: left; padding-left: 15px; color: #fff; font-size: 18px; }
+    .rank-level { font-size: 14px; color: #aaa; }
+    .rank-trophies { font-weight: bold; color: #ff3333; text-align: right; font-size: 18px; }
 
-    #reset-btn { position: absolute; top: max(50px, env(safe-area-inset-top)); right: 65px; background: rgba(139, 0, 0, 0.7); color: white; border: none; padding: 5px 10px; border-radius: 4px; font-size: 12px; z-index: 999; }
+    #reset-btn { position: absolute; top: max(60px, env(safe-area-inset-top)); right: 75px; background: rgba(139, 0, 0, 0.8); color: white; border: 2px solid #ff4444; padding: 8px 12px; border-radius: 6px; font-size: 14px; font-weight: bold; z-index: 999; }
   </style>
 </head>
 <body>
@@ -241,7 +289,7 @@
       <h2>Profil Gracza</h2>
       <div class="profile-header">
         <div class="avatar">🩸</div>
-        <div style="text-align: left;"><div style="font-size: 20px; font-weight: bold; color: #fff;">Watażka</div><div style="font-size: 14px; color: #ffd700;">Ranga: <span id="profile-level">1</span></div></div>
+        <div style="text-align: left;"><div style="font-size: 24px; font-weight: bold; color: #fff;">Watażka</div><div style="font-size: 16px; color: #ffd700;">Ranga: <span id="profile-level">1</span></div></div>
       </div>
       <div class="profile-stats">
         <div class="stat-card"><div class="stat-value" id="profile-trophies">0</div><div class="stat-label">Czaszki 💀</div></div>
@@ -256,7 +304,7 @@
   <div id="help-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Jak grać?</h2>
-      <div class="help-text"><p>Witaj w <b>Twierdzy</b>!</p><p><b>Budowanie:</b> Wybierz budynek i postaw na siatce.</p><p><b>Atak:</b> Wybierz jednostkę i klikaj na planszy wroga.</p></div>
+      <div class="help-text"><p style="font-size:18px;">Witaj w <b>Twierdzy</b>!</p><p style="font-size:16px;"><b>Budowanie:</b> Wybierz budynek i postaw na siatce.</p><p style="font-size:16px;"><b>Atak:</b> Wybierz jednostkę i klikaj na planszy wroga.</p></div>
       <button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button>
     </div>
   </div>
@@ -279,7 +327,7 @@
     <div class="modal-content">
       <h2 id="result-title">Zwycięstwo!</h2>
       <div class="stars-container"><span class="star" id="star1">★</span><span class="star" id="star2">★</span><span class="star" id="star3">★</span></div>
-      <p id="result-destroyed">Zniszczono: 0% bazy</p>
+      <p id="result-destroyed" style="font-size:18px;">Zniszczono: 0% bazy</p>
       <div class="loot-summary"><div class="loot-item loot-gold">💰 +<span id="result-gold">0</span></div><div class="loot-item loot-elixir">🔮 +<span id="result-elixir">0</span></div><div class="loot-item" style="color:#ff3333">💀 +<span id="result-trophies">0</span></div><div class="loot-item" style="color:#88ff88">🌟 +<span id="result-xp">0</span> XP</div></div>
       <button class="close-modal" onclick="closeBattleResult()">Wróć do twierdzy</button>
     </div>
@@ -288,8 +336,8 @@
   <div id="settings-overlay" class="modal-overlay">
     <div class="modal-content">
       <h2>Ustawienia</h2>
-      <p>Głośność dźwięków:</p>
-      <button id="sound-toggle-btn" onclick="toggleSound()">🔊 Dźwięk: Włączony</button>
+      <p style="font-size:18px;">Głośność dźwięków:</p>
+      <button id="sound-toggle-btn" onclick="toggleSound()" style="padding:12px; font-size:16px; width:100%; margin-bottom:10px; border-radius:6px; border:none; background:#444; color:#fff; font-weight:bold;">🔊 Dźwięk: Włączony</button>
       <button class="btn-danger" onclick="resetGame()">Zresetuj grę</button>
       <button class="close-modal" onclick="closeSettings()">Zamknij</button>
     </div>
@@ -298,8 +346,8 @@
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <script src="config.js?v=69"></script>
   <script src="ranking.js?v=69"></script>
-  <script src="ui.js?v=69"></script>
   <script src="alliance.js?v=69"></script>
+  <script src="ui.js?v=69"></script>
   <script src="scenes.js?v=69"></script>
   <script src="main.js?v=69"></script>
 </body>
