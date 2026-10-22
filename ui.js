@@ -1,12 +1,10 @@
 // --- FUNKCJA AKTUALIZACJI INTERFEJSU ---
 function updateUI() {
-  // Aktualizacja tekstów
   document.getElementById('ui-gold').innerText = Math.floor(gold);
   document.getElementById('ui-elixir').innerText = Math.floor(elixir);
   document.getElementById('ui-trophies').innerText = trophies;
   document.getElementById('ui-level').innerText = level;
 
-  // Aktualizacja paska XP
   const xpBarFill = document.getElementById('xp-bar-fill');
   if (xpBarFill) {
     let xpNeeded = level * 500;
@@ -15,7 +13,6 @@ function updateUI() {
     xpBarFill.style.width = xpPercent + '%';
   }
 
-  // Podświetlanie wybranego budynku
   const btns = document.querySelectorAll('.build-btn');
   if (btns.length >= 8) {
     btns.forEach(btn => btn.classList.remove('selected'));
@@ -29,7 +26,6 @@ function updateUI() {
     if (selectedBuildingType === 'tower') btns[7].classList.add('selected');
   }
   
-  // Aktualizacja jednostek w bitwie
   if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
   if(document.getElementById('ui-archer')) document.getElementById('ui-archer').innerText = army.archer;
   if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
@@ -39,17 +35,14 @@ function updateUI() {
     document.getElementById('bp-army-capacity').innerText = `${getCurrentArmySize()} / ${getMaxArmy()}`;
   }
 
-  // AKTUALIZACJA SOJUSZU W MENU
   updateAllianceUI();
 
-  // --- AKTUALIZACJA NOWEGO PASKA WOJSKA ---
   if(document.getElementById('army-bar-barbarian')) document.getElementById('army-bar-barbarian').innerText = army.barbarian;
   if(document.getElementById('army-bar-archer')) document.getElementById('army-bar-archer').innerText = army.archer;
   if(document.getElementById('army-bar-giant')) document.getElementById('army-bar-giant').innerText = army.giant;
   if(document.getElementById('army-bar-wallbreaker')) document.getElementById('army-bar-wallbreaker').innerText = army.wallbreaker;
 }
 
-// Nowa funkcja do wyświetlania statusu sojuszu
 function updateAllianceUI() {
   let allianceBtn = document.getElementById('alliance-btn');
   if (allianceBtn) {
@@ -64,21 +57,12 @@ function updateAllianceUI() {
 // --- NOWY SYSTEM POWIADOMIEŃ (TOAST) ---
 function showMessage(text, type = 'info') {
     const container = document.getElementById('toast-container');
-    if (!container) {
-        alert(text); // Fallback
-        return;
-    }
-    
+    if (!container) { alert(text); return; }
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerText = text;
-    
     container.appendChild(toast);
-    
-    // Usuwanie elementu z DOM po zakończeniu animacji (3 sekundy)
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
+    setTimeout(() => { toast.remove(); }, 3000);
 }
 
 function addXP(amount) {
@@ -89,7 +73,7 @@ function addXP(amount) {
     level++;
     showMessage(`Awans na Rangę ${level}!`, 'success');
   }
-  updateUI(); // Odśwież pasek XP
+  updateUI();
 }
 
 function checkHeroAvailability() {
@@ -107,10 +91,7 @@ function checkHeroAvailability() {
 }
 
 // --- FUNKCJE OTWIERANIA I ZAMYKANIA OKIEN ---
-function openMainMenu() { 
-  updateAllianceUI(); 
-  document.getElementById('main-menu-overlay').style.display = 'flex'; 
-}
+function openMainMenu() { updateAllianceUI(); document.getElementById('main-menu-overlay').style.display = 'flex'; }
 function closeMainMenu() { document.getElementById('main-menu-overlay').style.display = 'none'; }
 
 function openProfile() {
@@ -138,10 +119,7 @@ function updateSoundButton() {
   }
 }
 
-// --- NOWA FUNKCJA: POCZTA ---
-function openMail() {
-  showMessage('Brak nowych wiadomości.', 'info');
-}
+function openMail() { showMessage('Brak nowych wiadomości.', 'info'); }
 
 function resetGame() {
   if (confirm("Zresetować twierdzę? Cały postęp przepadnie.")) {
@@ -164,9 +142,15 @@ function openBuildingPanel(building) {
   if (prodElixir > 0) prodStr.push(prodElixir + ' 🔮');
   document.getElementById('bp-prod').innerText = prodStr.join(' i ') || 'Brak';
   
-  const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
-  const costElixir = Math.floor(def.cost.elixir * building.level * 1.5);
-  document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${costElixir} 🔮)`;
+  if (building.isBuilding) {
+      document.getElementById('bp-upgrade').innerText = `W budowie...`;
+      document.getElementById('bp-upgrade').disabled = true;
+  } else {
+      const upgradeCostGold = Math.floor(def.cost.gold * building.level * 1.5);
+      const costElixir = Math.floor(def.cost.elixir * building.level * 1.5);
+      document.getElementById('bp-upgrade').innerText = `Ulepsz (${upgradeCostGold} 💰, ${costElixir} 🔮)`;
+      document.getElementById('bp-upgrade').disabled = false;
+  }
   
   const sellValueGold = Math.floor(def.cost.gold * building.level * 0.5);
   const sellValueElixir = Math.floor(def.cost.elixir * building.level * 0.5);
@@ -175,18 +159,10 @@ function openBuildingPanel(building) {
   document.getElementById('bp-upgrade').style.display = 'block';
   document.getElementById('bp-sell').style.display = 'block';
 
-  if (building.type === 'barracks') {
-    document.getElementById('bp-train-section').style.display = 'block';
-    updateUI(); 
-  } else {
-    document.getElementById('bp-train-section').style.display = 'none';
-  }
-  if (building.type === 'lab') {
-    document.getElementById('bp-lab-section').style.display = 'block';
-    updateLabUI();
-  } else {
-    document.getElementById('bp-lab-section').style.display = 'none';
-  }
+  if (building.type === 'barracks') { document.getElementById('bp-train-section').style.display = 'block'; updateUI(); } 
+  else { document.getElementById('bp-train-section').style.display = 'none'; }
+  if (building.type === 'lab') { document.getElementById('bp-lab-section').style.display = 'block'; updateLabUI(); } 
+  else { document.getElementById('bp-lab-section').style.display = 'none'; }
   document.getElementById('building-panel').style.display = 'block';
 }
 
@@ -227,8 +203,11 @@ function trainTroop(type) {
   playSound('build'); updateUI(); saveGame();
 }
 
+// --- ZMIENIONA FUNKCJA ULEPSZANIA (CZAS BUDOWY) ---
 function upgradeBuilding() {
   if (!currentlySelectedBuilding) return;
+  if (currentlySelectedBuilding.isBuilding) { showMessage('Budynek jest już w budowie!', 'error'); return; }
+  
   const def = BUILDINGS[currentlySelectedBuilding.type];
   const townhall = buildings.find(b => b.type === 'townhall');
   
@@ -243,30 +222,37 @@ function upgradeBuilding() {
   if (elixir < costElixir) { showMessage('Za mało Many!', 'error'); return; }
   
   gold -= costGold; elixir -= costElixir;
-  currentlySelectedBuilding.level++;
+  
+  // Ustawienie stanu budowy
+  let buildTime = 15000; // 15 sekund na ulepszenie
+  currentlySelectedBuilding.isBuilding = true;
+  currentlySelectedBuilding.buildEndTime = Date.now() + buildTime;
+  
+  // Zmiana wyglądu na "w budowie"
+  const defBuilding = BUILDINGS[currentlySelectedBuilding.type];
+  let oldGridX = currentlySelectedBuilding.gridX;
+  let oldGridY = currentlySelectedBuilding.gridY;
+  let oldLevel = currentlySelectedBuilding.level;
+  
+  buildings = buildings.filter(b => b !== currentlySelectedBuilding);
+  if (currentlySelectedBuilding.label) currentlySelectedBuilding.label.destroy();
+  if (currentlySelectedBuilding.hpBar) currentlySelectedBuilding.hpBar.destroy();
+  currentlySelectedBuilding.destroy();
+  
+  baseSceneInstance.createBuilding(oldGridX, oldGridY, currentlySelectedBuilding.type, false, oldLevel, null, true, currentlySelectedBuilding.buildEndTime);
+  
   playSound('build');
-  
-  if (currentlySelectedBuilding.type === 'townhall' && currentlySelectedBuilding.level === 2) {
-    updateQuest('upgrade_townhall', 1);
-  }
-  updateQuest('upgrade_any', 1);
-
-  currentlySelectedBuilding.label.setText(def.name + ' L' + currentlySelectedBuilding.level);
-  currentlySelectedBuilding.maxHp = def.hp * currentlySelectedBuilding.level;
-  currentlySelectedBuilding.hp = currentlySelectedBuilding.maxHp;
-  currentlySelectedBuilding.hpBar.scaleX = 1;
-  
-  addXP(50); 
-  updateUI(); saveGame(); openBuildingPanel(currentlySelectedBuilding); 
+  updateUI(); saveGame(); closeBuildingPanel();
 }
 
 function sellBuilding() {
   if (!currentlySelectedBuilding) return;
+  if (currentlySelectedBuilding.isBuilding) { showMessage('Nie można zburzyć budynku w budowie!', 'error'); return; }
+  
   const def = BUILDINGS[currentlySelectedBuilding.type];
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
   
-  // Bezpieczne usuwanie obiektów wizualnych z Phasera
   if (currentlySelectedBuilding.sprite) currentlySelectedBuilding.sprite.destroy();
   if (currentlySelectedBuilding.label) currentlySelectedBuilding.label.destroy();
   if (currentlySelectedBuilding.hpBar) currentlySelectedBuilding.hpBar.destroy();
