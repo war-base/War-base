@@ -23,7 +23,7 @@ function renderCampaignNodes() {
         let nodeClass = isUnlocked ? 'campaign-node' : 'campaign-node locked';
         
         container.innerHTML += `
-            <div class="${nodeClass}" onclick="startCampaignLevel(${level.id})">
+            <div class="${nodeClass}" data-id="${level.id}">
                 <div class="node-info">
                     <div class="node-name">${level.name}</div>
                     <div class="node-desc">${level.desc} (Wymagany Poziom: ${level.reqLevel})</div>
@@ -33,6 +33,19 @@ function renderCampaignNodes() {
             </div>
         `;
     });
+}
+
+function handleCampaignClick(event) {
+    let node = event.target.closest('.campaign-node');
+    if (!node) return; 
+    
+    if (node.classList.contains('locked')) {
+        showMessage('Ta wioska jest zablokowana!', 'error');
+        return;
+    }
+    
+    let levelId = parseInt(node.getAttribute('data-id'));
+    startCampaignLevel(levelId);
 }
 
 function startCampaignLevel(id) {
@@ -45,7 +58,7 @@ function startCampaignLevel(id) {
     }
 
     closeCampaignMap();
-    window.currentCampaignLevel = id; // Przekazujemy ID poziomu do bitwy
+    window.currentCampaignLevel = id; 
     startAttack(); 
 }
 
