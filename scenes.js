@@ -1,10 +1,9 @@
 // ==========================================
-// SCENES.JS - OSTATECZNA POPRAWKA TŁA
+// SCENES.JS - OŻYWIONA BAZA (ANIMOWANI STRAŻNICY)
 // ==========================================
 
 const TILE_SIZE = 50; 
 
-// Funkcja rysująca budynek (bez zmian)
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   let container = scene.add.container(x, y);
   let graphics = scene.add.graphics();
@@ -50,17 +49,15 @@ class BaseScene extends Phaser.Scene {
     baseSceneInstance = this; 
     let cam = this.cameras.main;
     
-    // Twarde ustawienie tła
     cam.setBackgroundColor('#2d4a22'); 
 
-    // --- RYSOWANIE GIGANTYCZNEGO TŁA TRAWY ---
-    // Rysujemy ogromny prostokąt, żeby na pewno zakrył cały ekran
+    // Tło (trawa)
     let bgGraphics = this.add.graphics();
-    bgGraphics.fillStyle(0x2d4a22, 1); // Kolor trawy
-    bgGraphics.fillRect(-5000, -5000, 10000, 10000); // Ogromny kwadrat
+    bgGraphics.fillStyle(0x2d4a22, 1); 
+    bgGraphics.fillRect(-5000, -5000, 10000, 10000); 
     bgGraphics.setDepth(-10);
 
-    // Rysowanie siatki
+    // Siatka
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x000000, 0.15);
     for (let i = 0; i <= GRID * 2; i++) {
@@ -124,42 +121,69 @@ class BaseScene extends Phaser.Scene {
         if (window.preview) window.preview.setVisible(false); 
     });
     
-    // Precyzyjne ustawienie kamery na środku
-    let centerGridX = Math.floor(GRID / 2);
-    let centerGridY = Math.floor(GRID / 2);
-    let centerScreenX = (centerGridX - centerGridY) * (TILE_SIZE / 2);
-    let centerScreenY = (centerGridX + centerGridY) * (TILE_SIZE / 4);
-    
     cam.setZoom(2.5); 
-    cam.centerOn(centerScreenX, centerScreenY);
+    this.centerCamera();
     
-    this.spawnVillagers();
+    // URUCHAMIAMY STRAŻNIKÓW
+    this.spawnPatrols();
   }
 
-  spawnVillagers() {
-    this.villagers = [];
-    const numVillagers = 6; 
+  // --- NOWY SYSTEM PATROLOWANIA ---
+  spawnPatrols() {
+    this.patrols = [];
     
-    for (let i = 0; i < numVillagers; i++) {
-      let startX = Phaser.Math.Between(-50, 50);
-      let startY = Phaser.Math.Between(-50, 50);
+    // Tworzymy 4 grupy strażników
+    for (let i = 0; i < 4; i++) {
+      let startX = Phaser.Math.Between(-100, 100);
+      let startY = Phaser.Math.Between(-100, 100);
       
-      let sprite = this.add.text(startX, startY, '🛡️', { fontSize: '20px' }).setOrigin(0.5).setDepth(startY + 100);
+      // Losujemy wygląd jednostki (miecznik lub łucznik)
+      let unitIcon = Phaser.Math.RND.pick(['⚔️', '🏹']);
+      let unitColor = unitIcon === '⚔️' ? '#4a5c38' : '#5c4305';
       
-      let tween = this.tweens.add({
-        targets: sprite,
-        x: startX + Phaser.Math.Between(-30, 30),
-        y: startY + Phaser.Math.Between(-30, 30),
-        duration: Phaser.Math.Between(2000, 4000),
-        yoyo: true,
-        repeat: -1,
-        onUpdate: () => {
-            sprite.setDepth(sprite.y + 100);
-        }
-      });
+      let sprite = this.add.text(startX, startY, unitIcon, { 
+          fontSize: '20px', 
+          backgroundColor: unitColor,
+          padding: { x: 2, y: 2 }
+      }).setOrigin(0.5).setDepth(startY + 100);
       
-      this.villagers.push({ sprite, tween });
+      let unit = { sprite: sprite, targetX: startX, targetY: startY, speed: Phaser.Math.FloatBetween(20, 50) };
+      this.patrols.push(unit);
+      
+      // Funkcja rekurencyjna do losowego chodzenia
+      this.movePatrol(unit);
     }
+  }
+
+  movePatrol(unit) {
+    if (!unit.sprite.active) return; // Jeśli jednostka zniknęła, przerywamy
+
+    // Losujemy nowy cel w promieniu 150 pikseli
+    let targetX = unit.sprite.x + Phaser.Math.Between(-150, 150);
+    let targetY = unit.sprite.y + Phaser.Math.Between(-150, 150);
+    
+    // Obliczamy czas dotarcia do celu
+    let distance = Phaser.Math.Distance.Between(unit.sprite.x, unit.sprite.y, targetX, targetY);
+    let duration = (distance / unit.speed) * 1000;
+    
+    // Animacja ruchu
+    this.tweens.add({
+        targets: unit.sprite,
+        x: targetX,
+        y: targetY,
+        duration: duration,
+        ease: 'Linear',
+        onUpdate: () => {
+            // Aktualizujemy głębię (żeby jednostka była za budynkami, gdy jest wyżej)
+            unit.sprite.setDepth(unit.sprite.y + 100);
+        },
+        onComplete: () => {
+            // Po dotarciu do celu, czekamy chwilę i ruszamy dalej
+            this.time.delayedCall(Phaser.Math.Between(1000, 3000), () => {
+                this.movePatrol(unit);
+            });
+        }
+    });
   }
 
   centerCamera() {
@@ -270,7 +294,7 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY (SKOPIOWANE TŁO) ---
+// --- SCENA BITWY ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
@@ -443,7 +467,7 @@ class BattleScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA OBRONY (SKOPIOWANE TŁO) ---
+// --- SCENA OBRONY ---
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
@@ -557,7 +581,7 @@ const config = {
   parent: 'game',
   width: window.innerWidth,
   height: window.innerHeight,
-  backgroundColor: '#2d4a22', // Kolor trawy
+  backgroundColor: '#2d4a22',
   render: { clearBeforeRender: false },
   scene: [BaseScene, BattleScene, DefenseScene]
 };
