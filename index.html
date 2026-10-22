@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Twierdza - Dark Fantasy</title>
   <style>
-    /* --- STYLE SĄ IDENTYCZNE JAK POPRZEDNIO --- */
     html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; user-select: none; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
 
@@ -64,7 +63,6 @@
     @keyframes slide-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 
-    /* --- STYLE MODALI I KAMPANII --- */
     #battle-ui, #defense-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; z-index: 20; pointer-events: none; display: none; }
     #battle-top-bar, #defense-top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.98); color: white; padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; pointer-events: auto; border-bottom: 3px solid #8b0000; }
     #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; }
@@ -150,21 +148,10 @@
     .rank-level { font-size: 12px; color: #aaa; }
     .rank-trophies { font-weight: bold; color: #ff3333; text-align: right; font-size: 16px; }
 
-    /* --- STYL DLA MAPY KAMPANII --- */
-    #campaign-map {
-      position: absolute; top: 0; left: 0; width: 100vw; height: 100vh;
-      background: #1a1a1a url('https://www.transparenttextures.com/patterns/dark-matter.png');
-      z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center;
-      padding: 20px; box-sizing: border-box;
-    }
+    #campaign-map { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: #1a1a1a url('https://www.transparenttextures.com/patterns/dark-matter.png'); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 20px; box-sizing: border-box; }
     .campaign-title { color: #ffd700; font-size: 32px; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 30px; text-shadow: 0 0 10px #000; }
     .campaign-nodes { display: flex; flex-direction: column; gap: 20px; align-items: center; width: 100%; max-width: 400px; }
-    .campaign-node {
-      width: 100%; padding: 15px; border: 3px solid #555; border-radius: 12px;
-      background: #222; color: white; text-align: left; cursor: pointer;
-      display: flex; justify-content: space-between; align-items: center;
-      transition: all 0.2s;
-    }
+    .campaign-node { width: 100%; padding: 15px; border: 3px solid #555; border-radius: 12px; background: #222; color: white; text-align: left; cursor: pointer; display: flex; justify-content: space-between; align-items: center; transition: all 0.2s; }
     .campaign-node:hover { border-color: #8b6508; }
     .campaign-node.locked { opacity: 0.5; pointer-events: none; background: #111; border-color: #333; }
     .node-info { display: flex; flex-direction: column; gap: 5px; }
@@ -177,7 +164,6 @@
   <div id="game"></div>
   <div id="toast-container"></div>
 
-  <!-- GÓRNY PASEK -->
   <div id="top-bar">
     <div class="player-profile">
       <div class="avatar-container">
@@ -198,7 +184,6 @@
     </div>
   </div>
 
-  <!-- BOCZNE PRZYCISKI -->
   <div class="side-buttons">
     <div class="side-btn" onclick="openMail()">✉️<div class="notification-badge">1</div></div>
     <div class="side-btn" onclick="openQuests()">📜<div class="notification-badge">3</div></div>
@@ -208,9 +193,7 @@
   
   <button id="reset-btn" onclick="resetGame()">RESET</button>
 
-  <!-- DOLNY PASEK AKCJI -->
   <div id="action-bar">
-    <!-- ZMIENIONY PRZYCISK: Kampania -->
     <div class="big-btn attack-btn" onclick="openCampaignMap()"><div class="icon">🗺️</div><div class="label">Kampania</div></div>
     <div id="build-menu">
       <button class="build-btn" onclick="selectBuilding('townhall')"><div class="icon">🏰</div>Warownia<span class="btn-sub gold">1000 💰</span></button>
@@ -225,14 +208,12 @@
     <div class="big-btn shop-btn" onclick="openShop()"><div class="icon">🛒</div><div class="label">Sklep</div></div>
   </div>
 
-  <!-- MAPA KAMPANII -->
   <div id="campaign-map">
     <h1 class="campaign-title">Kampania</h1>
-    <div class="campaign-nodes" id="campaign-nodes-container"></div>
+    <div class="campaign-nodes" id="campaign-nodes-container" onclick="handleCampaignClick(event)"></div>
     <button class="close-modal" style="margin-top: 30px; width: auto; padding: 12px 40px;" onclick="closeCampaignMap()">Powrót do Bazy</button>
   </div>
 
-  <!-- RESZTA MODALI (SKRÓCONE) -->
   <div id="battle-ui">
     <div id="battle-top-bar"><div id="battle-status">Łup: <span id="loot-display">0 💰, 0 🔮</span> | ⏱️ <span id="timer-display">3:00</span></div><button onclick="endBattle(false)">Odwrót</button></div>
     <div id="troop-menu">
@@ -257,7 +238,7 @@
   <div id="profile-overlay" class="modal-overlay"><div class="modal-content"><h2>Profil Gracza</h2><div class="profile-header"><div class="avatar">🩸</div><div style="text-align: left;"><div style="font-size: 22px; font-weight: bold; color: #fff;">Watażka</div><div style="font-size: 14px; color: #ffd700;">Ranga: <span id="profile-level">1</span></div></div></div><div class="profile-stats"><div class="stat-card"><div class="stat-value" id="profile-trophies">0</div><div class="stat-label">Czaszki 💀</div></div><div class="stat-card"><div class="stat-value" id="profile-wins">0</div><div class="stat-label">Wygrane ⚔️</div></div><div class="stat-card"><div class="stat-value" id="profile-losses">0</div><div class="stat-label">Przegrane 🛡️</div></div><div class="stat-card"><div class="stat-value" id="profile-destroyed">0</div><div class="stat-label">Zniszczone 🏚️</div></div></div><button class="close-modal" onclick="closeProfile()">Zamknij Profil</button></div></div>
   <div id="help-overlay" class="modal-overlay"><div class="modal-content"><h2>Jak grać?</h2><div class="help-text"><p style="font-size:16px;">Witaj w <b>Twierdzy</b>!</p><p style="font-size:14px;"><b>Budowanie:</b> Wybierz budynek i postaw na siatce.</p><p style="font-size:14px;"><b>Atak:</b> Wybierz jednostkę i klikaj na planszy wroga.</p></div><button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button></div></div>
   <div id="shop-overlay" class="modal-overlay"><div class="modal-content"><h2>Sklep</h2><div class="shop-item"><div class="shop-icon">💰</div><div class="shop-info"><div class="shop-title">1000 Złota</div><div class="shop-price">Koszt: 500 Many</div></div><button class="shop-buy-btn" onclick="buyGoldWithMana()">Kup</button></div><div class="shop-item"><div class="shop-icon">🔮</div><div class="shop-info"><div class="shop-title">500 Many</div><div class="shop-price">Koszt: 1000 Złota</div></div><button class="shop-buy-btn" onclick="buyManaWithGold()">Kup</button></div><div class="shop-item"><div class="shop-icon">📦</div><div class="shop-info"><div class="shop-title">Drewniana Skrzynia</div><div class="shop-price">Koszt: 500 Złota</div></div><button class="shop-buy-btn" onclick="buyChest(500, 'wood')">Kup</button></div><div class="shop-item"><div class="shop-icon">🎁</div><div class="shop-info"><div class="shop-title">Srebrna Skrzynia</div><div class="shop-price">Koszt: 2000 Złota</div></div><button class="shop-buy-btn" onclick="buyChest(2000, 'silver')">Kup</button></div><button class="close-modal" onclick="closeShop()">Zamknij</button></div></div>
-  <div id="chest-overlay" class="modal-overlay"><div class="modal-content"><h2 id="chest-title">Skrzynia</h2><div class="chest-big-icon" id="chest-icon">📦</div><div id="chest-loot-display" class="chests-rewards"></div><button class="close-modal" onclick="closeChest()">Odbierz</button></div></div>
+  <div id="chest-overlay" class="modal-overlay"><div class="modal-content"><h2 id="chest-title">Skrzynia</h2><div class="chest-big-icon" id="chest-icon">📦</div><div id="chest-loot-display" class="chest-rewards"></div><button class="close-modal" onclick="closeChest()">Odbierz</button></div></div>
   <div id="quests-overlay" class="modal-overlay"><div class="modal-content"><h2>Zadania</h2><div id="quest-list"></div><button class="close-modal" onclick="closeQuests()">Zamknij</button></div></div>
   <div id="battle-result-overlay" class="modal-overlay"><div class="modal-content"><h2 id="result-title">Zwycięstwo!</h2><div class="stars-container"><span class="star" id="star1">★</span><span class="star" id="star2">★</span><span class="star" id="star3">★</span></div><p id="result-destroyed" style="font-size:16px;">Zniszczono: 0% bazy</p><div class="loot-summary"><div class="loot-item loot-gold">💰 +<span id="result-gold">0</span></div><div class="loot-item loot-elixir">🔮 +<span id="result-elixir">0</span></div><div class="loot-item" style="color:#ff3333">💀 +<span id="result-trophies">0</span></div><div class="loot-item" style="color:#88ff88">🌟 +<span id="result-xp">0</span> XP</div></div><button class="close-modal" onclick="closeBattleResult()">Wróć do twierdzy</button></div></div>
   <div id="settings-overlay" class="modal-overlay"><div class="modal-content"><h2>Ustawienia</h2><p style="font-size:16px;">Głośność dźwięków:</p><button id="sound-toggle-btn" onclick="toggleSound()" style="padding:10px; font-size:14px; width:100%; margin-bottom:10px; border-radius:6px; border:none; background:#444; color:#fff; font-weight:bold;">🔊 Dźwięk: Włączony</button><button class="btn-danger" onclick="resetGame()">Zresetuj grę</button><button class="close-modal" onclick="closeSettings()">Zamknij</button></div></div>
