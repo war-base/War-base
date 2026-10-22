@@ -5,156 +5,201 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Twierdza - Dark Fantasy</title>
   <style>
-    /* ... (STYLE SĄ TAKIE SAME, DODAJĘ TYLKO STYL DLA #army-bar) ... */
-    html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; }
+    /* --- RESET I TŁO --- */
+    html, body { margin: 0; padding: 0; overflow: hidden; background: #0a0a0a; touch-action: none; overscroll-behavior: none; font-family: 'Times New Roman', Times, serif; user-select: none; }
     #game { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1; background-color: #2b3625; }
 
-    #top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: linear-gradient(to bottom, rgba(10,10,10,0.95), rgba(0,0,0,0.8)); padding: max(8px, env(safe-area-inset-top)) 15px 10px 15px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 10; pointer-events: none; border-bottom: 2px solid #8b6508; box-shadow: 0 4px 15px rgba(0,0,0,0.9); }
+    /* --- GÓRNY PASEK (HUD) --- */
+    #top-bar { 
+      position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; 
+      background: linear-gradient(to bottom, rgba(10,10,10,0.98), rgba(0,0,0,0.8)); 
+      padding: max(8px, env(safe-area-inset-top)) 10px 10px 10px; 
+      display: flex; justify-content: space-between; align-items: flex-start; 
+      z-index: 10; pointer-events: none; border-bottom: 2px solid #8b6508;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.9);
+    }
+
+    /* LEWY GÓRNY RÓG: PROFIL GRACZA */
     .player-profile { display: flex; align-items: center; gap: 10px; pointer-events: auto; }
     .avatar-container { position: relative; width: 60px; height: 60px; }
-    .avatar-img { width: 100%; height: 100%; background: #111; border: 2px solid #8b6508; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 30px; overflow: hidden; }
+    .avatar-img { width: 100%; height: 100%; background: #111; border: 3px solid #8b6508; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; overflow: hidden; box-shadow: 0 0 10px rgba(0,0,0,0.8); }
     .level-badge { position: absolute; bottom: -5px; left: -5px; background: #111; color: #ffd700; border: 2px solid #8b6508; border-radius: 50%; width: 24px; height: 24px; display: flex; justify-content: center; align-items: center; font-size: 12px; font-weight: bold; }
-    .xp-bar-container { display: flex; flex-direction: column; gap: 2px; }
+    .xp-bar-container { display: flex; flex-direction: column; gap: 4px; }
     .player-name { color: #fff; font-size: 14px; font-weight: bold; text-shadow: 1px 1px 2px #000; }
-    .xp-bar-bg { width: 100px; height: 8px; background: #111; border: 1px solid #555; border-radius: 4px; overflow: hidden; position: relative; }
+    .xp-bar-bg { width: 100px; height: 10px; background: #111; border: 2px solid #555; border-radius: 5px; overflow: hidden; position: relative; }
     .xp-bar-fill { height: 100%; background: linear-gradient(to right, #4facfe 0%, #00f2fe 100%); width: 50%; transition: width 0.3s ease; }
-    .trophies-container { display: flex; align-items: center; gap: 5px; background: #111; border: 2px solid #555; border-radius: 20px; padding: 4px 10px; margin-top: 5px; }
-    .trophies-icon { font-size: 16px; color: #ff3333; }
+    .trophies-container { display: flex; align-items: center; gap: 5px; background: #111; border: 2px solid #555; border-radius: 20px; padding: 2px 8px; margin-top: 2px; width: fit-content; }
+    .trophies-icon { font-size: 14px; color: #ff3333; }
     .trophies-value { color: #fff; font-size: 14px; font-weight: bold; }
-    .resources-container { display: flex; gap: 8px; pointer-events: auto; }
-    .resource-pill { background: #111; border: 2px solid #555; border-radius: 20px; padding: 4px 12px 4px 6px; display: flex; align-items: center; gap: 6px; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
-    .resource-icon { font-size: 20px; width: 24px; text-align: center; filter: drop-shadow(0 0 2px #000); }
+
+    /* PRAWA STRONA: SUROWCE */
+    .resources-container { display: flex; gap: 6px; pointer-events: auto; flex-wrap: wrap; justify-content: flex-end; max-width: 60vw; }
+    .resource-pill { background: #111; border: 2px solid #555; border-radius: 20px; padding: 4px 10px 4px 6px; display: flex; align-items: center; gap: 6px; position: relative; box-shadow: inset 0 0 10px rgba(0,0,0,0.8); }
+    .resource-icon { font-size: 18px; width: 20px; text-align: center; filter: drop-shadow(0 0 2px #000); }
     .resource-data { display: flex; flex-direction: column; align-items: flex-end; }
-    .resource-value { color: #fff; font-size: 14px; font-weight: bold; line-height: 1; transition: color 0.2s; }
-    .resource-max { color: #888; font-size: 10px; line-height: 1; margin-top: 2px; }
-    .plus-btn-hud { background: #4a5c38; color: white; border: 1px solid #88ff88; border-radius: 50%; width: 18px; height: 18px; font-size: 12px; display: flex; justify-content: center; align-items: center; margin-left: 5px; cursor: pointer; }
+    .resource-value { color: #fff; font-size: 13px; font-weight: bold; line-height: 1; }
+    .resource-max { color: #888; font-size: 9px; line-height: 1; margin-top: 2px; }
+    .plus-btn-hud { background: #4a5c38; color: white; border: 1px solid #88ff88; border-radius: 50%; width: 16px; height: 16px; font-size: 10px; display: flex; justify-content: center; align-items: center; margin-left: 4px; cursor: pointer; }
     .res-gold .resource-icon { color: #ffd700; }
     .res-elixir .resource-icon { color: #ba55d3; }
     .res-stone .resource-icon { color: #ccc; }
     .res-gems .resource-icon { color: #00ff00; }
 
-    .side-buttons { position: absolute; top: max(80px, env(safe-area-inset-top)); right: 15px; display: flex; flex-direction: column; gap: 15px; z-index: 15; pointer-events: auto; }
-    .side-btn { width: 45px; height: 45px; background: #111; border: 2px solid #8b6508; border-radius: 8px; display: flex; justify-content: center; align-items: center; font-size: 22px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.8); position: relative; transition: transform 0.1s; }
+    /* --- BOCZNE PRZYCISKI (DUŻE) --- */
+    .side-buttons { position: absolute; top: max(90px, env(safe-area-inset-top)); right: 10px; display: flex; flex-direction: column; gap: 12px; z-index: 15; pointer-events: auto; }
+    .side-btn { width: 50px; height: 50px; background: linear-gradient(to bottom, #333, #111); border: 2px solid #8b6508; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 24px; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.8); position: relative; transition: transform 0.1s; }
     .side-btn:active { transform: scale(0.9); background: #222; }
     .notification-badge { position: absolute; top: -5px; right: -5px; background: #ff3333; color: white; font-size: 10px; font-weight: bold; width: 18px; height: 18px; border-radius: 50%; display: flex; justify-content: center; align-items: center; border: 1px solid #fff; }
 
-    /* --- NOWY PASEK WOJSKA --- */
-    #army-bar {
-      position: absolute; bottom: 115px; left: 50%; transform: translateX(-50%);
-      background: #111; border: 2px solid #8b6508; border-radius: 20px;
-      padding: 5px 15px; display: flex; gap: 15px; z-index: 9;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.8); pointer-events: none;
+    /* --- DOLNY PASEK AKCJI --- */
+    #action-bar { 
+      position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; 
+      background: linear-gradient(to top, #0a0a0a, #1a1a1a); 
+      padding: 10px 10px; display: flex; justify-content: space-between; align-items: flex-end; 
+      border-top: 3px solid #8b6508; z-index: 10; pointer-events: auto; 
+      box-shadow: 0 -4px 20px rgba(0,0,0,1);
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
     }
-    .army-item { display: flex; align-items: center; gap: 5px; color: #fff; font-weight: bold; font-size: 14px; }
-    .army-item .icon { font-size: 18px; }
 
-    #action-bar { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: linear-gradient(to top, #0a0a0a, #1a1a1a); padding: 10px 15px; display: flex; justify-content: space-between; align-items: flex-end; border-top: 3px solid #8b6508; z-index: 10; pointer-events: auto; box-shadow: 0 -4px 20px rgba(0,0,0,1); padding-bottom: max(15px, env(safe-area-inset-bottom)); }
-    .big-btn { display: flex; flex-direction: column; align-items: center; justify-content: center; width: 90px; height: 90px; border-radius: 12px; border: 3px solid #555; background: linear-gradient(to bottom, #333, #111); color: white; box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.8); cursor: pointer; transition: transform 0.1s; }
+    /* Duże przyciski akcji */
+    .big-btn { 
+      display: flex; flex-direction: column; align-items: center; justify-content: center; 
+      width: 80px; height: 80px; border-radius: 12px; border: 3px solid #555; 
+      background: linear-gradient(to bottom, #333, #111); color: white; 
+      box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 4px 10px rgba(0,0,0,0.8);
+      cursor: pointer; transition: transform 0.1s; flex-shrink: 0;
+    }
     .big-btn:active { transform: translateY(2px) scale(0.98); box-shadow: inset 0 0 15px rgba(0,0,0,0.9), 0 2px 5px rgba(0,0,0,0.8); }
     .big-btn.attack-btn { border-color: #ff4444; background: linear-gradient(to bottom, #8b0000, #2a0000); }
     .big-btn.shop-btn { border-color: #8b6508; background: linear-gradient(to bottom, #4a3b2a, #111); }
-    .big-btn .icon { font-size: 32px; margin-bottom: 5px; filter: drop-shadow(0 0 5px #000); }
-    .big-btn .label { font-size: 12px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
+    .big-btn .icon { font-size: 28px; margin-bottom: 4px; filter: drop-shadow(0 0 5px #000); }
+    .big-btn .label { font-size: 11px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; }
 
-    #build-menu { display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; flex: 1; margin: 0 15px; padding-bottom: 5px; scrollbar-width: none; }
+    /* Środkowy Pasek Budowania */
+    #build-menu { 
+      display: flex; gap: 8px; overflow-x: auto; white-space: nowrap; 
+      flex: 1; margin: 0 10px; padding-bottom: 5px;
+      scrollbar-width: none; 
+    }
     #build-menu::-webkit-scrollbar { display: none; }
-    .build-btn { min-width: 80px; padding: 10px 5px; border: none; border-radius: 8px; background: #222; color: #fff; font-weight: bold; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 5px; pointer-events: auto; border: 2px solid #444; box-shadow: 0 4px 8px rgba(0,0,0,0.8); transition: transform 0.1s; }
+
+    .build-btn { 
+      min-width: 75px; padding: 8px 4px; border: none; border-radius: 8px; 
+      background: #222; color: #fff; font-weight: bold; font-size: 11px; 
+      display: flex; flex-direction: column; align-items: center; gap: 4px; 
+      pointer-events: auto; border: 2px solid #444; box-shadow: 0 4px 8px rgba(0,0,0,0.8); 
+      transition: transform 0.1s; flex-shrink: 0;
+    }
     .build-btn.selected { background: #4a3b2a; border: 2px solid #ffd700; box-shadow: 0 0 15px #ffd700; transform: scale(1.05); }
     .build-btn:active { transform: scale(0.95); background: #444; }
-    .build-btn .icon { font-size: 24px; }
-    .btn-sub { font-size: 11px; font-weight: bold; margin-top: 2px; padding: 2px 6px; border-radius: 4px; background: rgba(0,0,0,0.5); }
+    .build-btn .icon { font-size: 22px; }
+    .btn-sub { font-size: 10px; font-weight: bold; margin-top: 2px; padding: 2px 4px; border-radius: 4px; background: rgba(0,0,0,0.5); }
     .btn-sub.gold { color: #ffd700; }
     .btn-sub.elixir { color: #ba55d3; }
 
+    /* --- SYSTEM POWIADOMIEŃ (TOASTY) --- */
     #toast-container { position: absolute; top: 100px; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; gap: 10px; z-index: 9999; pointer-events: none; }
-    .toast { background: rgba(20, 20, 20, 0.95); border: 2px solid #8b6508; color: white; padding: 12px 25px; border-radius: 8px; font-weight: bold; font-size: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: slide-down 0.3s ease-out, fade-out 0.5s ease-in 2.5s forwards; text-transform: uppercase; white-space: nowrap; }
+    .toast { background: rgba(20, 20, 20, 0.95); border: 2px solid #8b6508; color: white; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-size: 14px; box-shadow: 0 4px 15px rgba(0,0,0,0.8); animation: slide-down 0.3s ease-out, fade-out 0.5s ease-in 2.5s forwards; text-transform: uppercase; white-space: nowrap; }
     .toast.error { border-color: #ff4444; background: rgba(60, 0, 0, 0.95); }
     .toast.success { border-color: #88ff88; background: rgba(0, 40, 0, 0.95); }
     @keyframes slide-down { from { opacity: 0; transform: translateY(-20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes fade-out { from { opacity: 1; } to { opacity: 0; } }
 
-    /* RESZTA STYLÓW (MODALE) - BEZ ZMIAN */
+    /* --- RESZTA STYLÓW (MODALE, BITWY, ETC) --- */
     #battle-ui, #defense-ui { position: absolute; top: 0; left: 0; width: 100%; height: 100%; box-sizing: border-box; z-index: 20; pointer-events: none; display: none; }
-    #battle-top-bar, #defense-top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.98); color: white; padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 18px; font-weight: bold; pointer-events: auto; border-bottom: 3px solid #8b0000; }
-    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 12px 18px; border-radius: 6px; font-weight: bold; font-size: 16px; }
+    #battle-top-bar, #defense-top-bar { position: absolute; top: 0; left: 0; width: 100%; box-sizing: border-box; background: rgba(10, 10, 10, 0.98); color: white; padding: max(12px, env(safe-area-inset-top)) 15px 15px 15px; display: flex; justify-content: space-between; align-items: center; font-size: 16px; font-weight: bold; pointer-events: auto; border-bottom: 3px solid #8b0000; }
+    #battle-top-bar button, #defense-top-bar button { background: #8b0000; color: white; border: none; padding: 10px 15px; border-radius: 6px; font-weight: bold; font-size: 14px; }
     #loot-display { color: #ffd700; }
     #timer-display { color: #ffaa00; }
-    #troop-menu { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: #111; padding: 12px; display: flex; justify-content: space-around; gap: 8px; z-index: 21; pointer-events: auto; border-top: 3px solid #8b6508; padding-bottom: max(12px, env(safe-area-inset-bottom)); }
-    .troop-btn { flex: 1; padding: 10px 5px; border: 2px solid #444; border-radius: 8px; background: #222; color: #ccc; font-weight: bold; font-size: 14px; display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+    #troop-menu { position: absolute; bottom: 0; left: 0; width: 100%; box-sizing: border-box; background: #111; padding: 10px; display: flex; justify-content: space-around; gap: 5px; z-index: 21; pointer-events: auto; border-top: 3px solid #8b6508; padding-bottom: max(10px, env(safe-area-inset-bottom)); }
+    .troop-btn { flex: 1; padding: 8px 2px; border: 2px solid #444; border-radius: 8px; background: #222; color: #ccc; font-weight: bold; font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 3px; }
     .troop-btn.selected { border: 2px solid #ffd700; background: #332a1c; color: #fff; }
-    .troop-btn span { font-size: 14px; color: #aaa; }
+    .troop-btn span { font-size: 12px; color: #aaa; }
     .troop-btn.hero-btn { border-color: #ba55d3; background: #1a0f1f; }
     .troop-btn.hero-btn.selected { border-color: #ffd700; background: #332040; }
     .troop-btn.hero-btn.disabled { opacity: 0.4; pointer-events: none; }
-    #building-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; color: white; padding: 25px; border-radius: 12px; display: none; z-index: 30; text-align: center; min-width: 300px; border: 3px solid #8b6508; max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 40px rgba(0,0,0,0.9); }
-    #building-panel h3 { margin: 0 0 15px 0; color: #c9a06c; font-size: 26px; text-transform: uppercase; letter-spacing: 1px; }
-    #building-panel p { margin: 8px 0; font-size: 18px; }
-    #building-panel button { margin: 8px 0; padding: 12px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; font-size: 16px; width: 100%; text-transform: uppercase; }
+
+    #building-panel { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: #111; color: white; padding: 20px; border-radius: 12px; display: none; z-index: 30; text-align: center; min-width: 280px; border: 3px solid #8b6508; max-height: 80vh; overflow-y: auto; pointer-events: auto; box-shadow: 0 0 40px rgba(0,0,0,0.9); }
+    #building-panel h3 { margin: 0 0 10px 0; color: #c9a06c; font-size: 22px; text-transform: uppercase; letter-spacing: 1px; }
+    #building-panel p { margin: 6px 0; font-size: 16px; }
+    #building-panel button { margin: 6px 0; padding: 10px; font-weight: bold; border-radius: 6px; border: none; cursor: pointer; font-size: 14px; width: 100%; text-transform: uppercase; }
     #bp-upgrade { background: #4a5c38; color: white; }
     #bp-sell { background: #8b0000; color: white; }
     #bp-close { background: #444; color: white; }
-    #bp-train-section, #bp-lab-section { display: none; margin: 15px 0; padding: 15px; background: rgba(47, 79, 79, 0.2); border-radius: 8px; border: 2px solid #5f9ea0; }
+    #bp-train-section, #bp-lab-section { display: none; margin: 12px 0; padding: 12px; background: rgba(47, 79, 79, 0.2); border-radius: 8px; border: 2px solid #5f9ea0; }
     #bp-lab-section { background: rgba(138, 43, 226, 0.1); border: 2px solid #8a2be2; }
-    .train-btn { background: #5f9ea0; color: white; margin-top: 8px; font-size: 15px; }
+    .train-btn { background: #5f9ea0; color: white; margin-top: 6px; font-size: 14px; }
     .train-btn:active { background: #2f4f4f; }
-    .lab-btn { background: #8a2be2; color: white; margin-top: 8px; font-size: 15px; }
+    .lab-btn { background: #8a2be2; color: white; margin-top: 6px; font-size: 14px; }
     .lab-btn:active { background: #551a8b; }
-    #message { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(139, 0, 0, 0.95); color: white; padding: 15px 30px; border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 9999; text-align: center; font-size: 18px; box-shadow: 0 4px 20px rgba(0,0,0,0.9); white-space: nowrap; border: 2px solid #ff8888; text-transform: uppercase; }
+
+    #message { position: absolute; top: 20%; left: 50%; transform: translateX(-50%); background: rgba(139, 0, 0, 0.95); color: white; padding: 12px 25px; border-radius: 8px; font-weight: bold; display: none; pointer-events: none; z-index: 9999; text-align: center; font-size: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.9); white-space: nowrap; border: 2px solid #ff8888; text-transform: uppercase; }
+
     .modal-overlay { position: absolute; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.85); z-index: 1000; display: none; justify-content: center; align-items: center; pointer-events: auto; backdrop-filter: blur(4px); }
-    .modal-content { background: linear-gradient(to bottom, #222, #0a0a0a); border: 3px solid #8b6508; border-radius: 15px; padding: 30px 25px; min-width: 320px; max-width: 90vw; text-align: center; color: white; box-shadow: 0 0 60px rgba(0,0,0,1), inset 0 0 20px rgba(139, 101, 8, 0.2); max-height: 85vh; overflow-y: auto; }
-    .modal-content h2 { margin: 0 0 25px 0; color: #c9a06c; text-transform: uppercase; font-size: 28px; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); border-bottom: 1px solid #444; padding-bottom: 10px; }
-    .menu-btn-item { display: flex; align-items: center; justify-content: flex-start; gap: 15px; width: 100%; padding: 15px 18px; margin-bottom: 12px; background: #222; border: 2px solid #444; border-radius: 10px; color: white; font-size: 20px; font-weight: bold; cursor: pointer; text-align: left; transition: all 0.2s; }
+    .modal-content { background: linear-gradient(to bottom, #222, #0a0a0a); border: 3px solid #8b6508; border-radius: 15px; padding: 25px 20px; min-width: 300px; max-width: 90vw; text-align: center; color: white; box-shadow: 0 0 60px rgba(0,0,0,1), inset 0 0 20px rgba(139, 101, 8, 0.2); max-height: 85vh; overflow-y: auto; }
+    .modal-content h2 { margin: 0 0 20px 0; color: #c9a06c; text-transform: uppercase; font-size: 24px; letter-spacing: 2px; text-shadow: 0 2px 5px rgba(0,0,0,0.8); border-bottom: 1px solid #444; padding-bottom: 10px; }
+    
+    .menu-btn-item { display: flex; align-items: center; justify-content: flex-start; gap: 12px; width: 100%; padding: 12px 15px; margin-bottom: 10px; background: #222; border: 2px solid #444; border-radius: 10px; color: white; font-size: 18px; font-weight: bold; cursor: pointer; text-align: left; transition: all 0.2s; }
     .menu-btn-item:active { background: #333; border-color: #8b6508; transform: scale(0.98); }
-    .menu-icon { font-size: 26px; }
-    .profile-header { display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 25px; }
-    .avatar { width: 80px; height: 80px; background: #3a2a05; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 40px; border: 3px solid #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
-    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
-    .stat-card { background: #222; padding: 15px; border-radius: 10px; border: 2px solid #444; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
-    .stat-value { font-size: 28px; color: #88ff88; font-weight: bold; text-shadow: 0 0 10px rgba(136, 255, 136, 0.3); }
-    .stat-label { font-size: 14px; color: #aaa; text-transform: uppercase; margin-top: 5px; }
-    .quest-item { background: #222; border: 2px solid #444; border-radius: 10px; padding: 15px; margin-bottom: 12px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
-    .quest-info { flex: 1; padding-right: 15px; }
-    .quest-title { font-size: 18px; font-weight: bold; color: #ddd; margin-bottom: 8px; }
-    .quest-progress { font-size: 14px; color: #aaa; }
-    .quest-btn { padding: 10px 15px; border-radius: 6px; border: none; font-weight: bold; background: #333; color: #666; cursor: not-allowed; font-size: 14px; white-space: nowrap; transition: all 0.2s; }
+    .menu-icon { font-size: 22px; }
+
+    .profile-header { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 20px; }
+    .avatar { width: 70px; height: 70px; background: #3a2a05; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 35px; border: 3px solid #ffd700; box-shadow: 0 0 15px rgba(255, 215, 0, 0.5); }
+    .profile-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: #222; padding: 12px; border-radius: 10px; border: 2px solid #444; box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
+    .stat-value { font-size: 24px; color: #88ff88; font-weight: bold; text-shadow: 0 0 10px rgba(136, 255, 136, 0.3); }
+    .stat-label { font-size: 12px; color: #aaa; text-transform: uppercase; margin-top: 5px; }
+
+    .quest-item { background: #222; border: 2px solid #444; border-radius: 10px; padding: 12px; margin-bottom: 10px; text-align: left; display: flex; justify-content: space-between; align-items: center; }
+    .quest-info { flex: 1; padding-right: 10px; }
+    .quest-title { font-size: 16px; font-weight: bold; color: #ddd; margin-bottom: 6px; }
+    .quest-progress { font-size: 12px; color: #aaa; }
+    .quest-btn { padding: 8px 12px; border-radius: 6px; border: none; font-weight: bold; background: #333; color: #666; cursor: not-allowed; font-size: 12px; white-space: nowrap; transition: all 0.2s; }
     .quest-btn.ready { background: #4a5c38; color: #fff; cursor: pointer; box-shadow: 0 0 15px rgba(136, 255, 136, 0.4); border: 1px solid #88ff88; }
     .quest-btn.ready:active { transform: scale(0.95); }
     .quest-btn.claimed { background: #111; color: #444; }
-    .shop-item { background: #222; border: 2px solid #555; border-radius: 10px; padding: 15px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-    .shop-icon { font-size: 36px; margin-right: 15px; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); }
+
+    .shop-item { background: #222; border: 2px solid #555; border-radius: 10px; padding: 12px; margin-bottom: 10px; display: flex; justify-content: space-between; align-items: center; }
+    .shop-icon { font-size: 32px; margin-right: 10px; filter: drop-shadow(0 0 5px rgba(0,0,0,0.8)); }
     .shop-info { flex: 1; text-align: left; }
-    .shop-title { font-weight: bold; font-size: 18px; color: #ddd; }
-    .shop-price { font-size: 16px; color: #ffd700; margin-top: 5px; }
-    .shop-buy-btn { padding: 12px 20px; border-radius: 6px; border: none; font-weight: bold; background: #4a5c38; color: white; cursor: pointer; font-size: 16px; text-transform: uppercase; box-shadow: 0 4px 0 #2e3b22; }
+    .shop-title { font-weight: bold; font-size: 16px; color: #ddd; }
+    .shop-price { font-size: 14px; color: #ffd700; margin-top: 4px; }
+    .shop-buy-btn { padding: 10px 15px; border-radius: 6px; border: none; font-weight: bold; background: #4a5c38; color: white; cursor: pointer; font-size: 14px; text-transform: uppercase; box-shadow: 0 4px 0 #2e3b22; }
     .shop-buy-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #2e3b22; }
-    .modal-content button.close-modal { margin-top: 25px; padding: 15px 25px; font-weight: bold; font-size: 18px; border-radius: 8px; border: 2px solid #5a7a48; cursor: pointer; width: 100%; background: #4a5c38; color: white; text-transform: uppercase; box-shadow: 0 4px 0 #2e3b22; transition: all 0.1s; }
+
+    .modal-content button.close-modal { margin-top: 20px; padding: 12px 20px; font-weight: bold; font-size: 16px; border-radius: 8px; border: 2px solid #5a7a48; cursor: pointer; width: 100%; background: #4a5c38; color: white; text-transform: uppercase; box-shadow: 0 4px 0 #2e3b22; transition: all 0.1s; }
     .modal-content button.close-modal:active { transform: translateY(4px); box-shadow: 0 0 0 #2e3b22; }
     .modal-content .btn-danger { background: #8b0000; border-color: #ff4444; box-shadow: 0 4px 0 #4a0000; }
     .modal-content .btn-danger:active { box-shadow: 0 0 0 #4a0000; }
+
     #battle-result-overlay .modal-content { border-color: #ffd700; box-shadow: 0 0 80px rgba(255, 215, 0, 0.2); }
-    .stars-container { font-size: 60px; margin: 15px 0; letter-spacing: 8px; }
+    .stars-container { font-size: 50px; margin: 10px 0; letter-spacing: 8px; }
     .star { color: #333; }
     .star.earned { color: #ffd700; text-shadow: 0 0 20px #ffd700; }
-    .loot-summary { background: #1a1a1a; padding: 20px; border-radius: 10px; margin: 20px 0; border: 1px solid #444; }
-    .loot-item { font-size: 22px; margin: 8px 0; font-weight: bold; }
+    .loot-summary { background: #1a1a1a; padding: 15px; border-radius: 10px; margin: 15px 0; border: 1px solid #444; }
+    .loot-item { font-size: 20px; margin: 6px 0; font-weight: bold; }
+
     #chest-overlay .modal-content { border-color: #ba55d3; box-shadow: 0 0 80px rgba(186, 85, 211, 0.2); }
-    .chest-big-icon { font-size: 100px; margin: 25px 0; animation: bounce-in 0.5s; }
+    .chest-big-icon { font-size: 80px; margin: 20px 0; animation: bounce-in 0.5s; }
     @keyframes bounce-in { 0% { transform: scale(0); } 50% { transform: scale(1.2); } 100% { transform: scale(1); } }
-    .chest-rewards { font-size: 24px; color: #ffd700; margin: 20px 0; }
-    .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 2px solid #333; }
-    .ranking-row.player-highlight { background: rgba(255, 215, 0, 0.1); border: 2px solid #8b6508; border-radius: 8px; margin-bottom: 8px; }
-    .rank-place { font-weight: bold; color: #c9a06c; width: 50px; text-align: left; font-size: 18px; }
-    .rank-name { flex: 1; text-align: left; padding-left: 15px; color: #fff; font-size: 18px; }
-    .rank-level { font-size: 14px; color: #aaa; }
-    .rank-trophies { font-weight: bold; color: #ff3333; text-align: right; font-size: 18px; }
-    #reset-btn { position: absolute; top: max(65px, env(safe-area-inset-top)); right: 80px; background: #8b0000; color: white; border: 2px solid #ff4444; padding: 8px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.8); }
+    .chest-rewards { font-size: 20px; color: #ffd700; margin: 15px 0; }
+
+    .ranking-row { display: flex; justify-content: space-between; align-items: center; padding: 10px; border-bottom: 2px solid #333; }
+    .ranking-row.player-highlight { background: rgba(255, 215, 0, 0.1); border: 2px solid #8b6508; border-radius: 8px; margin-bottom: 5px; }
+    .rank-place { font-weight: bold; color: #c9a06c; width: 40px; text-align: left; font-size: 16px; }
+    .rank-name { flex: 1; text-align: left; padding-left: 10px; color: #fff; font-size: 16px; }
+    .rank-level { font-size: 12px; color: #aaa; }
+    .rank-trophies { font-weight: bold; color: #ff3333; text-align: right; font-size: 16px; }
+
+    #reset-btn { position: absolute; top: max(80px, env(safe-area-inset-top)); right: 70px; background: #8b0000; color: white; border: 2px solid #ff4444; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; z-index: 999; box-shadow: 0 2px 5px rgba(0,0,0,0.8); }
   </style>
 </head>
 <body>
   <div id="game"></div>
   <div id="toast-container"></div>
 
-  <!-- GÓRNY PASEK -->
+  <!-- GÓRNY PASEK (HUD) -->
   <div id="top-bar">
     <div class="player-profile">
       <div class="avatar-container">
@@ -167,6 +212,7 @@
         <div class="trophies-container"><span class="trophies-icon">💀</span><span class="trophies-value" id="ui-trophies">0</span></div>
       </div>
     </div>
+
     <div class="resources-container">
       <div class="resource-pill res-gold"><span class="resource-icon">💰</span><div class="resource-data"><span class="resource-value" id="ui-gold">3000</span><span class="resource-max">Max: 10k</span></div><div class="plus-btn-hud">+</div></div>
       <div class="resource-pill res-elixir"><span class="resource-icon">🔮</span><div class="resource-data"><span class="resource-value" id="ui-elixir">1000</span><span class="resource-max">Max: 5k</span></div><div class="plus-btn-hud">+</div></div>
@@ -184,14 +230,6 @@
   </div>
   
   <button id="reset-btn" onclick="resetGame()">RESET</button>
-
-  <!-- NOWY PASEK WOJSKA -->
-  <div id="army-bar">
-    <div class="army-item"><span class="icon">⚔️</span> <span id="army-bar-barbarian">0</span></div>
-    <div class="army-item"><span class="icon">🏹</span> <span id="army-bar-archer">0</span></div>
-    <div class="army-item"><span class="icon">🗿</span> <span id="army-bar-giant">0</span></div>
-    <div class="army-item"><span class="icon">🧨</span> <span id="army-bar-wallbreaker">0</span></div>
-  </div>
 
   <!-- DOLNY PASEK AKCJI -->
   <div id="action-bar">
@@ -231,13 +269,13 @@
   <div id="main-menu-overlay" class="modal-overlay"><div class="modal-content"><h2>Menu Główne</h2><button class="menu-btn-item" onclick="openProfile()"><span class="menu-icon">👤</span> Profil Gracza</button><button class="menu-btn-item" onclick="openRanking()"><span class="menu-icon">🏆</span> Ranking</button><button class="menu-btn-item" id="alliance-btn" onclick="openAllianceMenu()"><span class="menu-icon">🛡️</span> Sojusz</button><button class="menu-btn-item" onclick="openQuests()"><span class="menu-icon">📜</span> Zadania</button><button class="menu-btn-item" onclick="openSettings()"><span class="menu-icon">⚙️</span> Ustawienia</button><button class="menu-btn-item" onclick="openHelp()"><span class="menu-icon">❓</span> Pomoc</button><button class="menu-btn-item" onclick="openDailyReward()"><span class="menu-icon">🎁</span> Codzienna Nagroda</button><button class="close-modal" onclick="closeMainMenu()">Zamknij Menu</button></div></div>
   <div id="alliance-overlay" class="modal-overlay"><div class="modal-content"><h2>Sojusz</h2><div id="alliance-content"></div></div></div>
   <div id="ranking-overlay" class="modal-overlay"><div class="modal-content"><h2>Ranking Świata</h2><div id="ranking-list" style="max-height: 50vh; overflow-y: auto; margin-bottom: 15px;"></div><button class="close-modal" onclick="closeRanking()">Zamknij</button></div></div>
-  <div id="profile-overlay" class="modal-overlay"><div class="modal-content"><h2>Profil Gracza</h2><div class="profile-header"><div class="avatar">🩸</div><div style="text-align: left;"><div style="font-size: 24px; font-weight: bold; color: #fff;">Watażka</div><div style="font-size: 16px; color: #ffd700;">Ranga: <span id="profile-level">1</span></div></div></div><div class="profile-stats"><div class="stat-card"><div class="stat-value" id="profile-trophies">0</div><div class="stat-label">Czaszki 💀</div></div><div class="stat-card"><div class="stat-value" id="profile-wins">0</div><div class="stat-label">Wygrane ⚔️</div></div><div class="stat-card"><div class="stat-value" id="profile-losses">0</div><div class="stat-label">Przegrane 🛡️</div></div><div class="stat-card"><div class="stat-value" id="profile-destroyed">0</div><div class="stat-label">Zniszczone 🏚️</div></div></div><button class="close-modal" onclick="closeProfile()">Zamknij Profil</button></div></div>
-  <div id="help-overlay" class="modal-overlay"><div class="modal-content"><h2>Jak grać?</h2><div class="help-text"><p style="font-size:18px;">Witaj w <b>Twierdzy</b>!</p><p style="font-size:16px;"><b>Budowanie:</b> Wybierz budynek i postaw na siatce.</p><p style="font-size:16px;"><b>Atak:</b> Wybierz jednostkę i klikaj na planszy wroga.</p></div><button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button></div></div>
+  <div id="profile-overlay" class="modal-overlay"><div class="modal-content"><h2>Profil Gracza</h2><div class="profile-header"><div class="avatar">🩸</div><div style="text-align: left;"><div style="font-size: 22px; font-weight: bold; color: #fff;">Watażka</div><div style="font-size: 14px; color: #ffd700;">Ranga: <span id="profile-level">1</span></div></div></div><div class="profile-stats"><div class="stat-card"><div class="stat-value" id="profile-trophies">0</div><div class="stat-label">Czaszki 💀</div></div><div class="stat-card"><div class="stat-value" id="profile-wins">0</div><div class="stat-label">Wygrane ⚔️</div></div><div class="stat-card"><div class="stat-value" id="profile-losses">0</div><div class="stat-label">Przegrane 🛡️</div></div><div class="stat-card"><div class="stat-value" id="profile-destroyed">0</div><div class="stat-label">Zniszczone 🏚️</div></div></div><button class="close-modal" onclick="closeProfile()">Zamknij Profil</button></div></div>
+  <div id="help-overlay" class="modal-overlay"><div class="modal-content"><h2>Jak grać?</h2><div class="help-text"><p style="font-size:16px;">Witaj w <b>Twierdzy</b>!</p><p style="font-size:14px;"><b>Budowanie:</b> Wybierz budynek i postaw na siatce.</p><p style="font-size:14px;"><b>Atak:</b> Wybierz jednostkę i klikaj na planszy wroga.</p></div><button class="close-modal" onclick="closeHelp()">Zamknij Pomoc</button></div></div>
   <div id="shop-overlay" class="modal-overlay"><div class="modal-content"><h2>Sklep</h2><div class="shop-item"><div class="shop-icon">💰</div><div class="shop-info"><div class="shop-title">1000 Złota</div><div class="shop-price">Koszt: 500 Many</div></div><button class="shop-buy-btn" onclick="buyGoldWithMana()">Kup</button></div><div class="shop-item"><div class="shop-icon">🔮</div><div class="shop-info"><div class="shop-title">500 Many</div><div class="shop-price">Koszt: 1000 Złota</div></div><button class="shop-buy-btn" onclick="buyManaWithGold()">Kup</button></div><div class="shop-item"><div class="shop-icon">📦</div><div class="shop-info"><div class="shop-title">Drewniana Skrzynia</div><div class="shop-price">Koszt: 500 Złota</div></div><button class="shop-buy-btn" onclick="buyChest(500, 'wood')">Kup</button></div><div class="shop-item"><div class="shop-icon">🎁</div><div class="shop-info"><div class="shop-title">Srebrna Skrzynia</div><div class="shop-price">Koszt: 2000 Złota</div></div><button class="shop-buy-btn" onclick="buyChest(2000, 'silver')">Kup</button></div><button class="close-modal" onclick="closeShop()">Zamknij</button></div></div>
   <div id="chest-overlay" class="modal-overlay"><div class="modal-content"><h2 id="chest-title">Skrzynia</h2><div class="chest-big-icon" id="chest-icon">📦</div><div id="chest-loot-display" class="chest-rewards"></div><button class="close-modal" onclick="closeChest()">Odbierz</button></div></div>
   <div id="quests-overlay" class="modal-overlay"><div class="modal-content"><h2>Zadania</h2><div id="quest-list"></div><button class="close-modal" onclick="closeQuests()">Zamknij</button></div></div>
-  <div id="battle-result-overlay" class="modal-overlay"><div class="modal-content"><h2 id="result-title">Zwycięstwo!</h2><div class="stars-container"><span class="star" id="star1">★</span><span class="star" id="star2">★</span><span class="star" id="star3">★</span></div><p id="result-destroyed" style="font-size:18px;">Zniszczono: 0% bazy</p><div class="loot-summary"><div class="loot-item loot-gold">💰 +<span id="result-gold">0</span></div><div class="loot-item loot-elixir">🔮 +<span id="result-elixir">0</span></div><div class="loot-item" style="color:#ff3333">💀 +<span id="result-trophies">0</span></div><div class="loot-item" style="color:#88ff88">🌟 +<span id="result-xp">0</span> XP</div></div><button class="close-modal" onclick="closeBattleResult()">Wróć do twierdzy</button></div></div>
-  <div id="settings-overlay" class="modal-overlay"><div class="modal-content"><h2>Ustawienia</h2><p style="font-size:18px;">Głośność dźwięków:</p><button id="sound-toggle-btn" onclick="toggleSound()" style="padding:12px; font-size:16px; width:100%; margin-bottom:10px; border-radius:6px; border:none; background:#444; color:#fff; font-weight:bold;">🔊 Dźwięk: Włączony</button><button class="btn-danger" onclick="resetGame()">Zresetuj grę</button><button class="close-modal" onclick="closeSettings()">Zamknij</button></div></div>
+  <div id="battle-result-overlay" class="modal-overlay"><div class="modal-content"><h2 id="result-title">Zwycięstwo!</h2><div class="stars-container"><span class="star" id="star1">★</span><span class="star" id="star2">★</span><span class="star" id="star3">★</span></div><p id="result-destroyed" style="font-size:16px;">Zniszczono: 0% bazy</p><div class="loot-summary"><div class="loot-item loot-gold">💰 +<span id="result-gold">0</span></div><div class="loot-item loot-elixir">🔮 +<span id="result-elixir">0</span></div><div class="loot-item" style="color:#ff3333">💀 +<span id="result-trophies">0</span></div><div class="loot-item" style="color:#88ff88">🌟 +<span id="result-xp">0</span> XP</div></div><button class="close-modal" onclick="closeBattleResult()">Wróć do twierdzy</button></div></div>
+  <div id="settings-overlay" class="modal-overlay"><div class="modal-content"><h2>Ustawienia</h2><p style="font-size:16px;">Głośność dźwięków:</p><button id="sound-toggle-btn" onclick="toggleSound()" style="padding:10px; font-size:14px; width:100%; margin-bottom:10px; border-radius:6px; border:none; background:#444; color:#fff; font-weight:bold;">🔊 Dźwięk: Włączony</button><button class="btn-danger" onclick="resetGame()">Zresetuj grę</button><button class="close-modal" onclick="closeSettings()">Zamknij</button></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.90.0/dist/phaser.min.js"></script>
   <script src="config.js?v=69"></script>
