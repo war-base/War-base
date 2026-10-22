@@ -41,6 +41,12 @@ function updateUI() {
 
   // AKTUALIZACJA SOJUSZU W MENU
   updateAllianceUI();
+
+  // --- AKTUALIZACJA NOWEGO PASKA WOJSKA ---
+  if(document.getElementById('army-bar-barbarian')) document.getElementById('army-bar-barbarian').innerText = army.barbarian;
+  if(document.getElementById('army-bar-archer')) document.getElementById('army-bar-archer').innerText = army.archer;
+  if(document.getElementById('army-bar-giant')) document.getElementById('army-bar-giant').innerText = army.giant;
+  if(document.getElementById('army-bar-wallbreaker')) document.getElementById('army-bar-wallbreaker').innerText = army.wallbreaker;
 }
 
 // Nowa funkcja do wyświetlania statusu sojuszu
