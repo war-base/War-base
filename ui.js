@@ -19,7 +19,7 @@ function renderCampaignNodes() {
     container.innerHTML = '';
     
     CAMPAIGN_LEVELS.forEach(level => {
-        let isUnlocked = level.reqLevel <= level; // Poziom gracza
+        let isUnlocked = level.reqLevel <= level; 
         let nodeClass = isUnlocked ? 'campaign-node' : 'campaign-node locked';
         
         container.innerHTML += `
@@ -39,20 +39,15 @@ function startCampaignLevel(id) {
     let level = CAMPAIGN_LEVELS.find(l => l.id === id);
     if (!level) return;
     
-    // Sprawdzenie, czy gracz ma wojsko
     if (getCurrentArmySize() <= 0 && army.hero <= 0) {
         showMessage('Brak wojska do ataku!', 'error');
         return;
     }
 
-    // Ukrywamy mapę i przechodzimy do bitwy (na razie losowej, ale w przyszłości powiązanej z poziomem)
     closeCampaignMap();
-    
-    // Ustawiamy flagę, że to atak z kampanii
     window.isCampaignBattle = true;
     window.currentCampaignLoot = { gold: level.lootG, elixir: level.lootE };
-    
-    startAttack(); // Uruchamiamy standardową bitwę
+    startAttack(); 
 }
 
 // --- FUNKCJA AKTUALIZACJI INTERFEJSU ---
@@ -111,7 +106,6 @@ function updateAllianceUI() {
   }
 }
 
-// --- SYSTEM POWIADOMIEŃ (TOAST) ---
 function showMessage(text, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) { alert(text); return; }
@@ -132,10 +126,6 @@ function addXP(amount) {
   }
   updateUI();
 }
-
-// ... (RESZTA FUNKCJI UI.JS BEZ ZMIAN - SKLEP, ZADANIA, ITP.)
-// Skopiuj je ze swojego starego pliku ui.js. 
-// Poniżej dla pewności wklejam wszystkie potrzebne funkcje:
 
 function checkHeroAvailability() {
   const hasAltar = buildings.some(b => b.type === 'altar');
