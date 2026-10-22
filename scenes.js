@@ -1,10 +1,9 @@
 // ==========================================
-// SCENES.JS - KOMPLETNY Z SYSTEMEM CZASU BUDOWANIA
+// SCENES.JS - SYSTEM BOHATERA (WATAŻKA)
 // ==========================================
 
 const TILE_SIZE = 50; 
 
-// Funkcja rysująca budynek (z obsługą stanu "w budowie")
 function drawBuildingTexture(scene, x, y, def, alpha = 1, isBuilding = false) {
   let container = scene.add.container(x, y);
   
@@ -13,33 +12,22 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1, isBuilding = false) {
       wallGraphics.fillStyle(0x555555, alpha); 
       wallGraphics.lineStyle(2, 0x222222, alpha);
       const w = TILE_SIZE / 2; const h = TILE_SIZE / 4;
-      wallGraphics.beginPath();
-      wallGraphics.moveTo(0, -h * 1.5);      
-      wallGraphics.lineTo(w, 0);       
-      wallGraphics.lineTo(0, h * 1.5);       
-      wallGraphics.lineTo(-w, 0);      
-      wallGraphics.closePath();
-      wallGraphics.fillPath();
-      wallGraphics.strokePath();
-      wallGraphics.fillStyle(0x333333, alpha);
-      wallGraphics.fillRect(-w/2, -h/2, w, h);
+      wallGraphics.beginPath(); wallGraphics.moveTo(0, -h * 1.5); wallGraphics.lineTo(w, 0); wallGraphics.lineTo(0, h * 1.5); wallGraphics.lineTo(-w, 0);
+      wallGraphics.closePath(); wallGraphics.fillPath(); wallGraphics.strokePath();
+      wallGraphics.fillStyle(0x333333, alpha); wallGraphics.fillRect(-w/2, -h/2, w, h);
       container.add([wallGraphics]);
   } else {
       let graphics = scene.add.graphics();
       let color = isBuilding ? 0x666666 : def.color;
-      graphics.fillStyle(color, alpha);
-      graphics.lineStyle(2, 0x000000, alpha);
+      graphics.fillStyle(color, alpha); graphics.lineStyle(2, 0x000000, alpha);
       const w = TILE_SIZE / 2; const h = TILE_SIZE / 4; 
-      graphics.beginPath();
-      graphics.moveTo(0, -h); graphics.lineTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(-w, 0);
+      graphics.beginPath(); graphics.moveTo(0, -h); graphics.lineTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(-w, 0);
       graphics.closePath(); graphics.fillPath(); graphics.strokePath();
       graphics.fillStyle(0x000000, 0.4 * alpha);
-      graphics.beginPath();
-      graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
+      graphics.beginPath(); graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
       graphics.closePath(); graphics.fillPath();
       graphics.fillStyle(0x000000, 0.2 * alpha);
-      graphics.beginPath();
-      graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
+      graphics.beginPath(); graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
       graphics.closePath(); graphics.fillPath();
       
       let text = isBuilding ? '🔨' : def.short;
@@ -60,11 +48,8 @@ class BaseScene extends Phaser.Scene {
     cam.setBackgroundColor('#2d4a22'); 
 
     let bgGraphics = this.add.graphics();
-    bgGraphics.fillStyle(0x2d4a22, 1); 
-    bgGraphics.fillRect(-5000, -5000, 10000, 10000); 
-    bgGraphics.setDepth(-100);
+    bgGraphics.fillStyle(0x2d4a22, 1); bgGraphics.fillRect(-5000, -5000, 10000, 10000); bgGraphics.setDepth(-100);
 
-    // Ścieżki i siatka
     let pathGraphics = this.add.graphics(); pathGraphics.setDepth(-10);
     let centerGridX = Math.floor(GRID / 2); let centerGridY = Math.floor(GRID / 2);
     pathGraphics.fillStyle(0x8b7355, 1); pathGraphics.lineStyle(2, 0x5c4a3a, 1); 
@@ -136,6 +121,19 @@ class BaseScene extends Phaser.Scene {
     this.patrols = [];
     let townhall = buildings.find(b => b.type === 'townhall') || buildings[0];
     let centerX = townhall ? townhall.x : 0; let centerY = townhall ? townhall.y : 0;
+    
+    // Sprawdzenie, czy mamy Ołtarz Krwi (wtedy spawnujemy Bohatera)
+    let hasAltar = buildings.some(b => b.type === 'altar');
+    if (hasAltar) {
+        let heroSprite = this.add.text(centerX + 40, centerY + 40, '🩸', { fontSize: '36px', backgroundColor: '#8b0000', padding: { x: 4, y: 4 }, stroke: '#000', strokeThickness: 2 }).setOrigin(0.5).setDepth(9999);
+        this.hero = { sprite: heroSprite, centerX: centerX, centerY: centerY };
+        // Bohater też się rusza, ale wolniej
+        this.tweens.add({
+            targets: heroSprite, x: centerX + Phaser.Math.Between(-50, 50), y: centerY + Phaser.Math.Between(-50, 50),
+            duration: 4000, yoyo: true, repeat: -1, ease: 'Sine.easeInOut'
+        });
+    }
+    
     for (let i = 0; i < 5; i++) {
       let startX = centerX + Phaser.Math.Between(-80, 80); let startY = centerY + Phaser.Math.Between(-80, 80);
       let unitIcon = Phaser.Math.RND.pick(['⚔️', '🏹']); let unitColor = unitIcon === '⚔️' ? '#4a5c38' : '#5c4305';
@@ -217,10 +215,7 @@ class BaseScene extends Phaser.Scene {
     if (elixir < def.cost.elixir) { showMessage('Za mało Many!', 'error'); return; }
     
     gold -= def.cost.gold; elixir -= def.cost.elixir; addXP(10); 
-    
-    let buildTime = 10000; 
-    let buildEndTime = Date.now() + buildTime;
-    
+    let buildTime = 10000; let buildEndTime = Date.now() + buildTime;
     playSound('build'); 
     this.createBuilding(gridX, gridY, selectedBuildingType, true, 1, null, true, buildEndTime);
     this.lastGridX = gridX; this.lastGridY = gridY;
@@ -241,8 +236,7 @@ class BaseScene extends Phaser.Scene {
     container.setSize(TILE_SIZE, TILE_SIZE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
     container.label = label; container.hpBar = hpBar; container.x = screenX; container.y = screenY;
-    container.isBuilding = isBuilding;
-    container.buildEndTime = buildEndTime;
+    container.isBuilding = isBuilding; container.buildEndTime = buildEndTime;
     
     container.hp = hp !== null ? hp : def.hp * level; container.maxHp = def.hp * level; container.hpBar.scaleX = container.hp / container.maxHp;
 
@@ -256,26 +250,20 @@ class BaseScene extends Phaser.Scene {
     if (isNew && window.preview) window.preview.setVisible(false);
     
     if (isBuilding) { this.startBuildTimer(container); }
-    
     saveGame();
   }
 
   startBuildTimer(building) {
     let timerText = this.add.text(building.x, building.y - 50, '', { fontSize: '12px', color: '#ffaa00', fontStyle: 'bold', stroke: '#000', strokeThickness: 3 }).setOrigin(0.5).setDepth(9999);
     building.timerText = timerText;
-    
-    let timerEvent = this.time.addEvent({
-        delay: 1000, loop: true,
-        callback: () => {
-            if (!building.active) { timerEvent.remove(); return; }
-            let timeLeft = building.buildEndTime - Date.now();
-            if (timeLeft > 0) {
-                let seconds = Math.ceil(timeLeft / 1000);
-                let m = Math.floor(seconds / 60); let s = seconds % 60;
-                building.timerText.setText(`${m}:${s < 10 ? '0' : ''}${s}`);
-            } else { timerEvent.remove(); }
-        }
-    });
+    let timerEvent = this.time.addEvent({ delay: 1000, loop: true, callback: () => {
+        if (!building.active) { timerEvent.remove(); return; }
+        let timeLeft = building.buildEndTime - Date.now();
+        if (timeLeft > 0) {
+            let seconds = Math.ceil(timeLeft / 1000); let m = Math.floor(seconds / 60); let s = seconds % 60;
+            building.timerText.setText(`${m}:${s < 10 ? '0' : ''}${s}`);
+        } else { timerEvent.remove(); }
+    }});
   }
 
   finishBuilding(building) {
@@ -284,15 +272,15 @@ class BaseScene extends Phaser.Scene {
     
     const def = BUILDINGS[building.type];
     let oldX = building.x; let oldY = building.y;
+    let gridX = building.gridX; let gridY = building.gridY;
+    let level = building.level; let hp = building.hp;
     
-    // Usuwanie starego obiektu z tablicy i sceny
     buildings = buildings.filter(b => b !== building);
     if (building.label) building.label.destroy();
     if (building.hpBar) building.hpBar.destroy();
     building.destroy();
     
-    // Tworzenie nowego, gotowego
-    this.createBuilding(building.gridX, building.gridY, building.type, false, building.level, building.hp, false, null);
+    this.createBuilding(gridX, gridY, building.type, false, level, hp, false, null);
     
     let flash = this.add.circle(oldX, oldY, 30, 0x00ff00, 0.6).setDepth(9999);
     this.tweens.add({ targets: flash, scale: 2, alpha: 0, duration: 500, onComplete: () => flash.destroy() });
