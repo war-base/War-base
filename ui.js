@@ -45,8 +45,7 @@ function startCampaignLevel(id) {
     }
 
     closeCampaignMap();
-    window.isCampaignBattle = true;
-    window.currentCampaignLoot = { gold: level.lootG, elixir: level.lootE };
+    window.currentCampaignLevel = id; // Przekazujemy ID poziomu do bitwy
     startAttack(); 
 }
 
