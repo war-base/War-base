@@ -1,43 +1,72 @@
 // ==========================================
-// SCENES.JS - WYRAŹNE ŚCIEŻKI I KRAWĘDZIE
+// SCENES.JS - INTELIGENTNE MURY OBRONNE
 // ==========================================
 
 const TILE_SIZE = 50; 
 
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   let container = scene.add.container(x, y);
-  let graphics = scene.add.graphics();
   
-  graphics.fillStyle(def.color, alpha);
-  graphics.lineStyle(2, 0x000000, alpha);
-  
-  const w = TILE_SIZE / 2; 
-  const h = TILE_SIZE / 4; 
-  
-  graphics.beginPath();
-  graphics.moveTo(0, -h);      
-  graphics.lineTo(w, 0);       
-  graphics.lineTo(0, h);       
-  graphics.lineTo(-w, 0);      
-  graphics.closePath();
-  graphics.fillPath();
-  graphics.strokePath();
+  // Specjalne rysowanie dla MURÓW
+  if (def.short === 'M') {
+      let wallGraphics = scene.add.graphics();
+      
+      // Ciemny kamień
+      wallGraphics.fillStyle(0x555555, alpha); 
+      wallGraphics.lineStyle(2, 0x222222, alpha);
+      
+      const w = TILE_SIZE / 2;
+      const h = TILE_SIZE / 4;
+      
+      // Rysujemy wyższy romb (wyglądający jak mur)
+      wallGraphics.beginPath();
+      wallGraphics.moveTo(0, -h * 1.5);      
+      wallGraphics.lineTo(w, 0);       
+      wallGraphics.lineTo(0, h * 1.5);       
+      wallGraphics.lineTo(-w, 0);      
+      wallGraphics.closePath();
+      wallGraphics.fillPath();
+      wallGraphics.strokePath();
+      
+      // Dodatkowe "cegły" na murze
+      wallGraphics.fillStyle(0x333333, alpha);
+      wallGraphics.fillRect(-w/2, -h/2, w, h);
+      
+      container.add([wallGraphics]);
+  } else {
+      // Standardowy wygląd dla innych budynków
+      let graphics = scene.add.graphics();
+      
+      graphics.fillStyle(def.color, alpha);
+      graphics.lineStyle(2, 0x000000, alpha);
+      
+      const w = TILE_SIZE / 2; 
+      const h = TILE_SIZE / 4; 
+      
+      graphics.beginPath();
+      graphics.moveTo(0, -h);      
+      graphics.lineTo(w, 0);       
+      graphics.lineTo(0, h);       
+      graphics.lineTo(-w, 0);      
+      graphics.closePath();
+      graphics.fillPath();
+      graphics.strokePath();
 
-  graphics.fillStyle(0x000000, 0.4 * alpha);
-  graphics.beginPath();
-  graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
-  graphics.closePath(); graphics.fillPath();
+      graphics.fillStyle(0x000000, 0.4 * alpha);
+      graphics.beginPath();
+      graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
+      graphics.closePath(); graphics.fillPath();
 
-  graphics.fillStyle(0x000000, 0.2 * alpha);
-  graphics.beginPath();
-  graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
-  graphics.closePath(); graphics.fillPath();
+      graphics.fillStyle(0x000000, 0.2 * alpha);
+      graphics.beginPath();
+      graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
+      graphics.closePath(); graphics.fillPath();
 
-  let detail = scene.add.text(0, 0, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
+      let detail = scene.add.text(0, 0, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
+      container.add([graphics, detail]);
+  }
   
-  container.add([graphics, detail]);
   container.setDepth(y);
-  
   return container;
 }
 
@@ -51,57 +80,32 @@ class BaseScene extends Phaser.Scene {
     
     cam.setBackgroundColor('#2d4a22'); 
 
-    // Tło (trawa) - gigantyczny prostokąt
     let bgGraphics = this.add.graphics();
     bgGraphics.fillStyle(0x2d4a22, 1); 
     bgGraphics.fillRect(-5000, -5000, 10000, 10000); 
     bgGraphics.setDepth(-100);
 
-    // --- RYSOWANIE WYRAŹNYCH ŚCIEŻEK (PIASKOWY KOLOR) ---
+    // Ścieżki
     let pathGraphics = this.add.graphics();
-    pathGraphics.setDepth(-10); // Nad trawą, pod budynkami
-
-    // Rysujemy ścieżki w kształcie krzyża wokół środka
+    pathGraphics.setDepth(-10);
     let centerGridX = Math.floor(GRID / 2);
     let centerGridY = Math.floor(GRID / 2);
-    
-    pathGraphics.fillStyle(0x8b7355, 1); // Piaskowy/brązowy kolor
-    pathGraphics.lineStyle(2, 0x5c4a3a, 1); // Ciemniejsza ramka
+    pathGraphics.fillStyle(0x8b7355, 1); 
+    pathGraphics.lineStyle(2, 0x5c4a3a, 1); 
 
     for (let i = -4; i <= 4; i++) {
-        // Ścieżka pozioma
-        let gx = centerGridX + i;
-        let gy = centerGridY;
-        let sx = (gx - gy) * (TILE_SIZE / 2);
-        let sy = (gx + gy) * (TILE_SIZE / 4);
-        
+        let gx = centerGridX + i; let gy = centerGridY;
+        let sx = (gx - gy) * (TILE_SIZE / 2); let sy = (gx + gy) * (TILE_SIZE / 4);
         pathGraphics.beginPath();
-        pathGraphics.moveTo(sx, sy - TILE_SIZE/3);
-        pathGraphics.lineTo(sx + TILE_SIZE/2, sy);
-        pathGraphics.lineTo(sx, sy + TILE_SIZE/3);
-        pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
-        pathGraphics.closePath();
-        pathGraphics.fillPath();
-        pathGraphics.strokePath();
+        pathGraphics.moveTo(sx, sy - TILE_SIZE/3); pathGraphics.lineTo(sx + TILE_SIZE/2, sy); pathGraphics.lineTo(sx, sy + TILE_SIZE/3); pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
+        pathGraphics.closePath(); pathGraphics.fillPath(); pathGraphics.strokePath();
 
-        // Ścieżka pionowa
-        gx = centerGridX;
-        gy = centerGridY + i;
-        sx = (gx - gy) * (TILE_SIZE / 2);
-        sy = (gx + gy) * (TILE_SIZE / 4);
-        
+        gx = centerGridX; gy = centerGridY + i;
+        sx = (gx - gy) * (TILE_SIZE / 2); sy = (gx + gy) * (TILE_SIZE / 4);
         pathGraphics.beginPath();
-        pathGraphics.moveTo(sx, sy - TILE_SIZE/3);
-        pathGraphics.lineTo(sx + TILE_SIZE/2, sy);
-        pathGraphics.lineTo(sx, sy + TILE_SIZE/3);
-        pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
-        pathGraphics.closePath();
-        pathGraphics.fillPath();
-        pathGraphics.strokePath();
+        pathGraphics.moveTo(sx, sy - TILE_SIZE/3); pathGraphics.lineTo(sx + TILE_SIZE/2, sy); pathGraphics.lineTo(sx, sy + TILE_SIZE/3); pathGraphics.lineTo(sx - TILE_SIZE/2, sy);
+        pathGraphics.closePath(); pathGraphics.fillPath(); pathGraphics.strokePath();
     }
-    
-    // TEST: Czerwony punkt na środku (żeby sprawdzić czy rysowanie działa)
-    let testPoint = this.add.circle(0, 0, 10, 0xff0000).setDepth(9000);
 
     // Siatka
     let gridGraphics = this.add.graphics();
@@ -284,13 +288,27 @@ class BaseScene extends Phaser.Scene {
     
     if (gridX === this.lastGridX && gridY === this.lastGridY) return;
     
-    // Blokada krawędzi
-    if (gridX < 1 || gridY < 1 || gridX >= GRID - 1 || gridY >= GRID - 1) {
-        if (Date.now() > lastGoldWarningTime) { 
-            showMessage('Za blisko krawędzi mapy!', 'error'); 
-            lastGoldWarningTime = Date.now() + 1500; 
+    // --- SYSTEM MURÓW: BLOKADA ŚRODKA ---
+    if (selectedBuildingType === 'wall') {
+        // Sprawdzamy odległość od środka (Warowni)
+        let centerX = Math.floor(GRID / 2);
+        let centerY = Math.floor(GRID / 2);
+        let distFromCenter = Math.abs(gridX - centerX) + Math.abs(gridY - centerY);
+        
+        // Mur można stawiać tylko z dala od środka (np. minimum 3 kratki)
+        if (distFromCenter < 3) {
+            if (Date.now() > lastGoldWarningTime) { 
+                showMessage('Mury stawiamy na obrzeżach!', 'error'); 
+                lastGoldWarningTime = Date.now() + 1500; 
+            }
+            return;
         }
-        return;
+    } else {
+        // Inne budynki: standardowa blokada krawędzi
+        if (gridX < 1 || gridY < 1 || gridX >= GRID - 1 || gridY >= GRID - 1) {
+            if (Date.now() > lastGoldWarningTime) { showMessage('Za blisko krawędzi!', 'error'); lastGoldWarningTime = Date.now() + 1500; }
+            return;
+        }
     }
 
     if (buildings.some(b => b.gridX === gridX && b.gridY === gridY)) return;
@@ -303,8 +321,6 @@ class BaseScene extends Phaser.Scene {
     if (elixir < def.cost.elixir) { showMessage('Za mało Many!', 'error'); return; }
 
     gold -= def.cost.gold; elixir -= def.cost.elixir; addXP(10); 
-    if (selectedBuildingType === 'mine') updateQuest('build_mine', 1);
-    if (selectedBuildingType === 'altar') updateQuest('build_altar', 1);
 
     playSound('build'); this.createBuilding(gridX, gridY, selectedBuildingType, true, 1);
     this.lastGridX = gridX; this.lastGridY = gridY;
