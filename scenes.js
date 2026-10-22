@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - OŻYWIONA BAZA (ANIMOWANI STRAŻNICY)
+// SCENES.JS - PATROL WOKÓŁ WAROWNI
 // ==========================================
 
 const TILE_SIZE = 50; 
@@ -51,13 +51,11 @@ class BaseScene extends Phaser.Scene {
     
     cam.setBackgroundColor('#2d4a22'); 
 
-    // Tło (trawa)
     let bgGraphics = this.add.graphics();
     bgGraphics.fillStyle(0x2d4a22, 1); 
     bgGraphics.fillRect(-5000, -5000, 10000, 10000); 
     bgGraphics.setDepth(-10);
 
-    // Siatka
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x000000, 0.15);
     for (let i = 0; i <= GRID * 2; i++) {
@@ -128,16 +126,21 @@ class BaseScene extends Phaser.Scene {
     this.spawnPatrols();
   }
 
-  // --- NOWY SYSTEM PATROLOWANIA ---
+  // --- NOWY SYSTEM PATROLOWANIA (WOKÓŁ WAROWNI) ---
   spawnPatrols() {
     this.patrols = [];
     
-    // Tworzymy 4 grupy strażników
-    for (let i = 0; i < 4; i++) {
-      let startX = Phaser.Math.Between(-100, 100);
-      let startY = Phaser.Math.Between(-100, 100);
+    // Znajdujemy środek bazy (Warownię)
+    let townhall = buildings.find(b => b.type === 'townhall') || buildings[0];
+    let centerX = townhall ? townhall.x : 0;
+    let centerY = townhall ? townhall.y : 0;
+
+    // Tworzymy 5 grup strażników
+    for (let i = 0; i < 5; i++) {
+      // Pozycja startowa blisko centrum
+      let startX = centerX + Phaser.Math.Between(-80, 80);
+      let startY = centerY + Phaser.Math.Between(-80, 80);
       
-      // Losujemy wygląd jednostki (miecznik lub łucznik)
       let unitIcon = Phaser.Math.RND.pick(['⚔️', '🏹']);
       let unitColor = unitIcon === '⚔️' ? '#4a5c38' : '#5c4305';
       
@@ -147,22 +150,20 @@ class BaseScene extends Phaser.Scene {
           padding: { x: 2, y: 2 }
       }).setOrigin(0.5).setDepth(startY + 100);
       
-      let unit = { sprite: sprite, targetX: startX, targetY: startY, speed: Phaser.Math.FloatBetween(20, 50) };
+      let unit = { sprite: sprite, centerX: centerX, centerY: centerY, speed: Phaser.Math.FloatBetween(20, 40) };
       this.patrols.push(unit);
       
-      // Funkcja rekurencyjna do losowego chodzenia
       this.movePatrol(unit);
     }
   }
 
   movePatrol(unit) {
-    if (!unit.sprite.active) return; // Jeśli jednostka zniknęła, przerywamy
+    if (!unit.sprite.active) return;
 
-    // Losujemy nowy cel w promieniu 150 pikseli
-    let targetX = unit.sprite.x + Phaser.Math.Between(-150, 150);
-    let targetY = unit.sprite.y + Phaser.Math.Between(-150, 150);
+    // Losujemy nowy cel w promieniu 120 pikseli od Warowni
+    let targetX = unit.centerX + Phaser.Math.Between(-120, 120);
+    let targetY = unit.centerY + Phaser.Math.Between(-120, 120);
     
-    // Obliczamy czas dotarcia do celu
     let distance = Phaser.Math.Distance.Between(unit.sprite.x, unit.sprite.y, targetX, targetY);
     let duration = (distance / unit.speed) * 1000;
     
@@ -174,11 +175,12 @@ class BaseScene extends Phaser.Scene {
         duration: duration,
         ease: 'Linear',
         onUpdate: () => {
-            // Aktualizujemy głębię (żeby jednostka była za budynkami, gdy jest wyżej)
             unit.sprite.setDepth(unit.sprite.y + 100);
+            // Lekkie "bujanie" podczas ruchu (obrót)
+            unit.sprite.angle = Math.sin(Date.now() / 100) * 10;
         },
         onComplete: () => {
-            // Po dotarciu do celu, czekamy chwilę i ruszamy dalej
+            unit.sprite.angle = 0; // Reset obrotu
             this.time.delayedCall(Phaser.Math.Between(1000, 3000), () => {
                 this.movePatrol(unit);
             });
