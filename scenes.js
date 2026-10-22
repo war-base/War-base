@@ -1,8 +1,7 @@
 // ==========================================
-// SCENES.JS - WERSJA IZOMETRYCZNA (POPRAWIONA)
+// SCENES.JS - WERSJA IZOMETRYCZNA (PRZYBLIŻONA)
 // ==========================================
 
-// UWAGA: Zwiększamy rozmiar kafelka dla lepszej widoczności
 const TILE_SIZE = 80; 
 
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
@@ -34,7 +33,6 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 30); graphics.lineTo(w, 30);
   graphics.closePath(); graphics.fillPath();
 
-  // Większy tekst
   let detail = scene.add.text(0, 0, def.short, { fontSize: '24px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
   
   container.add([graphics, detail]);
@@ -52,7 +50,6 @@ class BaseScene extends Phaser.Scene {
     let cam = this.cameras.main;
     cam.setBackgroundColor('#1a1a1a'); 
 
-    // Rysowanie siatki izometrycznej
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x444444, 0.3);
     
@@ -61,7 +58,6 @@ class BaseScene extends Phaser.Scene {
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
     }
 
-    // Podgląd budowania
     window.preview = this.add.graphics().setVisible(false).setDepth(9999);
     
     buildings = []; 
@@ -88,7 +84,6 @@ class BaseScene extends Phaser.Scene {
         let screenX = getIsoX(gridX, gridY);
         let screenY = getIsoY(gridX, gridY);
         
-        // Rysowanie podglądu (ducha) pod palcem
         if (window.preview) {
           window.preview.clear();
           window.preview.fillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
@@ -121,8 +116,8 @@ class BaseScene extends Phaser.Scene {
     
     cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
     
-    // PRZYBLIŻENIE KAMERY
-    cam.setZoom(1.2); 
+    // ZWIĘKSZONY ZOOM
+    cam.setZoom(2.2); 
     this.centerCamera();
   }
 
@@ -182,7 +177,6 @@ class BaseScene extends Phaser.Scene {
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     container.type = type; 
     
-    // Większe napisy
     const label = this.add.text(screenX, screenY + 30, def.name + ' L' + level, { fontSize: '14px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
     const hpBarBg = this.add.rectangle(screenX, screenY - 45, 40, 6, 0x000000).setDepth(screenY + 1);
     const hpBar = this.add.rectangle(screenX - 20, screenY - 45, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
@@ -210,7 +204,7 @@ class BaseScene extends Phaser.Scene {
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
-    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(1.2);
+    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(2.2); // ZOOM W BITWIE
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
     
@@ -399,7 +393,11 @@ class DefenseScene extends Phaser.Scene {
     let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2);
     let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
     
-    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(1.2);
+    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
+    
+    // ZWIĘKSZONY ZOOM W OBRONIE
+    cam.setZoom(2.2);
+    
     cam.scrollX = isoCenterX - cam.width / 2; cam.scrollY = isoCenterY - cam.height / 2;
     this.centerBase = { x: isoCenterX, y: isoCenterY };
 
