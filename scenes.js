@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - WERSJA Z WIZUALIZACJĄ PRODUKCJI
+// SCENES.JS - WERSJA Z WIZUALIZACJĄ PRODUKCJI I MURAMI
 // ==========================================
 
 const TILE_SIZE = 80; 
@@ -68,11 +68,13 @@ class BaseScene extends Phaser.Scene {
     const getIsoX = (gridX, gridY) => (gridX - gridY) * (TILE_SIZE / 2);
     const getIsoY = (gridX, gridY) => (gridX + gridY) * (TILE_SIZE / 4);
 
+    // KLIKNIĘCIE (Początek akcji)
     this.input.on('pointerdown', (p) => {
       this.lastGridX = -1; this.lastGridY = -1;
       if (selectedBuildingType === 'wall') this.tryPlaceBuilding(p);
     });
     
+    // RUCH PALCA (Przeciąganie murów i podgląd)
     this.input.on('pointermove', (p) => {
       if (selectedBuildingType) {
         let isoX = p.worldX / (TILE_SIZE / 2);
@@ -83,6 +85,7 @@ class BaseScene extends Phaser.Scene {
         let screenX = getIsoX(gridX, gridY);
         let screenY = getIsoY(gridX, gridY);
         
+        // Podgląd (Biały romb)
         if (window.preview) {
           window.preview.clear();
           window.preview.fillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
@@ -98,16 +101,22 @@ class BaseScene extends Phaser.Scene {
           window.preview.setVisible(true);
         }
         
+        // SYSTEM PRZECIĄGANIA MURÓW
         if (selectedBuildingType === 'wall' && p.isDown) {
             let now = Date.now();
-            if (now - (this.lastWallTime || 0) > 50) { this.tryPlaceBuilding(p); this.lastWallTime = now; }
+            if (now - (this.lastWallTime || 0) > 50) { 
+                this.tryPlaceBuilding(p); 
+                this.lastWallTime = now; 
+            }
         }
       } else if (p.isDown) {
+        // Przesuwanie kamery, gdy nie budujemy
         cam.scrollX -= (p.x - p.prevPosition.x); 
         cam.scrollY -= (p.y - p.prevPosition.y);
       }
     });
     
+    // PUSZCZENIE PALCA (Koniec akcji)
     this.input.on('pointerup', (p) => { 
         if (selectedBuildingType && selectedBuildingType !== 'wall') this.tryPlaceBuilding(p); 
         if (window.preview) window.preview.setVisible(false); 
@@ -134,7 +143,6 @@ class BaseScene extends Phaser.Scene {
     if (prodTimer >= 1000) {
       let aG = 0, aE = 0;
       
-      // --- WIZUALIZACJA PRODUKCJI ---
       buildings.forEach(b => {
         let def = BUILDINGS[b.type];
         let goldProd = (def.prod.gold || 0) * b.level;
@@ -155,27 +163,16 @@ class BaseScene extends Phaser.Scene {
     }
   }
 
-  // NOWA FUNKCJA: Animacja tekstu produkcji
   spawnProductionText(x, y, text, color) {
-    // Losowe przesunięcie, żeby teksty nie nachodziły na siebie idealnie
     let offsetX = Phaser.Math.Between(-20, 20);
     let offsetY = Phaser.Math.Between(-10, 10);
     
     let prodText = this.add.text(x + offsetX, y + offsetY, text, {
-        fontSize: '20px', 
-        color: color, 
-        fontStyle: 'bold',
-        stroke: '#000000',
-        strokeThickness: 4
+        fontSize: '20px', color: color, fontStyle: 'bold', stroke: '#000000', strokeThickness: 4
     }).setOrigin(0.5).setDepth(9999);
 
-    // Animacja: tekst unosi się do góry i znika
     this.tweens.add({
-        targets: prodText,
-        y: y - 80, // Unosi się o 80 pikseli
-        alpha: 0,  // Znika
-        duration: 1500, // Trwa 1.5 sekundy
-        ease: 'Cubic.easeOut',
+        targets: prodText, y: y - 80, alpha: 0, duration: 1500, ease: 'Cubic.easeOut',
         onComplete: () => prodText.destroy()
     });
   }
@@ -192,10 +189,10 @@ class BaseScene extends Phaser.Scene {
     
     const def = BUILDINGS[selectedBuildingType];
     if (gold < def.cost.gold) { 
-      if (Date.now() > lastGoldWarningTime) { showMessage('Za mało złota!'); lastGoldWarningTime = Date.now() + 1500; }
+      if (Date.now() > lastGoldWarningTime) { showMessage('Za mało złota!', 'error'); lastGoldWarningTime = Date.now() + 1500; }
       return; 
     }
-    if (elixir < def.cost.elixir) { showMessage('Za mało Many!'); return; }
+    if (elixir < def.cost.elixir) { showMessage('Za mało Many!', 'error'); return; }
 
     gold -= def.cost.gold; elixir -= def.cost.elixir; addXP(10); 
     if (selectedBuildingType === 'mine') updateQuest('build_mine', 1);
@@ -238,7 +235,7 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY ---
+// --- SCENA BITWY (BEZ ZMIAN) ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
@@ -283,7 +280,7 @@ class BattleScene extends Phaser.Scene {
         this.spawnTroop(pointer.x, pointer.y, selectedBattleTroopType);
         army[selectedBattleTroopType]--; updateUI(); playSound('shoot');
         if (selectedBattleTroopType === 'hero') checkHeroAvailability();
-      } else { showMessage("Brak tej jednostki!"); }
+      } else { showMessage("Brak tej jednostki!", 'error'); }
     });
   }
   
@@ -401,7 +398,7 @@ class BattleScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA OBRONY ---
+// --- SCENA OBRONY (BEZ ZMIAN) ---
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
