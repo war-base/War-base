@@ -1,9 +1,11 @@
 // ==========================================
-// SCENES.JS - WERSJA Z OŻYWIONĄ BAZĄ
+// SCENES.JS - MAPA WIOSKI I MNIEJSZE BUDYNKI
 // ==========================================
 
-const TILE_SIZE = 80; 
+// Zmniejszamy kafelek, żeby budynki były mniejsze i zgrabniejsze
+const TILE_SIZE = 50; 
 
+// --- RYSOWANIE TEKSTURY BUDYNKU (PROSTOKĄTY Z CZYSTYM TŁEM) ---
 function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   let container = scene.add.container(x, y);
   let graphics = scene.add.graphics();
@@ -14,6 +16,7 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   const w = TILE_SIZE / 2; 
   const h = TILE_SIZE / 4; 
   
+  // Podstawa (romb)
   graphics.beginPath();
   graphics.moveTo(0, -h);      
   graphics.lineTo(w, 0);       
@@ -23,17 +26,19 @@ function drawBuildingTexture(scene, x, y, def, alpha = 1) {
   graphics.fillPath();
   graphics.strokePath();
 
+  // Efekt 3D (ściany)
   graphics.fillStyle(0x000000, 0.4 * alpha);
   graphics.beginPath();
-  graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 30); graphics.lineTo(-w, 30);
+  graphics.moveTo(-w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(-w, 20);
   graphics.closePath(); graphics.fillPath();
 
   graphics.fillStyle(0x000000, 0.2 * alpha);
   graphics.beginPath();
-  graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 30); graphics.lineTo(w, 30);
+  graphics.moveTo(w, 0); graphics.lineTo(0, h); graphics.lineTo(0, h + 20); graphics.lineTo(w, 20);
   graphics.closePath(); graphics.fillPath();
 
-  let detail = scene.add.text(0, 0, def.short, { fontSize: '24px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
+  // Skrócona nazwa (np. "Ko" zamiast "Kopalnia")
+  let detail = scene.add.text(0, 0, def.short, { fontSize: '16px', color: '#fff', fontStyle: 'bold' }).setOrigin(0.5).setAlpha(alpha);
   
   container.add([graphics, detail]);
   container.setDepth(y);
@@ -50,8 +55,12 @@ class BaseScene extends Phaser.Scene {
     let cam = this.cameras.main;
     cam.setBackgroundColor('#1a1a1a'); 
 
+    // --- GENEROWANIE MAPY WIOSKI (TŁO) ---
+    this.createVillageGround(cam);
+
+    // Siatka izometryczna (delikatna)
     let gridGraphics = this.add.graphics();
-    gridGraphics.lineStyle(1, 0x444444, 0.3);
+    gridGraphics.lineStyle(1, 0x000000, 0.2);
     for (let i = 0; i <= GRID * 2; i++) {
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 + (GRID * TILE_SIZE), (GRID * TILE_SIZE));
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
@@ -86,7 +95,7 @@ class BaseScene extends Phaser.Scene {
         if (window.preview) {
           window.preview.clear();
           window.preview.fillStyle(BUILDINGS[selectedBuildingType].color, 0.6);
-          window.preview.lineStyle(3, 0xffffff, 1);
+          window.preview.lineStyle(2, 0xffffff, 1);
           window.preview.beginPath();
           window.preview.moveTo(screenX, screenY - TILE_SIZE/4);
           window.preview.lineTo(screenX + TILE_SIZE/2, screenY);
@@ -113,27 +122,63 @@ class BaseScene extends Phaser.Scene {
         if (window.preview) window.preview.setVisible(false); 
     });
     
+    // Zwiększamy zoom, bo kafelki są mniejsze
     cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
-    cam.setZoom(2.2); 
+    cam.setZoom(3.5); 
     this.centerCamera();
     
     // Ożywienie bazy
     this.spawnVillagers();
   }
 
-  // NOWA FUNKCJA: Chodzące jednostki w bazie
+  // --- NOWA FUNKCJA: GENEROWANIE TRAWY I ŚCIEŻEK ---
+  createVillageGround(cam) {
+    let groundGraphics = this.add.graphics();
+    groundGraphics.setDepth(-1);
+
+    // Rysowanie dużego zielonego rombu (trawa)
+    let grassColor = 0x2d4a22; // Ciemna zieleń
+    groundGraphics.fillStyle(grassColor, 1);
+    groundGraphics.beginPath();
+    groundGraphics.moveTo(0, -GRID * TILE_SIZE / 2);
+    groundGraphics.lineTo(GRID * TILE_SIZE, 0);
+    groundGraphics.lineTo(0, GRID * TILE_SIZE / 2);
+    groundGraphics.lineTo(-GRID * TILE_SIZE, 0);
+    groundGraphics.closePath();
+    groundGraphics.fillPath();
+
+    // Dodawanie losowych plam ciemniejszej i jaśniejszej trawy (tekstura)
+    for (let i = 0; i < 300; i++) {
+        let rx = Phaser.Math.Between(-GRID * TILE_SIZE, GRID * TILE_SIZE);
+        let ry = Phaser.Math.Between(-GRID * TILE_SIZE / 2, GRID * TILE_SIZE / 2);
+        
+        let color = Phaser.Math.RND.pick([0x3a5c2e, 0x243d1b, 0x4a6e3a]);
+        groundGraphics.fillStyle(color, 0.5);
+        groundGraphics.fillCircle(rx, ry, Phaser.Math.Between(5, 20));
+    }
+
+    // Rysowanie "ścieżki" wokół środka (kamienie)
+    groundGraphics.fillStyle(0x555555, 0.8);
+    for (let i = 0; i < 50; i++) {
+        let angle = Phaser.Math.FloatBetween(0, Math.PI * 2);
+        let dist = Phaser.Math.Between(50, 150);
+        let cx = Math.cos(angle) * dist;
+        let cy = Math.sin(angle) * dist / 2; 
+        groundGraphics.fillEllipse(cx, cy, Phaser.Math.Between(10, 25), Phaser.Math.Between(5, 12));
+    }
+  }
+
+  // --- CHODZĄCE JEDNOSTKI ---
   spawnVillagers() {
     this.villagers = [];
-    const numVillagers = 5; // Liczba jednostek chodzących po bazie
+    const numVillagers = 6; 
     
     for (let i = 0; i < numVillagers; i++) {
-      // Losowa pozycja startowa wokół środka
       let startX = Phaser.Math.Between(-100, 100);
       let startY = Phaser.Math.Between(-100, 100);
       
-      let sprite = this.add.text(startX, startY, '🛡️', { fontSize: '24px' }).setOrigin(0.5).setDepth(startY + 100);
+      let sprite = this.add.text(startX, startY, '🛡️', { fontSize: '20px' }).setOrigin(0.5).setDepth(startY + 100);
       
-      // Prosta animacja "chodzenia" - losowe przesuwanie
       let tween = this.tweens.add({
         targets: sprite,
         x: startX + Phaser.Math.Between(-50, 50),
@@ -172,11 +217,11 @@ class BaseScene extends Phaser.Scene {
         let elixirProd = (def.prod.elixir || 0) * b.level;
 
         if (goldProd > 0) {
-            this.spawnProductionText(b.x, b.y - 30, '+' + goldProd + ' 💰', '#ffd700');
+            this.spawnProductionText(b.x, b.y - 20, '+' + goldProd + ' 💰', '#ffd700');
             aG += goldProd;
         }
         if (elixirProd > 0) {
-            this.spawnProductionText(b.x, b.y - 30, '+' + elixirProd + ' 🔮', '#ba55d3');
+            this.spawnProductionText(b.x, b.y - 20, '+' + elixirProd + ' 🔮', '#ba55d3');
             aE += elixirProd;
         }
       });
@@ -187,15 +232,15 @@ class BaseScene extends Phaser.Scene {
   }
 
   spawnProductionText(x, y, text, color) {
-    let offsetX = Phaser.Math.Between(-20, 20);
-    let offsetY = Phaser.Math.Between(-10, 10);
+    let offsetX = Phaser.Math.Between(-15, 15);
+    let offsetY = Phaser.Math.Between(-5, 5);
     
     let prodText = this.add.text(x + offsetX, y + offsetY, text, {
-        fontSize: '20px', color: color, fontStyle: 'bold', stroke: '#000000', strokeThickness: 4
+        fontSize: '14px', color: color, fontStyle: 'bold', stroke: '#000000', strokeThickness: 3
     }).setOrigin(0.5).setDepth(9999);
 
     this.tweens.add({
-        targets: prodText, y: y - 80, alpha: 0, duration: 1500, ease: 'Cubic.easeOut',
+        targets: prodText, y: y - 60, alpha: 0, duration: 1500, ease: 'Cubic.easeOut',
         onComplete: () => prodText.destroy()
     });
   }
@@ -235,9 +280,9 @@ class BaseScene extends Phaser.Scene {
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     container.type = type; 
     
-    const label = this.add.text(screenX, screenY + 35, def.name + ' L' + level, { fontSize: '14px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
-    const hpBarBg = this.add.rectangle(screenX, screenY - 50, 40, 6, 0x000000).setDepth(screenY + 1);
-    const hpBar = this.add.rectangle(screenX - 20, screenY - 50, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
+    const label = this.add.text(screenX, screenY + 25, def.name + ' L' + level, { fontSize: '10px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:3,y:1} }).setOrigin(0.5).setDepth(screenY + 1);
+    const hpBarBg = this.add.rectangle(screenX, screenY - 35, 30, 5, 0x000000).setDepth(screenY + 1);
+    const hpBar = this.add.rectangle(screenX - 15, screenY - 35, 30, 5, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
     
     container.setSize(TILE_SIZE, TILE_SIZE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
@@ -258,11 +303,11 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY (BEZ ZMIAN) ---
+// --- SCENA BITWY (DOSTOSOWANA DO MNIEJSZYCH BUDYNKÓW) ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
-    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(2.2);
+    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(3.5);
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
     
@@ -275,6 +320,9 @@ class BattleScene extends Phaser.Scene {
     }});
 
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
+    
+    // Dodajemy tło (trawę) również do bitwy
+    this.createVillageGround();
     
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
     this.createEnemyBuilding(centerX, centerY, 400, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
@@ -306,13 +354,33 @@ class BattleScene extends Phaser.Scene {
       } else { showMessage("Brak tej jednostki!", 'error'); }
     });
   }
+
+  createVillageGround() {
+      let groundGraphics = this.add.graphics();
+      groundGraphics.setDepth(-1);
+      groundGraphics.fillStyle(0x2d4a22, 1);
+      groundGraphics.beginPath();
+      groundGraphics.moveTo(0, -GRID * TILE_SIZE / 2);
+      groundGraphics.lineTo(GRID * TILE_SIZE, 0);
+      groundGraphics.lineTo(0, GRID * TILE_SIZE / 2);
+      groundGraphics.lineTo(-GRID * TILE_SIZE, 0);
+      groundGraphics.closePath();
+      groundGraphics.fillPath();
+      for (let i = 0; i < 300; i++) {
+          let rx = Phaser.Math.Between(-GRID * TILE_SIZE, GRID * TILE_SIZE);
+          let ry = Phaser.Math.Between(-GRID * TILE_SIZE / 2, GRID * TILE_SIZE / 2);
+          let color = Phaser.Math.RND.pick([0x3a5c2e, 0x243d1b, 0x4a6e3a]);
+          groundGraphics.fillStyle(color, 0.5);
+          groundGraphics.fillCircle(rx, ry, Phaser.Math.Between(5, 15));
+      }
+  }
   
   createEnemyBuilding(gridX, gridY, hp, type, isDefense, lootG, lootE) {
     const def = BUILDINGS[type]; 
     let screenX = (gridX - gridY) * (TILE_SIZE / 2); 
     let screenY = (gridX + gridY) * (TILE_SIZE / 4);
     let container = drawBuildingTexture(this, screenX, screenY, def, 1); 
-    let hpBar = this.add.rectangle(screenX - 20, screenY - 50, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
+    let hpBar = this.add.rectangle(screenX - 15, screenY - 35, 30, 5, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
     this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: screenX, y: screenY, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
   }
   
@@ -320,19 +388,19 @@ class BattleScene extends Phaser.Scene {
     const def = getTroopStats(type); let bgColor = '#4a5c38'; 
     if (type === 'hero') bgColor = '#8b0000'; 
     if (type === 'wallbreaker') bgColor = '#ff8c00'; 
-    let size = (type === 'hero') ? '32px' : '20px';
-    const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?8:4), y: (type==='hero'?8:4)} }).setOrigin(0.5).setDepth(y + 100);
-    const hpBar = this.add.rectangle(x - 12, y - (type==='hero'?30:24), (type==='hero'?40:24), 6, 0x00ff00).setOrigin(0, 0.5).setDepth(y + 100);
+    let size = (type === 'hero') ? '24px' : '16px';
+    const troopSprite = this.add.text(x, y, def.short, { fontSize: size, color: '#fff', fontStyle: 'bold', backgroundColor: bgColor, padding: {x: (type==='hero'?6:3), y: (type==='hero'?6:3)} }).setOrigin(0.5).setDepth(y + 100);
+    const hpBar = this.add.rectangle(x - 10, y - (type==='hero'?24:18), (type==='hero'?30:18), 4, 0x00ff00).setOrigin(0, 0.5).setDepth(y + 100);
     this.troops.push({ type: type, def: def, sprite: troopSprite, hpBar: hpBar, x: x, y: y, target: null, hp: def.hp, maxHp: def.hp });
   }
   
   showDamageText(x, y, amount) {
-    let dmgText = this.add.text(x, y - 30, '-' + Math.floor(amount), { fontSize: '18px', color: '#ff4444', fontStyle: 'bold' }).setOrigin(0.5).setDepth(9999);
-    this.tweens.add({ targets: dmgText, y: y - 70, alpha: 0, duration: 800, onComplete: () => dmgText.destroy() });
+    let dmgText = this.add.text(x, y - 20, '-' + Math.floor(amount), { fontSize: '14px', color: '#ff4444', fontStyle: 'bold' }).setOrigin(0.5).setDepth(9999);
+    this.tweens.add({ targets: dmgText, y: y - 50, alpha: 0, duration: 800, onComplete: () => dmgText.destroy() });
   }
   
   explode(x, y, color) {
-    let blast = this.add.circle(x, y, 20, color, 0.8).setDepth(9999);
+    let blast = this.add.circle(x, y, 15, color, 0.8).setDepth(9999);
     this.tweens.add({ targets: blast, scale: 3, alpha: 0, duration: 400, onComplete: () => blast.destroy() });
   }
   
@@ -347,7 +415,7 @@ class BattleScene extends Phaser.Scene {
         });
         if (nearestTroop) {
           const laser = this.add.line(0, 0, tower.x, tower.y, nearestTroop.x, nearestTroop.y, 0xff0000).setDepth(9999);
-          laser.setOrigin(0, 0); laser.setLineWidth(4); setTimeout(() => laser.destroy(), 150); 
+          laser.setOrigin(0, 0); laser.setLineWidth(3); setTimeout(() => laser.destroy(), 150); 
           nearestTroop.hp -= 25; this.showDamageText(nearestTroop.x, nearestTroop.y, 25); playSound('shoot');
         }
       }
@@ -360,8 +428,8 @@ class BattleScene extends Phaser.Scene {
     for (let i = this.troops.length - 1; i >= 0; i--) {
       let troop = this.troops[i];
       if (troop.hp <= 0) { troop.sprite.destroy(); troop.hpBar.destroy(); this.troops.splice(i, 1); continue; }
-      let barWidth = (troop.type === 'hero') ? 40 : 24;
-      troop.hpBar.width = barWidth * (troop.hp / troop.maxHp); troop.hpBar.setPosition(troop.x - barWidth/2, troop.y - (troop.type==='hero'?30:24));
+      let barWidth = (troop.type === 'hero') ? 30 : 18;
+      troop.hpBar.width = barWidth * (troop.hp / troop.maxHp); troop.hpBar.setPosition(troop.x - barWidth/2, troop.y - (troop.type==='hero'?24:18));
       
       if (!troop.target || !troop.target.alive) troop.target = this.findNearestBuilding(troop.x, troop.y, troop.def.target);
       
@@ -421,18 +489,23 @@ class BattleScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA OBRONY (BEZ ZMIAN) ---
+// --- SCENA OBRONY (DOSTOSOWANA DO MNIEJSZYCH BUDYNKÓW) ---
 class DefenseScene extends Phaser.Scene {
   constructor() { super('DefenseScene'); }
   create() {
     let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a');
     
-    let gridGraphics = this.add.graphics();
-    gridGraphics.lineStyle(1, 0x444444, 0.3);
-    for (let i = 0; i <= GRID * 2; i++) {
-      gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 + (GRID * TILE_SIZE), (GRID * TILE_SIZE));
-      gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
-    }
+    // Tło dla obrony
+    let groundGraphics = this.add.graphics();
+    groundGraphics.setDepth(-1);
+    groundGraphics.fillStyle(0x2d4a22, 1);
+    groundGraphics.beginPath();
+    groundGraphics.moveTo(0, -GRID * TILE_SIZE / 2);
+    groundGraphics.lineTo(GRID * TILE_SIZE, 0);
+    groundGraphics.lineTo(0, GRID * TILE_SIZE / 2);
+    groundGraphics.lineTo(-GRID * TILE_SIZE, 0);
+    groundGraphics.closePath();
+    groundGraphics.fillPath();
 
     this.playerBuildings = []; const saved = loadGame(); 
     saved.forEach(b => {
@@ -441,8 +514,8 @@ class DefenseScene extends Phaser.Scene {
       let screenY = (b.gridX + b.gridY) * (TILE_SIZE / 4);
       
       let container = drawBuildingTexture(this, screenX, screenY, def, 1);
-      const label = this.add.text(screenX, screenY + 35, def.name + ' L' + b.level, { fontSize: '14px', color: '#fff', backgroundColor:'#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
-      const hpBar = this.add.rectangle(screenX - 20, screenY - 50, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
+      const label = this.add.text(screenX, screenY + 25, def.name + ' L' + b.level, { fontSize: '10px', color: '#fff', backgroundColor:'#00000088', padding:{x:3,y:1} }).setOrigin(0.5).setDepth(screenY + 1);
+      const hpBar = this.add.rectangle(screenX - 15, screenY - 35, 30, 5, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
       
       this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower') });
     });
@@ -451,7 +524,7 @@ class DefenseScene extends Phaser.Scene {
     let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2);
     let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
     
-    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(2.2);
+    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(3.5);
     cam.scrollX = isoCenterX - cam.width / 2; cam.scrollY = isoCenterY - cam.height / 2;
     this.centerBase = { x: isoCenterX, y: isoCenterY };
 
@@ -465,7 +538,7 @@ class DefenseScene extends Phaser.Scene {
             let target = this.enemies.find(e => e.alive && Phaser.Math.Distance.Between(tower.x, tower.y, e.x, e.y) < 400);
             if (target) {
               const laser = this.add.line(0, 0, tower.x, tower.y, target.x, target.y, 0x00ffff).setDepth(9999);
-              laser.setOrigin(0, 0); laser.setLineWidth(5); setTimeout(() => laser.destroy(), 150); target.hp -= 30; playSound('shoot');
+              laser.setOrigin(0, 0); laser.setLineWidth(4); setTimeout(() => laser.destroy(), 150); target.hp -= 30; playSound('shoot');
             }
           }
         });
@@ -474,11 +547,11 @@ class DefenseScene extends Phaser.Scene {
     this.input.on('pointerdown', (pointer) => {
       if (this.battleEnded || this.mortarCooldown > 0) return;
       const clickX = pointer.worldX; const clickY = pointer.worldY;
-      const blast = this.add.circle(clickX, clickY, 80, 0xffaa00, 0.6).setDepth(9999); this.time.delayedCall(200, () => blast.destroy()); playSound('boom');
+      const blast = this.add.circle(clickX, clickY, 60, 0xffaa00, 0.6).setDepth(9999); this.time.delayedCall(200, () => blast.destroy()); playSound('boom');
       this.enemies.forEach(enemy => {
         if (!enemy.alive) return;
         const dist = Phaser.Math.Distance.Between(clickX, clickY, enemy.x, enemy.y);
-        if (dist <= 80) enemy.hp -= 100;
+        if (dist <= 60) enemy.hp -= 100;
       });
       this.mortarCooldown = 3000; document.getElementById('defense-status').innerText = '🛡️ Moździerz: Ładuje (3s)';
       this.time.addEvent({ delay: 1000, repeat: 2, callback: () => {
@@ -496,8 +569,8 @@ class DefenseScene extends Phaser.Scene {
     for (let i = 0; i < numEnemies; i++) {
       const angle = Phaser.Math.FloatBetween(0, Math.PI * 2); const distance = Phaser.Math.Between(400, 600); 
       const x = this.centerBase.x + Math.cos(angle) * distance; const y = this.centerBase.y + Math.sin(angle) * distance;
-      const sprite = this.add.text(x, y, '🩸', { fontSize: '24px', color: '#fff', backgroundColor: '#8b0000', padding: {x:4, y:4} }).setOrigin(0.5).setDepth(y + 100);
-      const hpBar = this.add.rectangle(x - 12, y - 24, 24, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(y + 100);
+      const sprite = this.add.text(x, y, '🩸', { fontSize: '18px', color: '#fff', backgroundColor: '#8b0000', padding: {x:3, y:3} }).setOrigin(0.5).setDepth(y + 100);
+      const hpBar = this.add.rectangle(x - 10, y - 18, 20, 4, 0x00ff00).setOrigin(0, 0.5).setDepth(y + 100);
       this.enemies.push({ sprite, hpBar, x, y, hp: 100, maxHp: 100, target: null, alive: true, damage: 15, speed: 80 });
     }
   }
@@ -508,7 +581,7 @@ class DefenseScene extends Phaser.Scene {
     for (let i = this.enemies.length - 1; i >= 0; i--) {
       let enemy = this.enemies[i];
       if (enemy.hp <= 0) { enemy.alive = false; enemy.sprite.destroy(); enemy.hpBar.destroy(); this.enemies.splice(i, 1); continue; }
-      enemy.hpBar.width = 24 * (enemy.hp / enemy.maxHp); enemy.hpBar.setPosition(enemy.x - 12, enemy.y - 24);
+      enemy.hpBar.width = 20 * (enemy.hp / enemy.maxHp); enemy.hpBar.setPosition(enemy.x - 10, enemy.y - 18);
       if (!enemy.target || !enemy.target.alive) {
         let nearest = null, minDist = Infinity;
         this.playerBuildings.forEach(b => { if (b.alive) { const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, b.x, b.y); if (dist < minDist) { minDist = dist; nearest = b; } } });
@@ -516,7 +589,7 @@ class DefenseScene extends Phaser.Scene {
       }
       if (enemy.target) {
         const dist = Phaser.Math.Distance.Between(enemy.x, enemy.y, enemy.target.x, enemy.target.y);
-        if (dist > 40) {
+        if (dist > 30) {
           const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, enemy.target.x, enemy.target.y);
           enemy.x += Math.cos(angle) * enemy.speed * dt; enemy.y += Math.sin(angle) * enemy.speed * dt; enemy.sprite.setPosition(enemy.x, enemy.y);
         } else {
