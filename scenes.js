@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - WERSJA IZOMETRYCZNA (PRZYBLIŻONA)
+// SCENES.JS - WERSJA Z WIZUALIZACJĄ PRODUKCJI
 // ==========================================
 
 const TILE_SIZE = 80; 
@@ -52,7 +52,6 @@ class BaseScene extends Phaser.Scene {
 
     let gridGraphics = this.add.graphics();
     gridGraphics.lineStyle(1, 0x444444, 0.3);
-    
     for (let i = 0; i <= GRID * 2; i++) {
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 + (GRID * TILE_SIZE), (GRID * TILE_SIZE));
       gridGraphics.lineBetween((i * TILE_SIZE) / 2, 0, (i * TILE_SIZE) / 2 - (GRID * TILE_SIZE), (GRID * TILE_SIZE));
@@ -115,8 +114,6 @@ class BaseScene extends Phaser.Scene {
     });
     
     cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
-    
-    // ZWIĘKSZONY ZOOM
     cam.setZoom(2.2); 
     this.centerCamera();
   }
@@ -136,10 +133,51 @@ class BaseScene extends Phaser.Scene {
     prodTimer += delta;
     if (prodTimer >= 1000) {
       let aG = 0, aE = 0;
-      buildings.forEach(b => { aG += (BUILDINGS[b.type].prod.gold || 0) * b.level; aE += (BUILDINGS[b.type].prod.elixir || 0) * b.level; });
+      
+      // --- WIZUALIZACJA PRODUKCJI ---
+      buildings.forEach(b => {
+        let def = BUILDINGS[b.type];
+        let goldProd = (def.prod.gold || 0) * b.level;
+        let elixirProd = (def.prod.elixir || 0) * b.level;
+
+        if (goldProd > 0) {
+            this.spawnProductionText(b.x, b.y - 30, '+' + goldProd + ' 💰', '#ffd700');
+            aG += goldProd;
+        }
+        if (elixirProd > 0) {
+            this.spawnProductionText(b.x, b.y - 30, '+' + elixirProd + ' 🔮', '#ba55d3');
+            aE += elixirProd;
+        }
+      });
+
       if (aG > 0 || aE > 0) { gold += aG; elixir += aE; updateUI(); }
       prodTimer = 0;
     }
+  }
+
+  // NOWA FUNKCJA: Animacja tekstu produkcji
+  spawnProductionText(x, y, text, color) {
+    // Losowe przesunięcie, żeby teksty nie nachodziły na siebie idealnie
+    let offsetX = Phaser.Math.Between(-20, 20);
+    let offsetY = Phaser.Math.Between(-10, 10);
+    
+    let prodText = this.add.text(x + offsetX, y + offsetY, text, {
+        fontSize: '20px', 
+        color: color, 
+        fontStyle: 'bold',
+        stroke: '#000000',
+        strokeThickness: 4
+    }).setOrigin(0.5).setDepth(9999);
+
+    // Animacja: tekst unosi się do góry i znika
+    this.tweens.add({
+        targets: prodText,
+        y: y - 80, // Unosi się o 80 pikseli
+        alpha: 0,  // Znika
+        duration: 1500, // Trwa 1.5 sekundy
+        ease: 'Cubic.easeOut',
+        onComplete: () => prodText.destroy()
+    });
   }
 
   tryPlaceBuilding(p) {
@@ -177,9 +215,9 @@ class BaseScene extends Phaser.Scene {
     const container = drawBuildingTexture(this, screenX, screenY, def, 1);
     container.type = type; 
     
-    const label = this.add.text(screenX, screenY + 30, def.name + ' L' + level, { fontSize: '14px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
-    const hpBarBg = this.add.rectangle(screenX, screenY - 45, 40, 6, 0x000000).setDepth(screenY + 1);
-    const hpBar = this.add.rectangle(screenX - 20, screenY - 45, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
+    const label = this.add.text(screenX, screenY + 35, def.name + ' L' + level, { fontSize: '14px', color: '#fff', fontStyle: 'bold', backgroundColor: '#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
+    const hpBarBg = this.add.rectangle(screenX, screenY - 50, 40, 6, 0x000000).setDepth(screenY + 1);
+    const hpBar = this.add.rectangle(screenX - 20, screenY - 50, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
     
     container.setSize(TILE_SIZE, TILE_SIZE).setInteractive({ useHandCursor: true });
     container.gridX = gridX; container.gridY = gridY; container.level = level;
@@ -204,7 +242,7 @@ class BaseScene extends Phaser.Scene {
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
-    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(2.2); // ZOOM W BITWIE
+    let cam = this.cameras.main; cam.setBackgroundColor('#1a1a1a'); cam.setScroll(0, 0); cam.setZoom(2.2);
     this.enemyBuildings = []; this.troops = []; this.battleEnded = false;
     this.lootGold = 0; this.lootElixir = 0; this.lastDamageText = 0; this.destroyedCount = 0; this.totalEnemyBuildings = 0; 
     
@@ -254,7 +292,7 @@ class BattleScene extends Phaser.Scene {
     let screenX = (gridX - gridY) * (TILE_SIZE / 2); 
     let screenY = (gridX + gridY) * (TILE_SIZE / 4);
     let container = drawBuildingTexture(this, screenX, screenY, def, 1); 
-    let hpBar = this.add.rectangle(screenX - 20, screenY - 45, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
+    let hpBar = this.add.rectangle(screenX - 20, screenY - 50, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
     this.enemyBuildings.push({ container: container, sprite: container, hpBar: hpBar, hp: hp, maxHp: hp, gridX: gridX, gridY: gridY, x: screenX, y: screenY, alive: true, isDefense: isDefense, lootG: lootG, lootE: lootE, type: type });
   }
   
@@ -383,8 +421,8 @@ class DefenseScene extends Phaser.Scene {
       let screenY = (b.gridX + b.gridY) * (TILE_SIZE / 4);
       
       let container = drawBuildingTexture(this, screenX, screenY, def, 1);
-      const label = this.add.text(screenX, screenY + 30, def.name + ' L' + b.level, { fontSize: '14px', color: '#fff', backgroundColor:'#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
-      const hpBar = this.add.rectangle(screenX - 20, screenY - 45, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
+      const label = this.add.text(screenX, screenY + 35, def.name + ' L' + b.level, { fontSize: '14px', color: '#fff', backgroundColor:'#00000088', padding:{x:4,y:2} }).setOrigin(0.5).setDepth(screenY + 1);
+      const hpBar = this.add.rectangle(screenX - 20, screenY - 50, 40, 6, 0x00ff00).setOrigin(0, 0.5).setDepth(screenY + 1);
       
       this.playerBuildings.push({ sprite: container, rect: container, hpBar: hpBar, gridX: b.gridX, gridY: b.gridY, x: screenX, y: screenY, hp: b.hp, maxHp: b.maxHp, type: b.type, level: b.level, alive: true, isDefense: (b.type === 'tower') });
     });
@@ -393,11 +431,7 @@ class DefenseScene extends Phaser.Scene {
     let isoCenterX = (centerX - centerY) * (TILE_SIZE / 2);
     let isoCenterY = (centerX + centerY) * (TILE_SIZE / 4);
     
-    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); 
-    
-    // ZWIĘKSZONY ZOOM W OBRONIE
-    cam.setZoom(2.2);
-    
+    cam.setBounds(-GRID * TILE_SIZE, -GRID * TILE_SIZE, GRID * TILE_SIZE * 2, GRID * TILE_SIZE * 2); cam.setZoom(2.2);
     cam.scrollX = isoCenterX - cam.width / 2; cam.scrollY = isoCenterY - cam.height / 2;
     this.centerBase = { x: isoCenterX, y: isoCenterY };
 
