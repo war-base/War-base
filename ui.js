@@ -48,6 +48,7 @@ function handleCampaignClick(event) {
     startCampaignLevel(levelId);
 }
 
+// --- POPRAWIONA FUNKCJA URUCHAMIANIA BITWY ---
 function startCampaignLevel(id) {
     let level = CAMPAIGN_LEVELS.find(l => l.id === id);
     if (!level) return;
@@ -59,7 +60,28 @@ function startCampaignLevel(id) {
 
     closeCampaignMap();
     window.currentCampaignLevel = id; 
-    startAttack(); 
+    
+    // Ręczne ukrycie UI bazy (to samo, co robi startAttack)
+    document.getElementById('build-menu').style.display = 'none';
+    document.getElementById('home-btn').style.display = 'none';
+    document.getElementById('attack-btn').style.display = 'none';
+    document.getElementById('shop-btn').style.display = 'none';
+    document.getElementById('top-bar').style.display = 'none';
+    document.getElementById('menu-btn').style.display = 'none';
+    document.getElementById('reset-btn').style.display = 'none';
+    document.getElementById('battle-ui').style.display = 'block';
+    document.getElementById('timer-display').innerText = '3:00';
+    
+    selectBattleTroop('barbarian'); 
+    updateUI(); 
+    checkHeroAvailability();
+    
+    // Uruchamiamy scenę bitwy bezpośrednio
+    if (game && game.scene) {
+        game.scene.start('BattleScene');
+    } else {
+        showMessage('Błąd ładowania sceny bitwy!', 'error');
+    }
 }
 
 // --- FUNKCJA AKTUALIZACJI INTERFEJSU ---
