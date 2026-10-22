@@ -1,9 +1,21 @@
+// --- FUNKCJA AKTUALIZACJI INTERFEJSU ---
 function updateUI() {
+  // Aktualizacja tekstów
   document.getElementById('ui-gold').innerText = Math.floor(gold);
   document.getElementById('ui-elixir').innerText = Math.floor(elixir);
   document.getElementById('ui-trophies').innerText = trophies;
   document.getElementById('ui-level').innerText = level;
 
+  // Aktualizacja paska XP
+  const xpBarFill = document.getElementById('xp-bar-fill');
+  if (xpBarFill) {
+    let xpNeeded = level * 500;
+    let xpPercent = (xp / xpNeeded) * 100;
+    if (xpPercent > 100) xpPercent = 100;
+    xpBarFill.style.width = xpPercent + '%';
+  }
+
+  // Podświetlanie wybranego budynku
   const btns = document.querySelectorAll('.build-btn');
   if (btns.length >= 8) {
     btns.forEach(btn => btn.classList.remove('selected'));
@@ -17,6 +29,7 @@ function updateUI() {
     if (selectedBuildingType === 'tower') btns[7].classList.add('selected');
   }
   
+  // Aktualizacja jednostek w bitwie
   if(document.getElementById('ui-barbarian')) document.getElementById('ui-barbarian').innerText = army.barbarian;
   if(document.getElementById('ui-archer')) document.getElementById('ui-archer').innerText = army.archer;
   if(document.getElementById('ui-giant')) document.getElementById('ui-giant').innerText = army.giant;
@@ -42,12 +55,24 @@ function updateAllianceUI() {
   }
 }
 
-function showMessage(text) {
-  const msg = document.getElementById('message');
-  if(!msg) return;
-  msg.innerText = text; msg.style.display = 'block';
-  if (messageTimeout) clearTimeout(messageTimeout);
-  messageTimeout = setTimeout(() => { msg.style.display = 'none'; }, 3000);
+// --- NOWY SYSTEM POWIADOMIEŃ (TOAST) ---
+function showMessage(text, type = 'info') {
+    const container = document.getElementById('toast-container');
+    if (!container) {
+        alert(text); // Fallback
+        return;
+    }
+    
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.innerText = text;
+    
+    container.appendChild(toast);
+    
+    // Usuwanie elementu z DOM po zakończeniu animacji (3 sekundy)
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
 
 function addXP(amount) {
@@ -56,8 +81,9 @@ function addXP(amount) {
   if (xp >= xpNeeded) {
     xp -= xpNeeded;
     level++;
-    showMessage(`Awans na Rangę ${level}!`);
+    showMessage(`Awans na Rangę ${level}!`, 'success');
   }
+  updateUI(); // Odśwież pasek XP
 }
 
 function checkHeroAvailability() {
@@ -74,8 +100,9 @@ function checkHeroAvailability() {
   }
 }
 
+// --- FUNKCJE OTWIERANIA I ZAMYKANIA OKIEN ---
 function openMainMenu() { 
-  updateAllianceUI(); // Odświeżenie sojuszu przy otwieraniu
+  updateAllianceUI(); 
   document.getElementById('main-menu-overlay').style.display = 'flex'; 
 }
 function closeMainMenu() { document.getElementById('main-menu-overlay').style.display = 'none'; }
@@ -111,6 +138,7 @@ function resetGame() {
   }
 }
 
+// --- PANEL BUDYNKU ---
 function openBuildingPanel(building) {
   currentlySelectedBuilding = building;
   const def = BUILDINGS[building.type];
@@ -168,18 +196,18 @@ function updateLabUI() {
 function upgradeTroop(type) {
   const lvl = troopLevels[type];
   const cost = Math.floor(BASE_TROOPS[type].cost * lvl * 2.5);
-  if (elixir < cost) { showMessage('Za mało Many!'); return; }
+  if (elixir < cost) { showMessage('Za mało Many!', 'error'); return; }
   elixir -= cost; troopLevels[type]++;
   playSound('build'); updateUI(); saveGame(); updateLabUI();
-  showMessage(`Wyszkolono: ${BASE_TROOPS[type].name} (Lvl ${troopLevels[type]})!`);
+  showMessage(`Wyszkolono: ${BASE_TROOPS[type].name} (Lvl ${troopLevels[type]})!`, 'success');
 }
 
 function trainTroop(type) {
   const barracks = buildings.find(b => b.type === 'barracks');
-  if (!barracks) { showMessage('Koszary są zniszczone!'); return; }
-  if (getCurrentArmySize() >= getMaxArmy()) { showMessage('Brak miejsca w Obozach!'); return; }
+  if (!barracks) { showMessage('Koszary są zniszczone!', 'error'); return; }
+  if (getCurrentArmySize() >= getMaxArmy()) { showMessage('Brak miejsca w Obozach!', 'error'); return; }
   const cost = BASE_TROOPS[type].cost;
-  if (elixir < cost) { showMessage('Za mało Many!'); return; }
+  if (elixir < cost) { showMessage('Za mało Many!', 'error'); return; }
   elixir -= cost; army[type]++;
   
   if (type === 'wallbreaker') updateQuest('train_wallbreaker', 1);
@@ -194,14 +222,14 @@ function upgradeBuilding() {
   const townhall = buildings.find(b => b.type === 'townhall');
   
   if (currentlySelectedBuilding.type !== 'townhall' && townhall && currentlySelectedBuilding.level >= townhall.level) {
-    showMessage('Najpierw ulepsz Warownię!'); return;
+    showMessage('Najpierw ulepsz Warownię!', 'error'); return;
   }
   
   const costGold = Math.floor(def.cost.gold * currentlySelectedBuilding.level * 1.5);
   const costElixir = Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 1.5);
   
-  if (gold < costGold) { showMessage('Za mało złota!'); return; }
-  if (elixir < costElixir) { showMessage('Za mało Many!'); return; }
+  if (gold < costGold) { showMessage('Za mało złota!', 'error'); return; }
+  if (elixir < costElixir) { showMessage('Za mało Many!', 'error'); return; }
   
   gold -= costGold; elixir -= costElixir;
   currentlySelectedBuilding.level++;
@@ -227,14 +255,16 @@ function sellBuilding() {
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
   
-  currentlySelectedBuilding.container.destroy();
-  currentlySelectedBuilding.label.destroy();
-  currentlySelectedBuilding.hpBar.destroy();
+  // Usuwanie obiektów wizualnych z Phasera
+  if (currentlySelectedBuilding.sprite) currentlySelectedBuilding.sprite.destroy();
+  if (currentlySelectedBuilding.label) currentlySelectedBuilding.label.destroy();
+  if (currentlySelectedBuilding.hpBar) currentlySelectedBuilding.hpBar.destroy();
   
   buildings = buildings.filter(b => b !== currentlySelectedBuilding);
   updateUI(); saveGame(); closeBuildingPanel();
 }
 
+// --- ZADANIA ---
 function updateQuest(type, amount = 1) {
   let questUpdated = false;
   quests.forEach(q => {
@@ -285,29 +315,30 @@ function claimQuest(id) {
     addXP(q.reward.xp);
     playSound('coin');
     updateUI(); saveGame(); renderQuests();
-    showMessage('Odebrano nagrodę!');
+    showMessage('Odebrano nagrodę!', 'success');
   }
 }
 
+// --- SKLEP ---
 function openShop() { closeMainMenu(); document.getElementById('shop-overlay').style.display = 'flex'; }
 function closeShop() { document.getElementById('shop-overlay').style.display = 'none'; }
 function buyGoldWithMana() {
   if (elixir >= 500) {
     elixir -= 500; gold += 1000;
-    playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 1000 złota!');
-  } else { showMessage('Za mało Many!'); }
+    playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 1000 złota!', 'success');
+  } else { showMessage('Za mało Many!', 'error'); }
 }
 function buyManaWithGold() {
   if (gold >= 1000) {
     gold -= 1000; elixir += 500;
-    playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 500 Many!');
-  } else { showMessage('Za mało złota!'); }
+    playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 500 Many!', 'success');
+  } else { showMessage('Za mało złota!', 'error'); }
 }
 let chestLoot = { gold: 0, elixir: 0 };
 function buyChest(cost, type) {
   if (gold >= cost) {
     gold -= cost; playSound('build'); updateUI(); saveGame(); openChest(type);
-  } else { showMessage('Za mało złota!'); }
+  } else { showMessage('Za mało złota!', 'error'); }
 }
 function openChest(type) {
   let title = "Drewniana Skrzynia"; let icon = "📦"; let rewardGold = 0; let rewardElixir = 0;
@@ -324,9 +355,10 @@ function openChest(type) {
 }
 function closeChest() {
   gold += chestLoot.gold; elixir += chestLoot.elixir;
-  updateUI(); saveGame(); document.getElementById('chest-overlay').style.display = 'none'; showMessage('Odebrano łup ze skrzyni!');
+  updateUI(); saveGame(); document.getElementById('chest-overlay').style.display = 'none'; showMessage('Odebrano łup ze skrzyni!', 'success');
 }
 
+// --- CODZIENNA NAGRODA ---
 function openDailyReward() {
   closeMainMenu();
   let now = Date.now(); let timePassed = now - lastDailyReward; let cooldown = 24 * 60 * 60 * 1000;
@@ -334,12 +366,12 @@ function openDailyReward() {
     let rewardGold = 1000; let rewardElixir = 500;
     gold += rewardGold; elixir += rewardElixir; lastDailyReward = now;
     playSound('coin'); updateUI(); saveGame(); updateDailyButtonState();
-    showMessage(`Odebrano codzienną nagrodę: ${rewardGold} 💰 i ${rewardElixir} 🔮!`);
+    showMessage(`Odebrano codzienną nagrodę: ${rewardGold} 💰 i ${rewardElixir} 🔮!`, 'success');
   } else {
     let msLeft = cooldown - timePassed;
     let hoursLeft = Math.floor(msLeft / (60 * 60 * 1000));
     let minsLeft = Math.floor((msLeft % (60 * 60 * 1000)) / (60 * 1000));
-    showMessage(`Nagroda dostępna za ${hoursLeft}h ${minsLeft}m.`);
+    showMessage(`Nagroda dostępna za ${hoursLeft}h ${minsLeft}m.`, 'info');
   }
 }
 function updateDailyButtonState() {
