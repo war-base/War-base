@@ -1,3 +1,60 @@
+// --- KAMPANIA I POZIOMY ---
+const CAMPAIGN_LEVELS = [
+    { id: 1, name: "Wioska Goblinów", desc: "Łatwy łup. Słaba obrona.", icon: "👺", reqLevel: 1, lootG: 500, lootE: 200 },
+    { id: 2, name: "Mroczna Puszcza", desc: "Średni poziom trudności.", icon: "🌲", reqLevel: 3, lootG: 1500, lootE: 800 },
+    { id: 3, name: "Zamek Krwi", desc: "Potężny wróg. Wymagana silna armia.", icon: "🏰", reqLevel: 5, lootG: 5000, lootE: 2500 }
+];
+
+function openCampaignMap() {
+    document.getElementById('campaign-map').style.display = 'flex';
+    renderCampaignNodes();
+}
+
+function closeCampaignMap() {
+    document.getElementById('campaign-map').style.display = 'none';
+}
+
+function renderCampaignNodes() {
+    let container = document.getElementById('campaign-nodes-container');
+    container.innerHTML = '';
+    
+    CAMPAIGN_LEVELS.forEach(level => {
+        let isUnlocked = level.reqLevel <= level; // Poziom gracza
+        let nodeClass = isUnlocked ? 'campaign-node' : 'campaign-node locked';
+        
+        container.innerHTML += `
+            <div class="${nodeClass}" onclick="startCampaignLevel(${level.id})">
+                <div class="node-info">
+                    <div class="node-name">${level.name}</div>
+                    <div class="node-desc">${level.desc} (Wymagany Poziom: ${level.reqLevel})</div>
+                    <div class="node-desc" style="color:#ffd700;">Łup: ${level.lootG} 💰, ${level.lootE} 🔮</div>
+                </div>
+                <div class="node-icon">${level.icon}</div>
+            </div>
+        `;
+    });
+}
+
+function startCampaignLevel(id) {
+    let level = CAMPAIGN_LEVELS.find(l => l.id === id);
+    if (!level) return;
+    
+    // Sprawdzenie, czy gracz ma wojsko
+    if (getCurrentArmySize() <= 0 && army.hero <= 0) {
+        showMessage('Brak wojska do ataku!', 'error');
+        return;
+    }
+
+    // Ukrywamy mapę i przechodzimy do bitwy (na razie losowej, ale w przyszłości powiązanej z poziomem)
+    closeCampaignMap();
+    
+    // Ustawiamy flagę, że to atak z kampanii
+    window.isCampaignBattle = true;
+    window.currentCampaignLoot = { gold: level.lootG, elixir: level.lootE };
+    
+    startAttack(); // Uruchamiamy standardową bitwę
+}
+
 // --- FUNKCJA AKTUALIZACJI INTERFEJSU ---
 function updateUI() {
   document.getElementById('ui-gold').innerText = Math.floor(gold);
@@ -54,7 +111,7 @@ function updateAllianceUI() {
   }
 }
 
-// --- NOWY SYSTEM POWIADOMIEŃ (TOAST) ---
+// --- SYSTEM POWIADOMIEŃ (TOAST) ---
 function showMessage(text, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) { alert(text); return; }
@@ -76,6 +133,10 @@ function addXP(amount) {
   updateUI();
 }
 
+// ... (RESZTA FUNKCJI UI.JS BEZ ZMIAN - SKLEP, ZADANIA, ITP.)
+// Skopiuj je ze swojego starego pliku ui.js. 
+// Poniżej dla pewności wklejam wszystkie potrzebne funkcje:
+
 function checkHeroAvailability() {
   const hasAltar = buildings.some(b => b.type === 'altar');
   const heroBtn = document.getElementById('btn-troop-hero');
@@ -90,7 +151,6 @@ function checkHeroAvailability() {
   }
 }
 
-// --- FUNKCJE OTWIERANIA I ZAMYKANIA OKIEN ---
 function openMainMenu() { updateAllianceUI(); document.getElementById('main-menu-overlay').style.display = 'flex'; }
 function closeMainMenu() { document.getElementById('main-menu-overlay').style.display = 'none'; }
 
@@ -127,7 +187,6 @@ function resetGame() {
   }
 }
 
-// --- PANEL BUDYNKU ---
 function openBuildingPanel(building) {
   currentlySelectedBuilding = building;
   const def = BUILDINGS[building.type];
@@ -203,7 +262,6 @@ function trainTroop(type) {
   playSound('build'); updateUI(); saveGame();
 }
 
-// --- ZMIENIONA FUNKCJA ULEPSZANIA (CZAS BUDOWY) ---
 function upgradeBuilding() {
   if (!currentlySelectedBuilding) return;
   if (currentlySelectedBuilding.isBuilding) { showMessage('Budynek jest już w budowie!', 'error'); return; }
@@ -222,16 +280,12 @@ function upgradeBuilding() {
   if (elixir < costElixir) { showMessage('Za mało Many!', 'error'); return; }
   
   gold -= costGold; elixir -= costElixir;
-  
-  // Ustawienie stanu budowy
-  let buildTime = 15000; // 15 sekund na ulepszenie
+  let buildTime = 15000; 
   currentlySelectedBuilding.isBuilding = true;
   currentlySelectedBuilding.buildEndTime = Date.now() + buildTime;
   
-  // Zmiana wyglądu na "w budowie"
   const defBuilding = BUILDINGS[currentlySelectedBuilding.type];
-  let oldGridX = currentlySelectedBuilding.gridX;
-  let oldGridY = currentlySelectedBuilding.gridY;
+  let oldGridX = currentlySelectedBuilding.gridX; let oldGridY = currentlySelectedBuilding.gridY;
   let oldLevel = currentlySelectedBuilding.level;
   
   buildings = buildings.filter(b => b !== currentlySelectedBuilding);
@@ -241,14 +295,12 @@ function upgradeBuilding() {
   
   baseSceneInstance.createBuilding(oldGridX, oldGridY, currentlySelectedBuilding.type, false, oldLevel, null, true, currentlySelectedBuilding.buildEndTime);
   
-  playSound('build');
-  updateUI(); saveGame(); closeBuildingPanel();
+  playSound('build'); updateUI(); saveGame(); closeBuildingPanel();
 }
 
 function sellBuilding() {
   if (!currentlySelectedBuilding) return;
   if (currentlySelectedBuilding.isBuilding) { showMessage('Nie można zburzyć budynku w budowie!', 'error'); return; }
-  
   const def = BUILDINGS[currentlySelectedBuilding.type];
   gold += Math.floor(def.cost.gold * currentlySelectedBuilding.level * 0.5);
   elixir += Math.floor(def.cost.elixir * currentlySelectedBuilding.level * 0.5);
@@ -261,7 +313,6 @@ function sellBuilding() {
   updateUI(); saveGame(); closeBuildingPanel();
 }
 
-// --- ZADANIA ---
 function updateQuest(type, amount = 1) {
   let questUpdated = false;
   quests.forEach(q => {
@@ -279,8 +330,7 @@ function updateQuest(type, amount = 1) {
 function openQuests() { closeMainMenu(); renderQuests(); document.getElementById('quests-overlay').style.display = 'flex'; }
 function closeQuests() { document.getElementById('quests-overlay').style.display = 'none'; }
 function renderQuests() {
-  let listEl = document.getElementById('quest-list');
-  listEl.innerHTML = '';
+  let listEl = document.getElementById('quest-list'); listEl.innerHTML = '';
   quests.forEach(q => {
     let isComplete = q.current >= q.target;
     let btnText = q.claimed ? 'Odebrano' : (isComplete ? 'Odbierz' : 'W toku');
@@ -291,71 +341,35 @@ function renderQuests() {
     if(q.reward.elixir > 0) rewardStr.push(`🔮 ${q.reward.elixir}`);
     if(q.reward.xp > 0) rewardStr.push(`🌟 ${q.reward.xp} XP`);
 
-    listEl.innerHTML += `
-      <div class="quest-item" style="${q.claimed ? 'opacity:0.5;' : ''}">
-        <div class="quest-info">
-          <div class="quest-title">${q.title}</div>
-          <div class="quest-progress">${q.desc} (${q.current}/${q.target})</div>
-          <div class="quest-progress" style="color:#c9a06c; margin-top:3px;">Nagroda: ${rewardStr.join(', ')}</div>
-        </div>
-        <button class="${btnClass}" ${action}>${btnText}</button>
-      </div>
-    `;
+    listEl.innerHTML += `<div class="quest-item" style="${q.claimed ? 'opacity:0.5;' : ''}"><div class="quest-info"><div class="quest-title">${q.title}</div><div class="quest-progress">${q.desc} (${q.current}/${q.target})</div><div class="quest-progress" style="color:#c9a06c; margin-top:3px;">Nagroda: ${rewardStr.join(', ')}</div></div><button class="${btnClass}" ${action}>${btnText}</button></div>`;
   });
 }
 function claimQuest(id) {
   let q = quests.find(x => x.id === id);
   if (q && q.current >= q.target && !q.claimed) {
-    q.claimed = true;
-    gold += q.reward.gold;
-    elixir += q.reward.elixir;
-    addXP(q.reward.xp);
-    playSound('coin');
-    updateUI(); saveGame(); renderQuests();
-    showMessage('Odebrano nagrodę!', 'success');
+    q.claimed = true; gold += q.reward.gold; elixir += q.reward.elixir; addXP(q.reward.xp); playSound('coin');
+    updateUI(); saveGame(); renderQuests(); showMessage('Odebrano nagrodę!', 'success');
   }
 }
 
-// --- SKLEP ---
 function openShop() { closeMainMenu(); document.getElementById('shop-overlay').style.display = 'flex'; }
 function closeShop() { document.getElementById('shop-overlay').style.display = 'none'; }
-function buyGoldWithMana() {
-  if (elixir >= 500) {
-    elixir -= 500; gold += 1000;
-    playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 1000 złota!', 'success');
-  } else { showMessage('Za mało Many!', 'error'); }
-}
-function buyManaWithGold() {
-  if (gold >= 1000) {
-    gold -= 1000; elixir += 500;
-    playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 500 Many!', 'success');
-  } else { showMessage('Za mało złota!', 'error'); }
-}
+function buyGoldWithMana() { if (elixir >= 500) { elixir -= 500; gold += 1000; playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 1000 złota!', 'success'); } else { showMessage('Za mało Many!', 'error'); } }
+function buyManaWithGold() { if (gold >= 1000) { gold -= 1000; elixir += 500; playSound('coin'); updateUI(); saveGame(); showMessage('Kupiono 500 Many!', 'success'); } else { showMessage('Za mało złota!', 'error'); } }
 let chestLoot = { gold: 0, elixir: 0 };
-function buyChest(cost, type) {
-  if (gold >= cost) {
-    gold -= cost; playSound('build'); updateUI(); saveGame(); openChest(type);
-  } else { showMessage('Za mało złota!', 'error'); }
-}
+function buyChest(cost, type) { if (gold >= cost) { gold -= cost; playSound('build'); updateUI(); saveGame(); openChest(type); } else { showMessage('Za mało złota!', 'error'); } }
 function openChest(type) {
   let title = "Drewniana Skrzynia"; let icon = "📦"; let rewardGold = 0; let rewardElixir = 0;
-  if (type === 'wood') {
-    title = "Drewniana Skrzynia"; icon = "📦"; rewardGold = Phaser.Math.Between(300, 800); rewardElixir = Phaser.Math.Between(100, 400);
-  } else if (type === 'silver') {
-    title = "Srebrna Skrzynia"; icon = "🎁"; rewardGold = Phaser.Math.Between(1500, 3000); rewardElixir = Phaser.Math.Between(800, 1500);
-  }
+  if (type === 'wood') { title = "Drewniana Skrzynia"; icon = "📦"; rewardGold = Phaser.Math.Between(300, 800); rewardElixir = Phaser.Math.Between(100, 400); }
+  else if (type === 'silver') { title = "Srebrna Skrzynia"; icon = "🎁"; rewardGold = Phaser.Math.Between(1500, 3000); rewardElixir = Phaser.Math.Between(800, 1500); }
   chestLoot.gold = rewardGold; chestLoot.elixir = rewardElixir;
   document.getElementById('chest-title').innerText = title;
   document.getElementById('chest-icon').innerText = icon;
   document.getElementById('chest-loot-display').innerHTML = `<div>💰 +${rewardGold}</div><div>🔮 +${rewardElixir}</div>`;
   document.getElementById('chest-overlay').style.display = 'flex'; playSound('coin');
 }
-function closeChest() {
-  gold += chestLoot.gold; elixir += chestLoot.elixir;
-  updateUI(); saveGame(); document.getElementById('chest-overlay').style.display = 'none'; showMessage('Odebrano łup ze skrzyni!', 'success');
-}
+function closeChest() { gold += chestLoot.gold; elixir += chestLoot.elixir; updateUI(); saveGame(); document.getElementById('chest-overlay').style.display = 'none'; showMessage('Odebrano łup ze skrzyni!', 'success'); }
 
-// --- CODZIENNA NAGRODA ---
 function openDailyReward() {
   closeMainMenu();
   let now = Date.now(); let timePassed = now - lastDailyReward; let cooldown = 24 * 60 * 60 * 1000;
@@ -365,15 +379,12 @@ function openDailyReward() {
     playSound('coin'); updateUI(); saveGame(); updateDailyButtonState();
     showMessage(`Odebrano codzienną nagrodę: ${rewardGold} 💰 i ${rewardElixir} 🔮!`, 'success');
   } else {
-    let msLeft = cooldown - timePassed;
-    let hoursLeft = Math.floor(msLeft / (60 * 60 * 1000));
-    let minsLeft = Math.floor((msLeft % (60 * 60 * 1000)) / (60 * 1000));
+    let msLeft = cooldown - timePassed; let hoursLeft = Math.floor(msLeft / (60 * 60 * 1000)); let minsLeft = Math.floor((msLeft % (60 * 60 * 1000)) / (60 * 1000));
     showMessage(`Nagroda dostępna za ${hoursLeft}h ${minsLeft}m.`, 'info');
   }
 }
 function updateDailyButtonState() {
   let btn = document.getElementById('daily-btn'); if (!btn) return;
   let now = Date.now(); let cooldown = 24 * 60 * 60 * 1000;
-  if (now - lastDailyReward >= cooldown) btn.classList.add('available');
-  else btn.classList.remove('available');
+  if (now - lastDailyReward >= cooldown) btn.classList.add('available'); else btn.classList.remove('available');
 }
