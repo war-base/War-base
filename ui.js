@@ -5,15 +5,33 @@ function startLevel(id) {
         return;
     }
     
-    // 1. Ustawiamy poziom kampanii
+    // Ustawiamy poziom kampanii
     window.currentCampaignLevel = id;
     
-    // 2. Ukrywamy mapę kampanii
+    // Ukrywamy mapę kampanii
     document.getElementById('campaign-map').style.display = 'none';
+
+    // Twarde ukrycie CAŁEGO interfejsu bazy
+    document.getElementById('top-bar').style.display = 'none';
+    document.getElementById('action-bar').style.display = 'none';
+    document.getElementById('build-menu').style.display = 'none';
+    document.getElementById('home-btn').style.display = 'none';
+    document.getElementById('attack-btn').style.display = 'none';
+    document.getElementById('shop-btn').style.display = 'none';
+    document.getElementById('menu-btn').style.display = 'none';
+    document.getElementById('reset-btn').style.display = 'none';
+    document.querySelectorAll('.side-buttons').forEach(el => el.style.display = 'none');
     
-    // 3. Wywołujemy starą, sprawdzoną funkcję startAttack(),
-    // która poprawnie ukryje całe UI bazy i uruchomi bitwę.
-    startAttack();
+    // Pokazujemy interfejs bitwy
+    document.getElementById('battle-ui').style.display = 'block';
+    document.getElementById('timer-display').innerText = '3:00';
+    
+    // Uruchamiamy bitwę bezpośrednio
+    if (typeof game !== 'undefined' && game.scene) {
+        game.scene.start('BattleScene');
+    } else {
+        showMessage('Błąd: Gra nie jest gotowa.', 'error');
+    }
 }
 
 function openCampaignMap() { document.getElementById('campaign-map').style.display = 'flex'; }
