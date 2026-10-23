@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - WYMUSZENIE BITWY
+// SCENES.JS - NAPRAWIONA SCENA BITWY KAMPANII
 // ==========================================
 
 const TILE_SIZE = 50; 
@@ -115,13 +115,6 @@ class BaseScene extends Phaser.Scene {
     });
     cam.setZoom(2.5); this.centerCamera();
     this.spawnPatrols();
-
-    // --- WYMUSZENIE BITWY Z KAMPANII ---
-    if (window.currentCampaignLevel) {
-        let lvl = window.currentCampaignLevel;
-        window.currentCampaignLevel = null; // Czyścimy
-        this.scene.start('BattleScene');
-    }
   }
 
   spawnPatrols() {
@@ -295,10 +288,14 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY ---
+// --- SCENA BITWY (Z TWARDYM CZYSZCZENIEM) ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
+    // --- KLUCZOWY FIX: CZYŚCIMY ZAPISANE BUDYNKI, ABY NIE RYSOWAŁO BAZY GRACZA ---
+    buildings = [];
+    // --------------------------------------------------------------------------
+
     let cam = this.cameras.main; cam.setBackgroundColor('#2d4a22'); 
     let bgGraphics = this.add.graphics(); bgGraphics.fillStyle(0x2d4a22, 1); bgGraphics.fillRect(-5000, -5000, 10000, 10000); bgGraphics.setDepth(-10);
     cam.setZoom(2.5); cam.centerOn(0, 0);
@@ -316,6 +313,7 @@ class BattleScene extends Phaser.Scene {
 
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
     
+    // Generowanie bazy wroga na podstawie wybranego poziomu
     let levelId = window.currentCampaignLevel || 1;
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
     
