@@ -11,7 +11,7 @@ function startLevel(id) {
     // Ukrywamy mapę kampanii
     document.getElementById('campaign-map').style.display = 'none';
 
-    // Twarde ukrycie CAŁEGO interfejsu bazy
+    // Ukrywamy TYLKO interfejs bazy
     document.getElementById('top-bar').style.display = 'none';
     document.getElementById('action-bar').style.display = 'none';
     document.getElementById('build-menu').style.display = 'none';
@@ -26,7 +26,7 @@ function startLevel(id) {
     document.getElementById('battle-ui').style.display = 'block';
     document.getElementById('timer-display').innerText = '3:00';
     
-    // Uruchamiamy bitwę bezpośrednio
+    // Uruchamiamy bitwę
     if (typeof game !== 'undefined' && game.scene) {
         game.scene.start('BattleScene');
     } else {
