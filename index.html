@@ -208,9 +208,32 @@
     <div class="big-btn shop-btn" onclick="openShop()"><div class="icon">🛒</div><div class="label">Sklep</div></div>
   </div>
 
+  <!-- MAPA KAMPANII (TERAZ Z BEZPOŚREDNIM ONCLICK) -->
   <div id="campaign-map">
     <h1 class="campaign-title">Kampania</h1>
-    <div class="campaign-nodes" id="campaign-nodes-container" onclick="handleCampaignClick(event)"></div>
+    <div class="campaign-nodes">
+        <div class="campaign-node" onclick="startLevel(1)">
+            <div class="node-info">
+                <div class="node-name">Wioska Goblinów</div>
+                <div class="node-desc">Łatwy łup. Słaba obrona.</div>
+            </div>
+            <div class="node-icon">👺</div>
+        </div>
+        <div class="campaign-node" onclick="startLevel(2)">
+            <div class="node-info">
+                <div class="node-name">Mroczna Puszcza</div>
+                <div class="node-desc">Średni poziom trudności.</div>
+            </div>
+            <div class="node-icon">🌲</div>
+        </div>
+        <div class="campaign-node" onclick="startLevel(3)">
+            <div class="node-info">
+                <div class="node-name">Zamek Krwi</div>
+                <div class="node-desc">Potężny wróg. Wymagana silna armia.</div>
+            </div>
+            <div class="node-icon">🏰</div>
+        </div>
+    </div>
     <button class="close-modal" style="margin-top: 30px; width: auto; padding: 12px 40px;" onclick="closeCampaignMap()">Powrót do Bazy</button>
   </div>
 
