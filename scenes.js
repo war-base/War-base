@@ -1,5 +1,5 @@
 // ==========================================
-// SCENES.JS - UNIKALNE POZIOMY KAMPANII
+// SCENES.JS - WYMUSZENIE BITWY
 // ==========================================
 
 const TILE_SIZE = 50; 
@@ -115,6 +115,13 @@ class BaseScene extends Phaser.Scene {
     });
     cam.setZoom(2.5); this.centerCamera();
     this.spawnPatrols();
+
+    // --- WYMUSZENIE BITWY Z KAMPANII ---
+    if (window.currentCampaignLevel) {
+        let lvl = window.currentCampaignLevel;
+        window.currentCampaignLevel = null; // Czyścimy
+        this.scene.start('BattleScene');
+    }
   }
 
   spawnPatrols() {
@@ -288,7 +295,7 @@ class BaseScene extends Phaser.Scene {
   }
 }
 
-// --- SCENA BITWY (Z UNIKALNYMI POZIOMAMI) ---
+// --- SCENA BITWY ---
 class BattleScene extends Phaser.Scene {
   constructor() { super('BattleScene'); }
   create() {
@@ -309,35 +316,29 @@ class BattleScene extends Phaser.Scene {
 
     document.getElementById('loot-display').innerText = '0 💰, 0 🔮';
     
-    // --- GENEROWANIE UNIKALNEGO POZIOMU ---
     let levelId = window.currentCampaignLevel || 1;
     let centerX = Math.floor(GRID / 2); let centerY = Math.floor(GRID / 2);
     
     if (levelId === 1) {
-        // Wioska Goblinów - słaba obrona
         this.createEnemyBuilding(centerX, centerY, 300, 'townhall', false, 200, 100); this.totalEnemyBuildings++;
         this.createEnemyBuilding(centerX + 2, centerY, 100, 'mine', false, 150, 0); this.totalEnemyBuildings++;
         this.createEnemyBuilding(centerX - 2, centerY + 2, 150, 'tower', true, 0, 0); this.totalEnemyBuildings++;
     } else if (levelId === 2) {
-        // Mroczna Puszcza - średnia obrona
         this.createEnemyBuilding(centerX, centerY, 500, 'townhall', false, 500, 300); this.totalEnemyBuildings++;
         for (let i = 0; i < 3; i++) {
             this.createEnemyBuilding(centerX + Phaser.Math.Between(-3, 3), centerY + Phaser.Math.Between(-3, 3), 200, 'tower', true, 0, 0); this.totalEnemyBuildings++;
         }
         this.createEnemyBuilding(centerX + 2, centerY - 2, 200, 'mine', false, 400, 0); this.totalEnemyBuildings++;
     } else {
-        // Zamek Krwi - potężna obrona
         this.createEnemyBuilding(centerX, centerY, 800, 'townhall', false, 1000, 500); this.totalEnemyBuildings++;
         for (let i = 0; i < 5; i++) {
             this.createEnemyBuilding(centerX + Phaser.Math.Between(-4, 4), centerY + Phaser.Math.Between(-4, 4), 300, 'tower', true, 0, 0); this.totalEnemyBuildings++;
         }
-        // Mury wokół bazy
         for (let x = -3; x <= 3; x++) {
             this.createEnemyBuilding(centerX + x, centerY - 4, 400, 'wall', false, 0, 0); this.totalEnemyBuildings++;
             this.createEnemyBuilding(centerX + x, centerY + 4, 400, 'wall', false, 0, 0); this.totalEnemyBuildings++;
         }
     }
-    // --------------------------------------
 
     this.time.addEvent({ delay: 1500, loop: true, callback: this.towersShoot, callbackScope: this });
     
