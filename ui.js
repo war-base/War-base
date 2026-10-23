@@ -4,26 +4,16 @@ function startLevel(id) {
         showMessage('Brak wojska do ataku!', 'error');
         return;
     }
-    document.getElementById('campaign-map').style.display = 'none';
+    
+    // 1. Ustawiamy poziom kampanii
     window.currentCampaignLevel = id;
-
-    document.getElementById('build-menu').style.display = 'none';
-    document.getElementById('home-btn').style.display = 'none';
-    document.getElementById('attack-btn').style.display = 'none';
-    document.getElementById('shop-btn').style.display = 'none';
-    document.getElementById('top-bar').style.display = 'none';
-    document.getElementById('menu-btn').style.display = 'none';
-    document.getElementById('reset-btn').style.display = 'none';
-    document.getElementById('action-bar').style.display = 'none';
-
-    document.getElementById('battle-ui').style.display = 'block';
-    document.getElementById('timer-display').innerText = '3:00';
-
-    if (typeof game !== 'undefined' && game.scene) {
-        game.scene.start('BattleScene');
-    } else {
-        showMessage('Błąd: Gra nie została załadowana.', 'error');
-    }
+    
+    // 2. Ukrywamy mapę kampanii
+    document.getElementById('campaign-map').style.display = 'none';
+    
+    // 3. Wywołujemy starą, sprawdzoną funkcję startAttack(),
+    // która poprawnie ukryje całe UI bazy i uruchomi bitwę.
+    startAttack();
 }
 
 function openCampaignMap() { document.getElementById('campaign-map').style.display = 'flex'; }
