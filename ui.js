@@ -1,67 +1,12 @@
-// --- KAMPANIA I POZIOMY ---
-const CAMPAIGN_LEVELS = [
-    { id: 1, name: "Wioska Goblinów", desc: "Łatwy łup. Słaba obrona.", icon: "👺", reqLevel: 1, lootG: 500, lootE: 200 },
-    { id: 2, name: "Mroczna Puszcza", desc: "Średni poziom trudności.", icon: "🌲", reqLevel: 3, lootG: 1500, lootE: 800 },
-    { id: 3, name: "Zamek Krwi", desc: "Potężny wróg. Wymagana silna armia.", icon: "🏰", reqLevel: 5, lootG: 5000, lootE: 2500 }
-];
-
-function openCampaignMap() {
-    document.getElementById('campaign-map').style.display = 'flex';
-    renderCampaignNodes();
-}
-
-function closeCampaignMap() {
-    document.getElementById('campaign-map').style.display = 'none';
-}
-
-function renderCampaignNodes() {
-    let container = document.getElementById('campaign-nodes-container');
-    container.innerHTML = '';
-    
-    CAMPAIGN_LEVELS.forEach(level => {
-        let isUnlocked = level.reqLevel <= level; 
-        let nodeClass = isUnlocked ? 'campaign-node' : 'campaign-node locked';
-        
-        container.innerHTML += `
-            <div class="${nodeClass}" data-id="${level.id}">
-                <div class="node-info">
-                    <div class="node-name">${level.name}</div>
-                    <div class="node-desc">${level.desc} (Wymagany Poziom: ${level.reqLevel})</div>
-                    <div class="node-desc" style="color:#ffd700;">Łup: ${level.lootG} 💰, ${level.lootE} 🔮</div>
-                </div>
-                <div class="node-icon">${level.icon}</div>
-            </div>
-        `;
-    });
-}
-
-function handleCampaignClick(event) {
-    let node = event.target.closest('.campaign-node');
-    if (!node) return; 
-    
-    if (node.classList.contains('locked')) {
-        showMessage('Ta wioska jest zablokowana!', 'error');
-        return;
-    }
-    
-    let levelId = parseInt(node.getAttribute('data-id'));
-    startCampaignLevel(levelId);
-}
-
-// --- POPRAWIONA FUNKCJA URUCHAMIANIA BITWY ---
-function startCampaignLevel(id) {
-    let level = CAMPAIGN_LEVELS.find(l => l.id === id);
-    if (!level) return;
-    
+// --- FUNKCJA URUCHAMIANIA BITWY Z KAMPANII ---
+function startLevel(id) {
     if (getCurrentArmySize() <= 0 && army.hero <= 0) {
         showMessage('Brak wojska do ataku!', 'error');
         return;
     }
+    document.getElementById('campaign-map').style.display = 'none';
+    window.currentCampaignLevel = id;
 
-    closeCampaignMap();
-    window.currentCampaignLevel = id; 
-    
-    // Ręczne ukrycie UI bazy (to samo, co robi startAttack)
     document.getElementById('build-menu').style.display = 'none';
     document.getElementById('home-btn').style.display = 'none';
     document.getElementById('attack-btn').style.display = 'none';
@@ -69,20 +14,20 @@ function startCampaignLevel(id) {
     document.getElementById('top-bar').style.display = 'none';
     document.getElementById('menu-btn').style.display = 'none';
     document.getElementById('reset-btn').style.display = 'none';
+    document.getElementById('action-bar').style.display = 'none';
+
     document.getElementById('battle-ui').style.display = 'block';
     document.getElementById('timer-display').innerText = '3:00';
-    
-    selectBattleTroop('barbarian'); 
-    updateUI(); 
-    checkHeroAvailability();
-    
-    // Uruchamiamy scenę bitwy bezpośrednio
-    if (game && game.scene) {
+
+    if (typeof game !== 'undefined' && game.scene) {
         game.scene.start('BattleScene');
     } else {
-        showMessage('Błąd ładowania sceny bitwy!', 'error');
+        showMessage('Błąd: Gra nie została załadowana.', 'error');
     }
 }
+
+function openCampaignMap() { document.getElementById('campaign-map').style.display = 'flex'; }
+function closeCampaignMap() { document.getElementById('campaign-map').style.display = 'none'; }
 
 // --- FUNKCJA AKTUALIZACJI INTERFEJSU ---
 function updateUI() {
